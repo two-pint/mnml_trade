@@ -1,0 +1,22 @@
+{
+  "name": "@repo/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'mobile: dev not configured yet (see M1-007)'",
+    "build": "echo 'mobile: build not configured yet (see M1-007)'",
+    "lint": "echo 'mobile: lint not configured yet'",
+    "type-check": "echo 'mobile: type-check not configured yet'",
+    "clean": "rm -rf node_modules .expo"
+  },
+  "dependencies": {
+    "@repo/types": "workspace:*",
+    "@repo/api-client": "workspace:*",
+    "@repo/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@repo/tailwind-config": "workspace:*",
+    "typescript": "^5"
+  }
+}

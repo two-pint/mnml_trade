@@ -1,0 +1,22 @@
+{
+  "name": "@repo/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'web: dev not configured yet (see M1-006)'",
+    "build": "echo 'web: build not configured yet (see M1-006)'",
+    "lint": "echo 'web: lint not configured yet'",
+    "type-check": "echo 'web: type-check not configured yet'",
+    "clean": "rm -rf .next node_modules"
+  },
+  "dependencies": {
+    "@repo/types": "workspace:*",
+    "@repo/api-client": "workspace:*",
+    "@repo/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@repo/tailwind-config": "workspace:*",
+    "typescript": "^5"
+  }
+}
