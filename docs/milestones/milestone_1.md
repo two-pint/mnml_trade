@@ -48,13 +48,13 @@ The product has three applications (web, mobile, API) and shared code (types, AP
 Web and mobile must share TypeScript types, API client logic, and styling/config to avoid drift and duplicate fixes. Centralizing these in `packages/*` gives a single source of truth and allows the API to be called the same way from both clients. Shared packages are a prerequisite for the web and mobile apps in M1.
 
 ### Required tasks
-- [ ] **packages/types**: Create package with `package.json` (name e.g. `@repo/types`), tsconfig; add shared types (e.g. `User`, auth DTOs, `ApiError`). Export from `src/index.ts`.
-- [ ] **packages/api-client**: Create package; implement base HTTP client (base URL, optional Bearer token, JSON parse, error handling). Add auth methods: `login(email, password)`, `register(payload)`, `refresh(token)`; use types from `@repo/types`. Export client and auth helpers.
-- [ ] **packages/ui**: Create package with minimal shared components (e.g. `Button`, `Card`) and platform adapters (web/native) or single implementation that works with both; use `@repo/types` if needed.
-- [ ] **packages/tailwind-config**: Add shared Tailwind config (theme extend: primary, bullish, bearish, fonts); export for web and native presets if applicable.
-- [ ] **packages/typescript-config**: Add `base.json`, `nextjs.json`, `react-native.json` (or equivalent) for apps to extend.
-- [ ] **packages/utils**: Create package; add formatters or validators (e.g. Zod schemas for auth) used by api-client or apps; export from index.
-- [ ] Wire workspace refs: apps depend on `@repo/types`, `@repo/api-client`, etc. via `workspace:*`.
+- [x] **packages/types**: Create package with `package.json` (name e.g. `@repo/types`), tsconfig; add shared types (e.g. `User`, auth DTOs, `ApiError`). Export from `src/index.ts`.
+- [x] **packages/api-client**: Create package; implement base HTTP client (base URL, optional Bearer token, JSON parse, error handling). Add auth methods: `login(email, password)`, `register(payload)`, `refresh(token)`; use types from `@repo/types`. Export client and auth helpers.
+- [x] **packages/ui**: Create package with minimal shared components (e.g. `Button`, `Card`) and platform adapters (web/native) or single implementation that works with both; use `@repo/types` if needed.
+- [x] **packages/tailwind-config**: Add shared Tailwind config (theme extend: primary, bullish, bearish, fonts); export for web and native presets if applicable.
+- [x] **packages/typescript-config**: Add `base.json`, `nextjs.json`, `react-native.json` (or equivalent) for apps to extend.
+- [x] **packages/utils**: Create package; add formatters or validators (e.g. Zod schemas for auth) used by api-client or apps; export from index.
+- [x] Wire workspace refs: apps depend on `@repo/types`, `@repo/api-client`, etc. via `workspace:*`.
 
 ### Acceptance criteria
 - Web and mobile can import `@repo/types`, `@repo/api-client`, `@repo/ui`, and extend shared Tailwind/TS configs.
@@ -285,7 +285,7 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 ## Milestone 1 completion checklist
 
 - [x] M1-001: Monorepo structure and tooling
-- [ ] M1-002: Shared packages
+- [x] M1-002: Shared packages
 - [ ] M1-003: Phoenix API skeleton and health
 - [ ] M1-004: Accounts context and JWT
 - [ ] M1-005: API CORS and protected pipeline

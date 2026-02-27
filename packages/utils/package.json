@@ -8,6 +8,9 @@
     "type-check": "tsc --noEmit",
     "lint": "echo 'lint: no linter configured yet'"
   },
+  "dependencies": {
+    "zod": "^3"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "typescript": "^5"
