@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "echo 'api: run mix phx.server from apps/api (see M1-003)'",
-    "build": "echo 'api: run mix release from apps/api (see M1-003)'",
-    "lint": "echo 'api: Elixir linting not managed by turbo'",
-    "type-check": "echo 'api: Elixir type-checking not managed by turbo'",
-    "clean": "echo 'api: run mix clean from apps/api'"
+    "dev": "mix phx.server",
+    "build": "MIX_ENV=prod mix release",
+    "lint": "mix format --check-formatted",
+    "type-check": "mix compile --warnings-as-errors",
+    "clean": "mix clean",
+    "test": "mix test",
+    "setup": "mix setup"
   }
 }

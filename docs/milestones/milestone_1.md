@@ -81,12 +81,12 @@ Web and mobile must share TypeScript types, API client logic, and styling/config
 The backend must exist in the monorepo and expose a stable base URL and health check so the frontends can target it and deployments can verify the service is up. A minimal Phoenix app with PostgreSQL and a health route establishes the API tier without auth or business logic.
 
 ### Required tasks
-- [ ] Create Phoenix 1.7+ project under `apps/api` (e.g. `mix phx.new` in place or generated then moved).
-- [ ] Configure PostgreSQL (dev/test/prod) via `config/*.exs` and `DATABASE_URL` where appropriate.
-- [ ] Add Ecto repo; run initial migration if any (e.g. create `schema_migrations` table).
-- [ ] Add JSON API pipeline: accept `application/json`, return JSON; add a router scope (e.g. `/api`).
-- [ ] Implement health endpoint: `GET /api/health` or `GET /health` that checks DB connectivity (e.g. `Repo.query!("SELECT 1")`) and returns `200` with body e.g. `%{status: "ok"}`; return `503` if DB is down.
-- [ ] Document in README or HLD how to run `mix setup` and `mix phx.server` and what port the API uses (e.g. 4000).
+- [x] Create Phoenix 1.7+ project under `apps/api` (e.g. `mix phx.new` in place or generated then moved).
+- [x] Configure PostgreSQL (dev/test/prod) via `config/*.exs` and `DATABASE_URL` where appropriate.
+- [x] Add Ecto repo; run initial migration if any (e.g. create `schema_migrations` table).
+- [x] Add JSON API pipeline: accept `application/json`, return JSON; add a router scope (e.g. `/api`).
+- [x] Implement health endpoint: `GET /api/health` or `GET /health` that checks DB connectivity (e.g. `Repo.query!("SELECT 1")`) and returns `200` with body e.g. `%{status: "ok"}`; return `503` if DB is down.
+- [x] Document in README or HLD how to run `mix setup` and `mix phx.server` and what port the API uses (e.g. 4000).
 
 ### Acceptance criteria
 - `mix phx.server` starts the API; `GET /api/health` returns 200 when DB is reachable.
@@ -286,7 +286,7 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 
 - [x] M1-001: Monorepo structure and tooling
 - [x] M1-002: Shared packages
-- [ ] M1-003: Phoenix API skeleton and health
+- [x] M1-003: Phoenix API skeleton and health
 - [ ] M1-004: Accounts context and JWT
 - [ ] M1-005: API CORS and protected pipeline
 - [ ] M1-006: Next.js web app and auth UI

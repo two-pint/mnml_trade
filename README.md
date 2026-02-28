@@ -6,6 +6,7 @@ Stock analysis platform — web (Next.js), mobile (React Native/Expo), and API (
 
 - **asdf** — runtime version manager; run `asdf install` to install Node.js, Elixir, and Erlang from `.tool-versions`
 - **pnpm** 9+ — install with `corepack enable && corepack prepare pnpm@latest --activate`
+- **PostgreSQL** 16+ — required for the Phoenix API
 
 ## Getting Started
 
@@ -68,14 +69,26 @@ pnpm --filter @repo/types type-check
 
 ### Phoenix API (apps/api)
 
-The API is an Elixir/Phoenix project managed outside of the Node.js toolchain:
+The API is an Elixir/Phoenix project. Set it up and run it separately:
 
 ```bash
 cd apps/api
-mix deps.get
-mix ecto.setup
+
+# First-time setup: install deps, create DB, run migrations
+mix setup
+
+# Start the API server (default: http://localhost:4000)
 mix phx.server
+
+# Run tests
+mix test
 ```
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/health` | Health check — returns `{"status": "ok"}` (200) or `{"status": "error"}` (503) |
+
+The dev config auto-detects your system Postgres user. To override, set `PGUSER`, `PGPASSWORD`, and `PGHOST` environment variables.
 
 ## Tooling
 
