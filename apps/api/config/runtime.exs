@@ -57,6 +57,16 @@ if config_env() == :prod do
 
   config :stock_analysis, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  guardian_secret =
+    System.get_env("GUARDIAN_SECRET_KEY") ||
+      raise """
+      environment variable GUARDIAN_SECRET_KEY is missing.
+      You can generate one by calling: mix guardian.gen.secret
+      """
+
+  config :stock_analysis, StockAnalysis.Guardian,
+    secret_key: guardian_secret
+
   config :stock_analysis, StockAnalysisWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

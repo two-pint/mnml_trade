@@ -27,6 +27,12 @@ config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+# Guardian JWT configuration
+config :stock_analysis, StockAnalysis.Guardian,
+  issuer: "stock_analysis",
+  secret_key: "dev-only-secret-key-replace-in-production",
+  ttl: {1, :hour}
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

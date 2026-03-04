@@ -113,14 +113,14 @@ The backend must exist in the monorepo and expose a stable base URL and health c
 Users must be able to register and log in so that later milestones can scope watchlist, history, and paper trading to a user. JWT (via Guardian) provides stateless auth that works the same for web and mobile and avoids server-side session storage. The Accounts context encapsulates user lifecycle and credential handling.
 
 ### Required tasks
-- [ ] Add Guardian dependency; configure JWT module (secret, issuer, ttl, etc.) in Phoenix config.
-- [ ] Create User schema and migration: email (unique), password_hash, username (optional), email_verified (default false), timestamps.
-- [ ] Implement Accounts context: `register_user(attrs)`, `get_user_by_email/1`, `get_user_by_id/1`; use `Bcrypt` or `Argon2` for password hashing on registration and verification on login.
-- [ ] Implement token functions: `issue_access_token(user)`, `verify_token(token)` (Guardian); optionally `refresh_token` and storage in DB if using refresh tokens.
-- [ ] Expose HTTP endpoints: `POST /api/auth/register` (body: email, password, username?), `POST /api/auth/login` (body: email, password). Return JSON with `token` and optional `user` (id, email, username); return 4xx with clear message for invalid credentials or duplicate email.
-- [ ] Add `POST /api/auth/refresh` if using refresh tokens (body or header with refresh token); return new access token.
-- [ ] Optional for M1: `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` (stub or minimal implementation).
-- [ ] Add tests for register (success, duplicate email), login (success, wrong password), and token verification.
+- [x] Add Guardian dependency; configure JWT module (secret, issuer, ttl, etc.) in Phoenix config.
+- [x] Create User schema and migration: email (unique), password_hash, username (optional), email_verified (default false), timestamps.
+- [x] Implement Accounts context: `register_user(attrs)`, `get_user_by_email/1`, `get_user_by_id/1`; use `Bcrypt` or `Argon2` for password hashing on registration and verification on login.
+- [x] Implement token functions: `issue_access_token(user)`, `verify_token(token)` (Guardian); optionally `refresh_token` and storage in DB if using refresh tokens.
+- [x] Expose HTTP endpoints: `POST /api/auth/register` (body: email, password, username?), `POST /api/auth/login` (body: email, password). Return JSON with `token` and optional `user` (id, email, username); return 4xx with clear message for invalid credentials or duplicate email.
+- [x] Add `POST /api/auth/refresh` if using refresh tokens (body or header with refresh token); return new access token.
+- [x] Optional for M1: `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` (stub or minimal implementation).
+- [x] Add tests for register (success, duplicate email), login (success, wrong password), and token verification.
 
 ### Acceptance criteria
 - Registration creates a user with hashed password; duplicate email returns 422 or 409.
@@ -287,7 +287,7 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M1-001: Monorepo structure and tooling
 - [x] M1-002: Shared packages
 - [x] M1-003: Phoenix API skeleton and health
-- [ ] M1-004: Accounts context and JWT
+- [x] M1-004: Accounts context and JWT
 - [ ] M1-005: API CORS and protected pipeline
 - [ ] M1-006: Next.js web app and auth UI
 - [ ] M1-007: Expo mobile app and auth
