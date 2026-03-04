@@ -227,13 +227,13 @@ Users need a web interface to register and log in. The web app must use the shar
 Mobile users need the same auth capabilities as web. The mobile app must use the same API and shared packages so that one backend and one contract serve both platforms. Storing the JWT in SecureStore (Expo) keeps the token persistent and relatively secure on device. Expo Router provides file-based routing similar to Next.js for consistency.
 
 ### Required tasks
-- [ ] Create Expo app in `apps/mobile` with Expo Router (file-based); TypeScript; NativeWind for Tailwind-style styling. Extend shared typescript-config and tailwind-config.
-- [ ] Add dependencies: `@repo/types`, `@repo/api-client`, `@repo/ui`, `expo-secure-store`. Configure `EXPO_PUBLIC_API_URL` (app config or env).
-- [ ] Implement auth screens: login and register (email, password, optional username); call api-client `login`/`register`; on success, store token in SecureStore; navigate to app root (tabs or home).
-- [ ] Implement token retrieval: on app load or before API calls, read token from SecureStore; set in api-client (or pass per request). Implement logout: clear SecureStore and navigate to login.
-- [ ] Add auth guard: root layout or route group that checks for token; if missing, show login/register stack; if present, show main app (tabs or single home screen for M1).
-- [ ] Add minimal home screen after login (e.g. “Welcome” and logout) to verify flow.
-- [ ] Ensure API base URL is correct for device (e.g. local IP for dev, production URL for release).
+- [x] Create Expo app in `apps/mobile` with Expo Router (file-based); TypeScript; NativeWind for Tailwind-style styling. Extend shared typescript-config and tailwind-config.
+- [x] Add dependencies: `@repo/types`, `@repo/api-client`, `@repo/ui`, `expo-secure-store`. Configure `EXPO_PUBLIC_API_URL` (app config or env).
+- [x] Implement auth screens: login and register (email, password, optional username); call api-client `login`/`register`; on success, store token in SecureStore; navigate to app root (tabs or home).
+- [x] Implement token retrieval: on app load or before API calls, read token from SecureStore; set in api-client (or pass per request). Implement logout: clear SecureStore and navigate to login.
+- [x] Add auth guard: root layout or route group that checks for token; if missing, show login/register stack; if present, show main app (tabs or single home screen for M1).
+- [x] Add minimal home screen after login (e.g. “Welcome” and logout) to verify flow.
+- [x] Ensure API base URL is correct for device (e.g. local IP for dev, production URL for release).
 
 ### Acceptance criteria
 - User can log in and register on mobile; on success, navigates to home and token is stored.
