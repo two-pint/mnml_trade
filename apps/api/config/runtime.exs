@@ -73,7 +73,11 @@ if config_env() == :prod do
       origins -> String.split(origins, ",", trim: true)
     end
 
-  config :stock_analysis, :cors, origins: cors_origins
+  config :stock_analysis, :cors,
+    origins: cors_origins,
+    allow_headers: ["authorization", "content-type", "accept"],
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_credentials: true
 
   config :stock_analysis, StockAnalysisWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
