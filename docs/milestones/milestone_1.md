@@ -189,13 +189,13 @@ Web (Next.js) and mobile (Expo) run on different origins; browsers enforce CORS.
 Users need a web interface to register and log in. The web app must use the shared API client and types so that it stays in sync with the API contract and can be reused for patterns (e.g. error handling) that mobile will also use. Protected route middleware ensures unauthenticated users cannot access app pages until they log in.
 
 ### Required tasks
-- [ ] Create Next.js 14+ app in `apps/web` with App Router and TypeScript; extend `packages/typescript-config` and `packages/tailwind-config`.
-- [ ] Add dependencies: `@repo/types`, `@repo/api-client`, `@repo/ui` (and `@repo/utils` if needed). Configure `NEXT_PUBLIC_API_URL` (env).
-- [ ] Implement auth pages: login and register forms (email, password, optional username); client-side submit to api-client `login`/`register`; on success, store token (e.g. in memory + localStorage or httpOnly cookie if implemented); redirect to app home or dashboard.
-- [ ] Implement token storage and usage: after login, set token so api-client can send `Authorization: Bearer <token>` on subsequent requests; implement logout (clear token and redirect to login).
-- [ ] Add protected route handling: middleware or layout that checks for token; if missing, redirect to login. Apply to all app routes except login/register and public assets.
-- [ ] Add a simple “home” or “dashboard” page after login (e.g. “Welcome” and a logout button) to verify protected flow.
-- [ ] Use shared UI components and Tailwind; ensure forms show validation/error messages from API.
+- [x] Create Next.js 16 app in `apps/web` with App Router and TypeScript; extend `packages/typescript-config` and `packages/tailwind-config`.
+- [x] Add dependencies: `@repo/types`, `@repo/api-client`, `@repo/ui` (and `@repo/utils` if needed). Configure `NEXT_PUBLIC_API_URL` (env).
+- [x] Implement auth pages: login and register forms (email, password, optional username); client-side submit to api-client `login`/`register`; on success, store token (e.g. in memory + localStorage or httpOnly cookie if implemented); redirect to app home or dashboard.
+- [x] Implement token storage and usage: after login, set token so api-client can send `Authorization: Bearer <token>` on subsequent requests; implement logout (clear token and redirect to login).
+- [x] Add protected route handling: layout guard that checks for token; if missing, redirect to login. Apply to all app routes except login/register and public assets.
+- [x] Add a simple “home” or “dashboard” page after login (e.g. “Welcome” and a logout button) to verify protected flow.
+- [x] Use shared UI components and Tailwind; ensure forms show validation/error messages from API.
 
 ### Acceptance criteria
 - User can open login page, enter credentials, submit; on success, is redirected and sees protected content.
@@ -295,7 +295,7 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M1-003: Phoenix API skeleton and health
 - [x] M1-004: Accounts context and JWT
 - [x] M1-005: API CORS and protected pipeline
-- [ ] M1-006: Next.js web app and auth UI
+- [x] M1-006: Next.js web app and auth UI
 - [ ] M1-007: Expo mobile app and auth
 - [ ] M1-008: Deployment pipeline
 

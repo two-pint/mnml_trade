@@ -36,8 +36,7 @@ config :stock_analysis, StockAnalysis.Guardian,
 # CORS configuration
 config :stock_analysis, :cors,
   origins: [
-    "http://localhost:3000",
-    "http://localhost:8081",
+    ~r/^http:\/\/localhost:\d+$/,
     ~r/^https:\/\/.*\.vercel\.app$/
   ],
   allow_headers: ["authorization", "content-type", "accept"],
