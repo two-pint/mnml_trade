@@ -33,6 +33,17 @@ config :stock_analysis, StockAnalysis.Guardian,
   secret_key: "dev-only-secret-key-replace-in-production",
   ttl: {1, :hour}
 
+# CORS configuration
+config :stock_analysis, :cors,
+  origins: [
+    "http://localhost:3000",
+    "http://localhost:8081",
+    ~r/^https:\/\/.*\.vercel\.app$/
+  ],
+  allow_headers: ["authorization", "content-type", "accept"],
+  allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allow_credentials: true
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
