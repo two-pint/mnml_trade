@@ -150,11 +150,17 @@ Users must be able to register and log in so that later milestones can scope wat
 Web (Next.js) and mobile (Expo) run on different origins; browsers enforce CORS. The API must allow requests from the web app and from Expo dev/client origins so that both can call the same backend. Protected routes must reject requests without a valid JWT so that only authenticated users can access user-specific endpoints later.
 
 ### Required tasks
-- [ ] Add CORS plug (e.g. Corsica or built-in): allow origins for local dev (e.g. `http://localhost:3000`, `http://localhost:8081`), production web domain, and Expo patterns (e.g. `exp://`, Vercel preview if needed). Allow methods: GET, POST, PUT, DELETE, OPTIONS. Allow headers: `authorization`, `content-type`. Allow credentials if using cookies.
-- [ ] Create a pipeline that verifies JWT: extract `Authorization: Bearer <token>`, call Guardian to verify and load user; attach `current_user` to conn. On failure, return 401 JSON.
-- [ ] Apply “public” pipeline to auth routes (register, login, refresh, forgot-password, reset-password) and health.
-- [ ] Apply “protected” pipeline to a placeholder route (e.g. `GET /api/user/me` that returns current user) so that only valid JWT returns 200.
-- [ ] Document allowed origins and how to add new ones (e.g. env or config list).
+
+- [x] Add CORS plug (e.g. Corsica or built-in): allow origins for local dev (e.g. `http://localhost:3000`,
+  `http://localhost:8081`), production web domain, and Expo patterns (e.g. `exp://`, Vercel preview if needed). Allow
+  methods: GET, POST, PUT, DELETE, OPTIONS. Allow headers: `authorization`, `content-type`. Allow credentials if using
+  cookies.
+- [x] Create a pipeline that verifies JWT: extract `Authorization: Bearer <token>`, call Guardian to verify and load
+  user; attach `current_user` to conn. On failure, return 401 JSON.
+- [x] Apply “public” pipeline to auth routes (register, login, refresh, forgot-password, reset-password) and health.
+- [x] Apply “protected” pipeline to a placeholder route (e.g. `GET /api/user/me` that returns current user) so that only
+  valid JWT returns 200.
+- [x] Document allowed origins and how to add new ones (e.g. env or config list).
 
 ### Acceptance criteria
 - Request from allowed origin with valid `Authorization: Bearer <token>` to a protected route returns 200 (or business response).
@@ -288,7 +294,7 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M1-002: Shared packages
 - [x] M1-003: Phoenix API skeleton and health
 - [x] M1-004: Accounts context and JWT
-- [ ] M1-005: API CORS and protected pipeline
+- [x] M1-005: API CORS and protected pipeline
 - [ ] M1-006: Next.js web app and auth UI
 - [ ] M1-007: Expo mobile app and auth
 - [ ] M1-008: Deployment pipeline

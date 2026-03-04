@@ -67,6 +67,14 @@ if config_env() == :prod do
   config :stock_analysis, StockAnalysis.Guardian,
     secret_key: guardian_secret
 
+  cors_origins =
+    case System.get_env("CORS_ORIGINS") do
+      nil -> ["https://#{host}"]
+      origins -> String.split(origins, ",", trim: true)
+    end
+
+  config :stock_analysis, :cors, origins: cors_origins
+
   config :stock_analysis, StockAnalysisWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

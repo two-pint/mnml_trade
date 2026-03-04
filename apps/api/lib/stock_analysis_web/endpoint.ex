@@ -45,5 +45,6 @@ defmodule StockAnalysisWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+  plug Corsica, Application.compile_env(:stock_analysis, :cors, [])
   plug StockAnalysisWeb.Router
 end
