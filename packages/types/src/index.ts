@@ -14,3 +14,4 @@ export type {
   PaginationMeta,
   PaginatedResponse,
 } from "./api";
+export type { SearchResult, StockOverview } from "./stocks";

@@ -1,5 +1,10 @@
 import Config
 
+# Alpha Vantage API key (optional in dev/test; set ALPHA_VANTAGE_API_KEY or config)
+if System.get_env("ALPHA_VANTAGE_API_KEY") do
+  config :stock_analysis, :alpha_vantage_api_key, System.get_env("ALPHA_VANTAGE_API_KEY")
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

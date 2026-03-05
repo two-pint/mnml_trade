@@ -10,6 +10,7 @@ defmodule StockAnalysis.Application do
     children = [
       StockAnalysisWeb.Telemetry,
       StockAnalysis.Repo,
+      StockAnalysis.Cache,
       {DNSCluster, query: Application.get_env(:stock_analysis, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: StockAnalysis.PubSub},
       # Start a worker by calling: StockAnalysis.Worker.start_link(arg)

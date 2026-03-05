@@ -11,6 +11,13 @@ config :stock_analysis,
   ecto_repos: [StockAnalysis.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Cache default TTLs (seconds): price 15s, technical 1h, institutional 1h
+config :stock_analysis, :cache_default_ttls, %{
+  price: 15,
+  technical: 3600,
+  institutional: 3600
+}
+
 # Configure the endpoint
 config :stock_analysis, StockAnalysisWeb.Endpoint,
   url: [host: "localhost"],

@@ -51,7 +51,9 @@ defmodule StockAnalysis.MixProject do
       {:bandit, "~> 1.5"},
       {:guardian, "~> 2.3"},
       {:bcrypt_elixir, "~> 3.0"},
-      {:corsica, "~> 2.0"}
+      {:corsica, "~> 2.0"},
+      {:req, "~> 0.5"},
+      {:bypass, "~> 2.0", only: :test}
     ]
   end
 
