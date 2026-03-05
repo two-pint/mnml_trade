@@ -14,3 +14,13 @@ export type {
   PaginationMeta,
   PaginatedResponse,
 } from "./api";
+export type {
+  SearchResult,
+  StockOverview,
+  TechnicalAnalysis,
+  TechnicalSignal,
+  IndicatorValue,
+  OptionsFlowTrade,
+  DarkPoolSummary,
+  InstitutionalData,
+} from "./stocks";
