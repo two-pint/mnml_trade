@@ -191,12 +191,12 @@ The institutional data (options flow and dark pool) is a key differentiator per 
 Users need to find stocks quickly. An autocomplete search bar in the navbar (or dedicated search page) provides fast feedback as the user types, calls the API search endpoint, and navigates to the stock detail page on selection. This is the primary entry point into the analysis experience on web.
 
 ### Required tasks
-- [ ] Add search bar component to the top navbar (or a global search page); use a debounced input (e.g. 300ms).
-- [ ] On input change, call `api.searchStocks(query)` from `@repo/api-client`; display results in a dropdown with ticker and company name.
-- [ ] On result selection, navigate to `/stocks/[ticker]`.
-- [ ] Handle loading state (spinner or skeleton in dropdown), empty results ("No results"), and errors.
-- [ ] Persist recent searches locally (e.g. localStorage, last 5).
-- [ ] Style with Tailwind / Shadcn — clean, responsive.
+- [x] Add search bar component to the top navbar (or a global search page); use a debounced input (e.g. 300ms).
+- [x] On input change, call `api.searchStocks(query)` from `@repo/api-client`; display results in a dropdown with ticker and company name.
+- [x] On result selection, navigate to `/stocks/[ticker]`.
+- [x] Handle loading state (spinner or skeleton in dropdown), empty results ("No results"), and errors.
+- [x] Persist recent searches locally (e.g. localStorage, last 5).
+- [x] Style with Tailwind / Shadcn — clean, responsive.
 
 ### Acceptance criteria
 - Typing "AA" shows matching tickers within ~500ms of debounce.
@@ -225,15 +225,15 @@ Users need to find stocks quickly. An autocomplete search bar in the navbar (or 
 The stock detail page is the main product experience. The overview section shows price, change, and key metrics; the Technical tab shows an interactive chart and indicators. This ticket wires the web UI to the API endpoints built in M2-003 and M2-004, and lays out the tab structure that will be extended in M3.
 
 ### Required tasks
-- [ ] Create `/stocks/[ticker]/page.tsx` (App Router dynamic route).
-- [ ] Fetch stock overview from `api.getStock(ticker)` (server component or React Query); display price, 24h change (colored), market cap, P/E placeholder, 52-week range.
-- [ ] Add tab navigation UI: "Technical | Fundamental | Emotional | Institutional" — only Technical is active for M2; others show "Coming soon" or skeleton.
-- [ ] Tab state in URL: `?tab=technical` (default), update on click; use `useSearchParams`.
-- [ ] **Technical tab**: Fetch `api.getStockTechnical(ticker)` with React Query.
-  - [ ] Interactive price chart: integrate Lightweight Charts (TradingView) or Recharts; show candlestick + volume; timeframe toggles (1D, 1M, 6M, 1Y).
-  - [ ] Indicators section: display RSI, MACD, SMA (20/50/200), Bollinger, ATR, ADX with values and interpretation (bullish/bearish label).
-  - [ ] Technical score display: 0–100 gauge or badge with signal (e.g. "Bullish").
-- [ ] Loading skeletons for overview and chart; error boundary for failed fetches.
+- [x] Create `/stocks/[ticker]/page.tsx` (App Router dynamic route).
+- [x] Fetch stock overview from `api.getStock(ticker)` (server component or React Query); display price, 24h change (colored), market cap, P/E placeholder, 52-week range.
+- [x] Add tab navigation UI: "Technical | Fundamental | Emotional | Institutional" — only Technical is active for M2; others show "Coming soon" or skeleton.
+- [x] Tab state in URL: `?tab=technical` (default), update on click; use `useSearchParams`.
+- [x] **Technical tab**: Fetch `api.getStockTechnical(ticker)` with React Query.
+  - [x] Interactive price chart: integrate Lightweight Charts (TradingView) or Recharts; show candlestick + volume; timeframe toggles (1D, 1M, 6M, 1Y).
+  - [x] Indicators section: display RSI, MACD, SMA (20/50/200), Bollinger, ATR, ADX with values and interpretation (bullish/bearish label).
+  - [x] Technical score display: 0–100 gauge or badge with signal (e.g. "Bullish").
+- [x] Loading skeletons for overview and chart; error boundary for failed fetches.
 - [ ] Optional: show basic institutional data (options flow summary, dark pool summary from M2-005) below technical or in Institutional tab placeholder.
 
 ### Acceptance criteria
@@ -367,8 +367,8 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M2-003: Stocks context (search and overview)
 - [x] M2-004: Analysis context — technical indicators and score
 - [x] M2-005: Unusual Whales integration — options flow and dark pool
-- [ ] M2-006: Stock search UI (web)
-- [ ] M2-007: Stock overview and Technical tab (web)
+- [x] M2-006: Stock search UI (web)
+- [x] M2-007: Stock overview and Technical tab (web)
 - [ ] M2-008: Stock search and Technical tab (mobile)
 - [ ] M2-009: Trending stocks endpoint and UI
 - [ ] M2-010: Deployment pipeline (Fly.io, Vercel, EAS)

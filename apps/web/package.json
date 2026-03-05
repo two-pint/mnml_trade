@@ -17,7 +17,8 @@
     "@repo/utils": "workspace:*",
     "next": "^16",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "recharts": "^2.15"
   },
   "devDependencies": {
     "@repo/tailwind-config": "workspace:*",

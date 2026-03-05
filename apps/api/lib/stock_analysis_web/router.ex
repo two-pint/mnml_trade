@@ -32,6 +32,7 @@ defmodule StockAnalysisWeb.Router do
 
     get "/stocks/search", StocksController, :search
     get "/stocks/:ticker/technical", StocksController, :technical
+    get "/stocks/:ticker/daily", StocksController, :daily
     get "/stocks/:ticker/institutional", StocksController, :institutional
     get "/stocks/:ticker", StocksController, :show
   end

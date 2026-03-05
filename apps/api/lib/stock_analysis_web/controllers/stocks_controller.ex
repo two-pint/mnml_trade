@@ -50,6 +50,20 @@ defmodule StockAnalysisWeb.StocksController do
     end
   end
 
+  def daily(conn, %{"ticker" => ticker}) do
+    case Stocks.get_daily(ticker) do
+      {:ok, series} ->
+        conn
+        |> put_status(:ok)
+        |> json(series)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "not_found", message: "Stock not found"})
+    end
+  end
+
   def technical(conn, %{"ticker" => ticker}) do
     case Analysis.get_technical(ticker) do
       {:ok, technical} ->

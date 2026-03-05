@@ -56,6 +56,33 @@ defmodule StockAnalysis.Stocks do
     end
   end
 
+  @doc """
+  Fetches daily OHLCV series for a ticker (for charts).
+
+  Uses cache (1h TTL). Returns `{:ok, [%{date: _, open: _, high: _, low: _, close: _, volume: _}, ...]}`
+  or `{:error, :not_found}`.
+  """
+  def get_daily(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+    cache_key = Cache.key("stocks", ticker, "daily")
+    ttl = Cache.default_ttl(:technical)
+
+    case Cache.get(cache_key) do
+      nil ->
+        case AlphaVantage.get_daily(ticker) do
+          {:ok, series} ->
+            Cache.put(cache_key, series, ttl)
+            {:ok, series}
+
+          {:error, _} ->
+            {:error, :not_found}
+        end
+
+      cached ->
+        {:ok, cached}
+    end
+  end
+
   defp quote_to_overview(ticker, quote) do
     %{
       ticker: ticker,

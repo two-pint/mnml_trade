@@ -60,3 +60,14 @@ export interface InstitutionalData {
   data_as_of: string;
   stale: boolean;
 }
+
+export interface DailyOhlcv {
+  date: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
+}
+
+export type DailySeries = DailyOhlcv[];
