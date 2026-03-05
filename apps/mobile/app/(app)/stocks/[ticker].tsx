@@ -1,0 +1,369 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  useWindowDimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import type { DailyOhlcv, StockOverview, TechnicalAnalysis } from "@repo/types";
+import { stocksApi } from "@/lib/api";
+
+type Timeframe = "1D" | "1M" | "6M" | "1Y";
+
+const TABS = [
+  { id: "technical", label: "Technical" },
+  { id: "fundamental", label: "Fundamental" },
+  { id: "emotional", label: "Emotional" },
+  { id: "institutional", label: "Institutional" },
+] as const;
+
+function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): DailyOhlcv[] {
+  if (!series.length) return [];
+  const now = new Date();
+  let cut: Date;
+  switch (tf) {
+    case "1D":
+      cut = new Date(now);
+      cut.setDate(cut.getDate() - 1);
+      break;
+    case "1M":
+      cut = new Date(now);
+      cut.setMonth(cut.getMonth() - 1);
+      break;
+    case "6M":
+      cut = new Date(now);
+      cut.setMonth(cut.getMonth() - 6);
+      break;
+    case "1Y":
+      cut = new Date(now);
+      cut.setFullYear(cut.getFullYear() - 1);
+      break;
+    default:
+      return series;
+  }
+  const cutStr = cut.toISOString().slice(0, 10);
+  return series.filter((d) => d.date >= cutStr).slice(-80);
+}
+
+export default function StockDetailScreen() {
+  const { ticker: rawTicker } = useLocalSearchParams<{ ticker: string }>();
+  const ticker = rawTicker ? decodeURIComponent(rawTicker) : "";
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+
+  const [overview, setOverview] = useState<StockOverview | null>(null);
+  const [technical, setTechnical] = useState<TechnicalAnalysis | null>(null);
+  const [daily, setDaily] = useState<DailyOhlcv[]>([]);
+  const [tab, setTab] = useState<string>("technical");
+  const [timeframe, setTimeframe] = useState<Timeframe>("1M");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(() => {
+    if (!ticker) return;
+    setError(null);
+    Promise.all([
+      stocksApi.getStock(ticker),
+      stocksApi.getStockTechnical(ticker).catch(() => null),
+      stocksApi.getStockDaily(ticker).catch(() => []),
+    ])
+      .then(([ov, tech, d]) => {
+        setOverview(ov);
+        setTechnical(tech ?? null);
+        setDaily(Array.isArray(d) ? d : []);
+      })
+      .catch(() => setError("Failed to load"))
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+      });
+  }, [ticker]);
+
+  useEffect(() => {
+    if (ticker) {
+      setLoading(true);
+      load();
+    }
+  }, [ticker, load]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    load();
+  }, [load]);
+
+  const chartData = useMemo(
+    () => filterByTimeframe(daily, timeframe),
+    [daily, timeframe],
+  );
+
+  if (!ticker) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="p-6">
+          <Text className="text-gray-500">Missing ticker</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && !overview) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-1 items-center justify-center p-6">
+          <View className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <Text className="text-red-600">{error}</Text>
+            <View className="mt-4 flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => {
+                  setError(null);
+                  setLoading(true);
+                  load();
+                }}
+                className="rounded-lg bg-primary-600 px-4 py-2"
+              >
+                <Text className="font-medium text-white">Retry</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="rounded-lg bg-gray-200 px-4 py-2"
+              >
+                <Text className="font-medium text-gray-700">Go back</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const changeNum = overview?.change ?? 0;
+  const isPositive = changeNum >= 0;
+
+  return (
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <ScrollView
+        className="flex-1"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View className="border-b border-gray-200 px-4 py-3">
+          <TouchableOpacity onPress={() => router.back()} className="mb-2">
+            <Text className="text-primary-600">← Back</Text>
+          </TouchableOpacity>
+          {loading && !overview ? (
+            <ActivityIndicator size="small" color="#4c6ef5" />
+          ) : overview ? (
+            <>
+              <Text className="text-2xl font-bold text-gray-900">{overview.ticker}</Text>
+              <View className="mt-2 flex-row items-baseline gap-3">
+                <Text className="text-xl font-semibold text-gray-900">
+                  ${overview.price != null ? overview.price.toFixed(2) : "—"}
+                </Text>
+                <Text
+                  className={
+                    isPositive ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  {isPositive ? "+" : ""}
+                  {overview.change != null ? overview.change.toFixed(2) : "—"}{" "}
+                  ({overview.change_percent ?? "—"})
+                </Text>
+              </View>
+              <View className="mt-3 flex-row gap-4">
+                <Text className="text-sm text-gray-500">
+                  Vol: {overview.volume != null ? overview.volume.toLocaleString() : "—"}
+                </Text>
+                <Text className="text-sm text-gray-500">
+                  O: {overview.open != null ? overview.open.toFixed(2) : "—"} H:{" "}
+                  {overview.high != null ? overview.high.toFixed(2) : "—"} L:{" "}
+                  {overview.low != null ? overview.low.toFixed(2) : "—"}
+                </Text>
+              </View>
+            </>
+          ) : null}
+        </View>
+
+        {/* Tabs */}
+        <View className="flex-row border-b border-gray-200 px-2">
+          {TABS.map((t) => (
+            <TouchableOpacity
+              key={t.id}
+              onPress={() => setTab(t.id)}
+              className={`border-b-2 px-4 py-3 ${
+                tab === t.id
+                  ? "border-primary-600"
+                  : "border-transparent"
+              }`}
+            >
+              <Text
+                className={
+                  tab === t.id
+                    ? "font-semibold text-primary-600"
+                    : "text-gray-500"
+                }
+              >
+                {t.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {tab === "technical" && (
+          <View className="p-4">
+            {/* Timeframe */}
+            <View className="mb-4 flex-row flex-wrap gap-2">
+              {(["1D", "1M", "6M", "1Y"] as const).map((tf) => (
+                <TouchableOpacity
+                  key={tf}
+                  onPress={() => setTimeframe(tf)}
+                  className={`rounded-lg px-3 py-1.5 ${
+                    timeframe === tf ? "bg-primary-600" : "bg-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={
+                      timeframe === tf
+                        ? "font-medium text-white"
+                        : "text-gray-700"
+                    }
+                  >
+                    {tf}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Simple chart placeholder (line of closes) */}
+            {chartData.length > 0 && (
+              <View className="mb-6 h-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                <Text className="mb-2 text-xs font-medium text-gray-500">
+                  Price (close)
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row items-end gap-0.5" style={{ minWidth: width - 48 }}>
+                    {chartData.slice(-60).map((d, i) => {
+                      const closes = chartData.map((x) => x.close ?? 0).filter(Boolean);
+                      const min = Math.min(...closes);
+                      const max = Math.max(...closes) || 1;
+                      const h = ((d.close ?? 0) - min) / (max - min || 1) * 120;
+                      return (
+                        <View
+                          key={`${d.date}-${i}`}
+                          className="w-1 rounded-sm bg-primary-500"
+                          style={{ height: Math.max(2, h) }}
+                        />
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Score + Indicators */}
+            {technical ? (
+              <>
+                <View className="mb-4 flex-row items-center gap-3">
+                  <Text className="text-sm text-gray-500">Score</Text>
+                  <Text className="text-2xl font-bold text-gray-900">
+                    {technical.score}
+                  </Text>
+                  <View
+                    className={`rounded-full px-2 py-0.5 ${
+                      technical.signal === "bullish"
+                        ? "bg-green-100"
+                        : technical.signal === "bearish"
+                          ? "bg-red-100"
+                          : "bg-gray-100"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-medium ${
+                        technical.signal === "bullish"
+                          ? "text-green-800"
+                          : technical.signal === "bearish"
+                            ? "text-red-800"
+                            : "text-gray-700"
+                      }`}
+                    >
+                      {technical.signal}
+                    </Text>
+                  </View>
+                </View>
+                <View className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <Text className="mb-3 font-semibold text-gray-700">
+                    Indicators
+                  </Text>
+                  {technical.indicators?.rsi && (
+                    <View className="flex-row justify-between py-2">
+                      <Text className="text-gray-600">RSI</Text>
+                      <Text className="font-medium text-gray-900">
+                        {typeof technical.indicators.rsi.value === "number"
+                          ? technical.indicators.rsi.value.toFixed(2)
+                          : "—"}
+                      </Text>
+                    </View>
+                  )}
+                  {technical.indicators?.sma_20 && (
+                    <View className="flex-row justify-between py-2">
+                      <Text className="text-gray-600">SMA 20</Text>
+                      <Text className="font-medium text-gray-900">
+                        {typeof technical.indicators.sma_20.value === "number"
+                          ? technical.indicators.sma_20.value.toFixed(2)
+                          : "—"}
+                      </Text>
+                    </View>
+                  )}
+                  {technical.indicators?.sma_50 && (
+                    <View className="flex-row justify-between py-2">
+                      <Text className="text-gray-600">SMA 50</Text>
+                      <Text className="font-medium text-gray-900">
+                        {typeof technical.indicators.sma_50.value === "number"
+                          ? technical.indicators.sma_50.value.toFixed(2)
+                          : "—"}
+                      </Text>
+                    </View>
+                  )}
+                  {technical.indicators?.sma_200 && (
+                    <View className="flex-row justify-between py-2">
+                      <Text className="text-gray-600">SMA 200</Text>
+                      <Text className="font-medium text-gray-900">
+                        {typeof technical.indicators.sma_200.value === "number"
+                          ? technical.indicators.sma_200.value.toFixed(2)
+                          : "—"}
+                      </Text>
+                    </View>
+                  )}
+                  {technical.support_resistance && (
+                    <View className="mt-3 border-t border-gray-200 pt-3">
+                      <Text className="text-xs text-gray-500">
+                        Support: {technical.support_resistance.support?.toFixed(2) ?? "—"} |
+                        Resistance: {technical.support_resistance.resistance?.toFixed(2) ?? "—"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </>
+            ) : (
+              loading && <ActivityIndicator size="small" color="#4c6ef5" />
+            )}
+          </View>
+        )}
+
+        {(tab === "fundamental" || tab === "emotional" || tab === "institutional") && (
+          <View className="items-center justify-center py-12">
+            <Text className="text-gray-500">Coming soon</Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Link } from "expo-router";
+import { MnmlLogo } from "@/components/MnmlLogo";
 import { useAuth } from "@/lib/auth-context";
 import { ApiClientError } from "@repo/api-client";
 
@@ -46,9 +47,10 @@ export default function LoginScreen() {
         contentContainerClassName="flex-1 justify-center px-6"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="mb-8">
-          <Text className="text-center text-2xl font-bold text-gray-900">
-            Sign in to mnml trade
+        <View className="mb-8 items-center">
+          <MnmlLogo height={40} />
+          <Text className="mt-6 text-center text-2xl font-bold text-gray-900">
+            Sign in
           </Text>
           <View className="mt-2 flex-row justify-center">
             <Text className="text-sm text-gray-500">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@repo/ui";
 import { useAuth } from "@/lib/auth-context";
 import { ApiClientError } from "@repo/api-client";
 
@@ -36,8 +37,11 @@ export default function LoginPage() {
   return (
     <>
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          Sign in to mnml trade
+        <div className="flex justify-center">
+          <Logo height={40} />
+        </div>
+        <h1 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
+          Sign in
         </h1>
         <p className="mt-2 text-sm text-gray-500">
           Don&apos;t have an account?{" "}

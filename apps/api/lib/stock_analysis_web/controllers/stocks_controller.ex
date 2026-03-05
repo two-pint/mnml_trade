@@ -5,6 +5,20 @@ defmodule StockAnalysisWeb.StocksController do
   alias StockAnalysis.InstitutionalActivity
   alias StockAnalysis.Stocks
 
+  def trending(conn, _params) do
+    case Stocks.get_trending() do
+      {:ok, list} ->
+        conn
+        |> put_status(:ok)
+        |> json(list)
+
+      {:error, _} ->
+        conn
+        |> put_status(:ok)
+        |> json([])
+    end
+  end
+
   def search(conn, params) do
     q = params["q"] || ""
     case Stocks.search(q) do

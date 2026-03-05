@@ -25,4 +25,5 @@ export type {
   InstitutionalData,
   DailyOhlcv,
   DailySeries,
+  TrendingStock,
 } from "./stocks";

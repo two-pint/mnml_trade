@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Logo } from "@repo/ui";
 import { useAuth } from "@/lib/auth-context";
 import { StockSearch } from "@/components/stock-search";
 
@@ -32,9 +33,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
           <Link
             href="/dashboard"
-            className="shrink-0 text-lg font-semibold tracking-tight text-gray-900"
+            className="shrink-0"
+            aria-label="mnml trade home"
           >
-            mnml trade
+            <Logo height={28} className="block" />
           </Link>
           <div className="min-w-0 flex-1">
             <StockSearch />

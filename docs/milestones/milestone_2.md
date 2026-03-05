@@ -265,16 +265,16 @@ The stock detail page is the main product experience. The overview section shows
 Mobile users need the same search and analysis as web, adapted for native screens. This ticket adds a stock search screen, a stock detail screen with overview and Technical tab, and tab layout placeholders (Portfolio, Watchlist) using the shared api-client and types.
 
 ### Required tasks
-- [ ] Set up tab navigation layout in Expo Router: Home (search/trending), Portfolio (placeholder), Watchlist (placeholder), Profile (placeholder).
-- [ ] **Home tab / Search**: Search input with debounce; call `api.searchStocks(query)`; display results in a FlatList with ticker and name; navigate to stock detail on press.
-- [ ] **Stock detail screen** (`stocks/[ticker].tsx`): fetch overview from `api.getStock(ticker)`; display price, change, key metrics.
-- [ ] Add tab/segmented control for analysis tabs (Technical active; others placeholder).
-- [ ] **Technical tab**: Fetch `api.getStockTechnical(ticker)`.
-  - [ ] Price chart: integrate Victory Native or react-native-chart-kit; candlestick or line chart with timeframe toggle.
-  - [ ] Indicators list: RSI, MACD, SMAs, score — native list with labels and values.
-  - [ ] Technical score badge.
-- [ ] Loading and error states (ActivityIndicator, error card with retry).
-- [ ] Pull-to-refresh on stock detail to re-fetch.
+- [x] Set up tab navigation layout in Expo Router: Home (search/trending), Portfolio (placeholder), Watchlist (placeholder), Profile (placeholder).
+- [x] **Home tab / Search**: Search input with debounce; call `api.searchStocks(query)`; display results in a FlatList with ticker and name; navigate to stock detail on press.
+- [x] **Stock detail screen** (`stocks/[ticker].tsx`): fetch overview from `api.getStock(ticker)`; display price, change, key metrics.
+- [x] Add tab/segmented control for analysis tabs (Technical active; others placeholder).
+- [x] **Technical tab**: Fetch `api.getStockTechnical(ticker)`.
+  - [x] Price chart: integrate Victory Native or react-native-chart-kit; candlestick or line chart with timeframe toggle.
+  - [x] Indicators list: RSI, MACD, SMAs, score — native list with labels and values.
+  - [x] Technical score badge.
+- [x] Loading and error states (ActivityIndicator, error card with retry).
+- [x] Pull-to-refresh on stock detail to re-fetch.
 
 ### Acceptance criteria
 - Search bar on home tab returns matching tickers; tapping navigates to stock detail.
@@ -305,10 +305,10 @@ Mobile users need the same search and analysis as web, adapted for native screen
 Before users search, they need a starting point. A trending/popular stocks section on the home screen (web and mobile) gives users immediate tickers to explore and increases engagement from the first visit.
 
 ### Required tasks
-- [ ] **API**: Implement `GET /api/stocks/trending` in Stocks context — return a curated or computed list of popular tickers (e.g. top 10 by volume, or a static seed list for MVP). Cache for 1h.
-- [ ] Add type `TrendingStock` and api-client method `getTrending()`.
-- [ ] **Web**: Add a "Trending" or "Popular Stocks" section on the home/dashboard page; display ticker cards with name, price, change (colored); link each to `/stocks/[ticker]`.
-- [ ] **Mobile**: Add a trending section on the Home tab (below or in place of search when query is empty); FlatList of cards; tap navigates to stock detail.
+- [x] **API**: Implement `GET /api/stocks/trending` in Stocks context — return a curated or computed list of popular tickers (e.g. top 10 by volume, or a static seed list for MVP). Cache for 1h.
+- [x] Add type `TrendingStock` and api-client method `getTrending()`.
+- [x] **Web**: Add a "Trending" or "Popular Stocks" section on the home/dashboard page; display ticker cards with name, price, change (colored); link each to `/stocks/[ticker]`.
+- [x] **Mobile**: Add a trending section on the Home tab (below or in place of search when query is empty); FlatList of cards; tap navigates to stock detail.
 
 ### Acceptance criteria
 - `/api/stocks/trending` returns a list of tickers with price and change.
@@ -369,8 +369,8 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M2-005: Unusual Whales integration — options flow and dark pool
 - [x] M2-006: Stock search UI (web)
 - [x] M2-007: Stock overview and Technical tab (web)
-- [ ] M2-008: Stock search and Technical tab (mobile)
-- [ ] M2-009: Trending stocks endpoint and UI
+- [x] M2-008: Stock search and Technical tab (mobile)
+- [x] M2-009: Trending stocks endpoint and UI
 - [ ] M2-010: Deployment pipeline (Fly.io, Vercel, EAS)
 
 **Done when**: Users can search stocks, view overview and Technical Analysis tab with chart, indicators, and score on both web and mobile; basic institutional data (options flow, dark pool) is visible; all data is cached per TTL; full stack deployed to production.

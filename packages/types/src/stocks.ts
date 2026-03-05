@@ -71,3 +71,11 @@ export interface DailyOhlcv {
 }
 
 export type DailySeries = DailyOhlcv[];
+
+export interface TrendingStock {
+  ticker: string;
+  name: string;
+  price: number | null;
+  change: number | null;
+  change_percent: string | null;
+}
