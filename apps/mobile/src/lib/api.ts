@@ -1,5 +1,4 @@
 import * as SecureStore from "expo-secure-store";
-import Constants from "expo-constants";
 import { ApiClient, createAuthApi } from "@repo/api-client";
 
 const TOKEN_KEY = "auth_token";
@@ -25,6 +24,10 @@ export async function loadToken(): Promise<string | null> {
   return cachedToken;
 }
 
+export async function getRefreshToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+}
+
 export async function setRefreshToken(t: string | null): Promise<void> {
   if (t) {
     await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, t);
@@ -39,8 +42,7 @@ export async function clearTokens(): Promise<void> {
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
 }
 
-const apiUrl =
-  Constants.expoConfig?.extra?.apiUrl ?? "http://localhost:4000";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export const apiClient = new ApiClient({
   baseUrl: apiUrl,
