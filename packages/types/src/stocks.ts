@@ -18,3 +18,45 @@ export interface StockOverview {
   previous_close: number | null;
   latest_trading_day: string | null;
 }
+
+export type TechnicalSignal = "bullish" | "bearish" | "neutral";
+
+export interface IndicatorValue {
+  date: string;
+  value: number | number[];
+}
+
+export interface TechnicalAnalysis {
+  ticker: string;
+  indicators: Record<string, IndicatorValue | null>;
+  score: number;
+  signal: TechnicalSignal;
+  trend_direction: TechnicalSignal;
+  support_resistance: {
+    support: number;
+    resistance: number;
+  };
+}
+
+export interface OptionsFlowTrade {
+  type: string | null;
+  strike: number | null;
+  expiry: string | null;
+  premium: number | null;
+  quantity: number | null;
+  sentiment: string | null;
+}
+
+export interface DarkPoolSummary {
+  volume: number | null;
+  net_buy_sell: number | null;
+  block_trades: unknown[];
+}
+
+export interface InstitutionalData {
+  ticker: string;
+  options_flow: OptionsFlowTrade[];
+  dark_pool: DarkPoolSummary;
+  data_as_of: string;
+  stale: boolean;
+}

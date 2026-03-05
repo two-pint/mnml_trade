@@ -120,13 +120,13 @@ Users need to find stocks by ticker or name (autocomplete) and view an overview 
 The Technical Analysis tab requires computed indicator values (RSI, MACD, SMA, Bollinger Bands, ATR, ADX) and an aggregated technical score (0–100). The Analysis context wraps Alpha Vantage indicator calls, caches results (1h TTL), and runs a scoring algorithm that maps indicator signals to an overall score.
 
 ### Required tasks
-- [ ] Create `StockAnalysis.Analysis` context module.
-- [ ] Implement `get_technical(ticker)`: for each indicator (RSI-14, MACD, SMA-20/50/200, Bollinger, ATR, ADX, Stochastic), fetch via cache → AlphaVantage integration; return combined map.
-- [ ] Implement `compute_technical_score(indicators)`: apply rules (e.g. RSI < 30 bullish, > 70 bearish; price above SMA-200 bullish; MACD crossover) and return score 0–100 with buy/sell signal strength.
-- [ ] Include support/resistance estimate and trend direction (bullish/bearish arrows) in the response.
-- [ ] Cache the full technical result per ticker with 1h TTL.
-- [ ] Expose endpoint: `GET /api/stocks/:ticker/technical` → JSON with indicators, score, signal.
-- [ ] Add `TechnicalAnalysis` type to `packages/types`; update `packages/api-client` with `getStockTechnical(ticker)`.
+- [x] Create `StockAnalysis.Analysis` context module.
+- [x] Implement `get_technical(ticker)`: for each indicator (RSI-14, MACD, SMA-20/50/200, Bollinger, ATR, ADX, Stochastic), fetch via cache → AlphaVantage integration; return combined map.
+- [x] Implement `compute_technical_score(indicators)`: apply rules (e.g. RSI < 30 bullish, > 70 bearish; price above SMA-200 bullish; MACD crossover) and return score 0–100 with buy/sell signal strength.
+- [x] Include support/resistance estimate and trend direction (bullish/bearish arrows) in the response.
+- [x] Cache the full technical result per ticker with 1h TTL.
+- [x] Expose endpoint: `GET /api/stocks/:ticker/technical` → JSON with indicators, score, signal.
+- [x] Add `TechnicalAnalysis` type to `packages/types`; update `packages/api-client` with `getStockTechnical(ticker)`.
 
 ### Acceptance criteria
 - Endpoint returns all indicators with recent values and an aggregated score 0–100.
@@ -154,15 +154,15 @@ The Technical Analysis tab requires computed indicator values (RSI, MACD, SMA, B
 The institutional data (options flow and dark pool) is a key differentiator per the PRD. Even in M2 a basic version surfaces "smart money" signals alongside the technical tab. The integration module handles Unusual Whales API auth, HTTP, rate-limit awareness, and caching (1h TTL) with "as of" timestamps for transparency.
 
 ### Required tasks
-- [ ] Create module `StockAnalysis.Integrations.UnusualWhales`.
-- [ ] Configure API key via env `UNUSUAL_WHALES_API_KEY`.
-- [ ] Implement `get_options_flow(ticker)`: fetch recent unusual options activity; normalize into list of trades (type, strike, expiry, premium, quantity, sentiment).
-- [ ] Implement `get_dark_pool(ticker)`: fetch dark pool volume, net buy/sell, block trades; normalize.
-- [ ] Cache both with 1h TTL; include `fetched_at` timestamp in cached payload.
-- [ ] Rate-limit awareness: track calls; if approaching limit, skip fetch and return cached + `stale: true`.
-- [ ] Create `StockAnalysis.InstitutionalActivity` context with `get_basic(ticker)` that returns options flow + dark pool (delegates to integration + cache).
-- [ ] Expose endpoint: `GET /api/stocks/:ticker/institutional` → JSON with options flow summary and dark pool summary; include `data_as_of` timestamp.
-- [ ] Add types and api-client method for institutional basic data.
+- [x] Create module `StockAnalysis.Integrations.UnusualWhales`.
+- [x] Configure API key via env `UNUSUAL_WHALES_API_KEY`.
+- [x] Implement `get_options_flow(ticker)`: fetch recent unusual options activity; normalize into list of trades (type, strike, expiry, premium, quantity, sentiment).
+- [x] Implement `get_dark_pool(ticker)`: fetch dark pool volume, net buy/sell, block trades; normalize.
+- [x] Cache both with 1h TTL; include `fetched_at` timestamp in cached payload.
+- [x] Rate-limit awareness: track calls; if approaching limit, skip fetch and return cached + `stale: true`.
+- [x] Create `StockAnalysis.InstitutionalActivity` context with `get_basic(ticker)` that returns options flow + dark pool (delegates to integration + cache).
+- [x] Expose endpoint: `GET /api/stocks/:ticker/institutional` → JSON with options flow summary and dark pool summary; include `data_as_of` timestamp.
+- [x] Add types and api-client method for institutional basic data.
 
 ### Acceptance criteria
 - Endpoint returns options flow trades and dark pool data for a valid ticker.
@@ -365,8 +365,8 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M2-001: ETS cache layer
 - [x] M2-002: Alpha Vantage integration module
 - [x] M2-003: Stocks context (search and overview)
-- [ ] M2-004: Analysis context — technical indicators and score
-- [ ] M2-005: Unusual Whales integration — options flow and dark pool
+- [x] M2-004: Analysis context — technical indicators and score
+- [x] M2-005: Unusual Whales integration — options flow and dark pool
 - [ ] M2-006: Stock search UI (web)
 - [ ] M2-007: Stock overview and Technical tab (web)
 - [ ] M2-008: Stock search and Technical tab (mobile)

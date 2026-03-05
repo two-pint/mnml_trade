@@ -1,4 +1,9 @@
-import type { SearchResult, StockOverview } from "@repo/types";
+import type {
+  SearchResult,
+  StockOverview,
+  TechnicalAnalysis,
+  InstitutionalData,
+} from "@repo/types";
 import type { ApiClient } from "./client";
 
 export function createStocksApi(client: ApiClient) {
@@ -11,6 +16,16 @@ export function createStocksApi(client: ApiClient) {
     getStock(ticker: string): Promise<StockOverview> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<StockOverview>(`/api/stocks/${encoded}`);
+    },
+
+    getStockTechnical(ticker: string): Promise<TechnicalAnalysis> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get<TechnicalAnalysis>(`/api/stocks/${encoded}/technical`);
+    },
+
+    getStockInstitutional(ticker: string): Promise<InstitutionalData> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get<InstitutionalData>(`/api/stocks/${encoded}/institutional`);
     },
   };
 }
