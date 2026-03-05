@@ -227,13 +227,13 @@ Users need a web interface to register and log in. The web app must use the shar
 Mobile users need the same auth capabilities as web. The mobile app must use the same API and shared packages so that one backend and one contract serve both platforms. Storing the JWT in SecureStore (Expo) keeps the token persistent and relatively secure on device. Expo Router provides file-based routing similar to Next.js for consistency.
 
 ### Required tasks
-- [ ] Create Expo app in `apps/mobile` with Expo Router (file-based); TypeScript; NativeWind for Tailwind-style styling. Extend shared typescript-config and tailwind-config.
-- [ ] Add dependencies: `@repo/types`, `@repo/api-client`, `@repo/ui`, `expo-secure-store`. Configure `EXPO_PUBLIC_API_URL` (app config or env).
-- [ ] Implement auth screens: login and register (email, password, optional username); call api-client `login`/`register`; on success, store token in SecureStore; navigate to app root (tabs or home).
-- [ ] Implement token retrieval: on app load or before API calls, read token from SecureStore; set in api-client (or pass per request). Implement logout: clear SecureStore and navigate to login.
-- [ ] Add auth guard: root layout or route group that checks for token; if missing, show login/register stack; if present, show main app (tabs or single home screen for M1).
-- [ ] Add minimal home screen after login (e.g. “Welcome” and logout) to verify flow.
-- [ ] Ensure API base URL is correct for device (e.g. local IP for dev, production URL for release).
+- [x] Create Expo app in `apps/mobile` with Expo Router (file-based); TypeScript; NativeWind for Tailwind-style styling. Extend shared typescript-config and tailwind-config.
+- [x] Add dependencies: `@repo/types`, `@repo/api-client`, `@repo/ui`, `expo-secure-store`. Configure `EXPO_PUBLIC_API_URL` (app config or env).
+- [x] Implement auth screens: login and register (email, password, optional username); call api-client `login`/`register`; on success, store token in SecureStore; navigate to app root (tabs or home).
+- [x] Implement token retrieval: on app load or before API calls, read token from SecureStore; set in api-client (or pass per request). Implement logout: clear SecureStore and navigate to login.
+- [x] Add auth guard: root layout or route group that checks for token; if missing, show login/register stack; if present, show main app (tabs or single home screen for M1).
+- [x] Add minimal home screen after login (e.g. “Welcome” and logout) to verify flow.
+- [x] Ensure API base URL is correct for device (e.g. local IP for dev, production URL for release).
 
 ### Acceptance criteria
 - User can log in and register on mobile; on success, navigates to home and token is stored.
@@ -254,40 +254,6 @@ Mobile users need the same auth capabilities as web. The mobile app must use the
 
 ---
 
-## M1-008: Deployment pipeline (Fly.io, Vercel, EAS)
-
-### Ticket
-**ID**: M1-008  
-**Title**: Deployment pipeline (Fly.io, Vercel, EAS)
-
-### Description (why this ticket is needed)
-To validate the full stack and allow testing from real devices and shared URLs, the API and web app must deploy to production-like environments, and the mobile app must be buildable and testable via EAS. Wiring secrets and environment variables correctly ensures that auth and CORS work in production.
-
-### Required tasks
-- [ ] **Phoenix on Fly.io**: Create Fly app (or use existing); attach or create Postgres; set secrets (e.g. `SECRET_KEY_BASE`, `DATABASE_URL`). Configure `mix release` and `fly deploy`; run migrations as part of deploy or via release command. Document deploy steps.
-- [ ] **Next.js on Vercel**: Connect repo (or manual deploy); set build output to `apps/web` (or root with turbo filter). Set env: `NEXT_PUBLIC_API_URL` to Phoenix URL (e.g. `https://<app>.fly.dev`). Ensure CORS on Phoenix allows Vercel origin and preview URLs.
-- [ ] **EAS for mobile**: Create EAS project; configure `app.json`/`eas.json` (e.g. development build profile). Set `EXPO_PUBLIC_API_URL` in EAS env or app config to production API URL for dev builds. Document how to run `eas build --profile development` and install on device/simulator.
-- [ ] Update API CORS config with production web URL and any Expo/redirect URIs if needed.
-- [ ] Add a brief “Deployment” section to README or docs: how to deploy API, web, and how to build mobile for testing.
-
-### Acceptance criteria
-- Phoenix deploys to Fly.io; health endpoint returns 200 in production; DB migrations applied.
-- Next.js deploys to Vercel; production URL loads; login/register work against production API (CORS allows origin).
-- EAS build (development profile) produces an installable binary; app can point to production API and complete login flow.
-- No secrets (API keys, DB URLs) are committed; all sensitive config via Fly/Vercel/EAS secrets or env.
-
-### Test plan
-| Step | Action | Expected result |
-|------|--------|-----------------|
-| 1 | Deploy Phoenix; open `https://<app>.fly.dev/api/health` | 200, JSON status |
-| 2 | Deploy Next.js; open production URL | App loads; login form visible |
-| 3 | Log in on production web app | Success; token stored; protected page visible |
-| 4 | Run EAS build for development; install on device | App launches; can set API URL to production and log in |
-| 5 | Verify CORS: from production web origin, POST to API login | 200 and CORS headers present |
-| 6 | Confirm no secrets in repo (e.g. grep or audit) | No SECRET_KEY_BASE, DATABASE_URL, etc. in committed files |
-
----
-
 ## Milestone 1 completion checklist
 
 - [x] M1-001: Monorepo structure and tooling
@@ -296,7 +262,6 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M1-004: Accounts context and JWT
 - [x] M1-005: API CORS and protected pipeline
 - [x] M1-006: Next.js web app and auth UI
-- [ ] M1-007: Expo mobile app and auth
-- [ ] M1-008: Deployment pipeline
+- [x] M1-007: Expo mobile app and auth
 
-**Done when**: A user can register and log in on web and mobile against the same API; JWT is accepted; `pnpm dev` runs web + mobile; Phoenix and Next.js deploy successfully; health check returns 200.
+**Done when**: A user can register and log in on web and mobile against the same API; JWT is accepted; `pnpm dev` runs web + mobile.
