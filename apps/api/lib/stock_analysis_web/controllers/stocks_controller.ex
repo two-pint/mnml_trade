@@ -5,6 +5,20 @@ defmodule StockAnalysisWeb.StocksController do
   alias StockAnalysis.InstitutionalActivity
   alias StockAnalysis.Stocks
 
+  def trending(conn, _params) do
+    case Stocks.get_trending() do
+      {:ok, list} ->
+        conn
+        |> put_status(:ok)
+        |> json(list)
+
+      {:error, _} ->
+        conn
+        |> put_status(:ok)
+        |> json([])
+    end
+  end
+
   def search(conn, params) do
     q = params["q"] || ""
     case Stocks.search(q) do
@@ -47,6 +61,20 @@ defmodule StockAnalysisWeb.StocksController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "not_found", message: "Institutional data not found"})
+    end
+  end
+
+  def daily(conn, %{"ticker" => ticker}) do
+    case Stocks.get_daily(ticker) do
+      {:ok, series} ->
+        conn
+        |> put_status(:ok)
+        |> json(series)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "not_found", message: "Stock not found"})
     end
   end
 

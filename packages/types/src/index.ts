@@ -23,4 +23,7 @@ export type {
   OptionsFlowTrade,
   DarkPoolSummary,
   InstitutionalData,
+  DailyOhlcv,
+  DailySeries,
+  TrendingStock,
 } from "./stocks";

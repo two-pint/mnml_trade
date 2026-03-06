@@ -191,12 +191,12 @@ The institutional data (options flow and dark pool) is a key differentiator per 
 Users need to find stocks quickly. An autocomplete search bar in the navbar (or dedicated search page) provides fast feedback as the user types, calls the API search endpoint, and navigates to the stock detail page on selection. This is the primary entry point into the analysis experience on web.
 
 ### Required tasks
-- [ ] Add search bar component to the top navbar (or a global search page); use a debounced input (e.g. 300ms).
-- [ ] On input change, call `api.searchStocks(query)` from `@repo/api-client`; display results in a dropdown with ticker and company name.
-- [ ] On result selection, navigate to `/stocks/[ticker]`.
-- [ ] Handle loading state (spinner or skeleton in dropdown), empty results ("No results"), and errors.
-- [ ] Persist recent searches locally (e.g. localStorage, last 5).
-- [ ] Style with Tailwind / Shadcn — clean, responsive.
+- [x] Add search bar component to the top navbar (or a global search page); use a debounced input (e.g. 300ms).
+- [x] On input change, call `api.searchStocks(query)` from `@repo/api-client`; display results in a dropdown with ticker and company name.
+- [x] On result selection, navigate to `/stocks/[ticker]`.
+- [x] Handle loading state (spinner or skeleton in dropdown), empty results ("No results"), and errors.
+- [x] Persist recent searches locally (e.g. localStorage, last 5).
+- [x] Style with Tailwind / Shadcn — clean, responsive.
 
 ### Acceptance criteria
 - Typing "AA" shows matching tickers within ~500ms of debounce.
@@ -225,15 +225,15 @@ Users need to find stocks quickly. An autocomplete search bar in the navbar (or 
 The stock detail page is the main product experience. The overview section shows price, change, and key metrics; the Technical tab shows an interactive chart and indicators. This ticket wires the web UI to the API endpoints built in M2-003 and M2-004, and lays out the tab structure that will be extended in M3.
 
 ### Required tasks
-- [ ] Create `/stocks/[ticker]/page.tsx` (App Router dynamic route).
-- [ ] Fetch stock overview from `api.getStock(ticker)` (server component or React Query); display price, 24h change (colored), market cap, P/E placeholder, 52-week range.
-- [ ] Add tab navigation UI: "Technical | Fundamental | Emotional | Institutional" — only Technical is active for M2; others show "Coming soon" or skeleton.
-- [ ] Tab state in URL: `?tab=technical` (default), update on click; use `useSearchParams`.
-- [ ] **Technical tab**: Fetch `api.getStockTechnical(ticker)` with React Query.
-  - [ ] Interactive price chart: integrate Lightweight Charts (TradingView) or Recharts; show candlestick + volume; timeframe toggles (1D, 1M, 6M, 1Y).
-  - [ ] Indicators section: display RSI, MACD, SMA (20/50/200), Bollinger, ATR, ADX with values and interpretation (bullish/bearish label).
-  - [ ] Technical score display: 0–100 gauge or badge with signal (e.g. "Bullish").
-- [ ] Loading skeletons for overview and chart; error boundary for failed fetches.
+- [x] Create `/stocks/[ticker]/page.tsx` (App Router dynamic route).
+- [x] Fetch stock overview from `api.getStock(ticker)` (server component or React Query); display price, 24h change (colored), market cap, P/E placeholder, 52-week range.
+- [x] Add tab navigation UI: "Technical | Fundamental | Emotional | Institutional" — only Technical is active for M2; others show "Coming soon" or skeleton.
+- [x] Tab state in URL: `?tab=technical` (default), update on click; use `useSearchParams`.
+- [x] **Technical tab**: Fetch `api.getStockTechnical(ticker)` with React Query.
+  - [x] Interactive price chart: integrate Lightweight Charts (TradingView) or Recharts; show candlestick + volume; timeframe toggles (1D, 1M, 6M, 1Y).
+  - [x] Indicators section: display RSI, MACD, SMA (20/50/200), Bollinger, ATR, ADX with values and interpretation (bullish/bearish label).
+  - [x] Technical score display: 0–100 gauge or badge with signal (e.g. "Bullish").
+- [x] Loading skeletons for overview and chart; error boundary for failed fetches.
 - [ ] Optional: show basic institutional data (options flow summary, dark pool summary from M2-005) below technical or in Institutional tab placeholder.
 
 ### Acceptance criteria
@@ -265,16 +265,16 @@ The stock detail page is the main product experience. The overview section shows
 Mobile users need the same search and analysis as web, adapted for native screens. This ticket adds a stock search screen, a stock detail screen with overview and Technical tab, and tab layout placeholders (Portfolio, Watchlist) using the shared api-client and types.
 
 ### Required tasks
-- [ ] Set up tab navigation layout in Expo Router: Home (search/trending), Portfolio (placeholder), Watchlist (placeholder), Profile (placeholder).
-- [ ] **Home tab / Search**: Search input with debounce; call `api.searchStocks(query)`; display results in a FlatList with ticker and name; navigate to stock detail on press.
-- [ ] **Stock detail screen** (`stocks/[ticker].tsx`): fetch overview from `api.getStock(ticker)`; display price, change, key metrics.
-- [ ] Add tab/segmented control for analysis tabs (Technical active; others placeholder).
-- [ ] **Technical tab**: Fetch `api.getStockTechnical(ticker)`.
-  - [ ] Price chart: integrate Victory Native or react-native-chart-kit; candlestick or line chart with timeframe toggle.
-  - [ ] Indicators list: RSI, MACD, SMAs, score — native list with labels and values.
-  - [ ] Technical score badge.
-- [ ] Loading and error states (ActivityIndicator, error card with retry).
-- [ ] Pull-to-refresh on stock detail to re-fetch.
+- [x] Set up tab navigation layout in Expo Router: Home (search/trending), Portfolio (placeholder), Watchlist (placeholder), Profile (placeholder).
+- [x] **Home tab / Search**: Search input with debounce; call `api.searchStocks(query)`; display results in a FlatList with ticker and name; navigate to stock detail on press.
+- [x] **Stock detail screen** (`stocks/[ticker].tsx`): fetch overview from `api.getStock(ticker)`; display price, change, key metrics.
+- [x] Add tab/segmented control for analysis tabs (Technical active; others placeholder).
+- [x] **Technical tab**: Fetch `api.getStockTechnical(ticker)`.
+  - [x] Price chart: integrate Victory Native or react-native-chart-kit; candlestick or line chart with timeframe toggle.
+  - [x] Indicators list: RSI, MACD, SMAs, score — native list with labels and values.
+  - [x] Technical score badge.
+- [x] Loading and error states (ActivityIndicator, error card with retry).
+- [x] Pull-to-refresh on stock detail to re-fetch.
 
 ### Acceptance criteria
 - Search bar on home tab returns matching tickers; tapping navigates to stock detail.
@@ -305,10 +305,10 @@ Mobile users need the same search and analysis as web, adapted for native screen
 Before users search, they need a starting point. A trending/popular stocks section on the home screen (web and mobile) gives users immediate tickers to explore and increases engagement from the first visit.
 
 ### Required tasks
-- [ ] **API**: Implement `GET /api/stocks/trending` in Stocks context — return a curated or computed list of popular tickers (e.g. top 10 by volume, or a static seed list for MVP). Cache for 1h.
-- [ ] Add type `TrendingStock` and api-client method `getTrending()`.
-- [ ] **Web**: Add a "Trending" or "Popular Stocks" section on the home/dashboard page; display ticker cards with name, price, change (colored); link each to `/stocks/[ticker]`.
-- [ ] **Mobile**: Add a trending section on the Home tab (below or in place of search when query is empty); FlatList of cards; tap navigates to stock detail.
+- [x] **API**: Implement `GET /api/stocks/trending` in Stocks context — return a curated or computed list of popular tickers (e.g. top 10 by volume, or a static seed list for MVP). Cache for 1h.
+- [x] Add type `TrendingStock` and api-client method `getTrending()`.
+- [x] **Web**: Add a "Trending" or "Popular Stocks" section on the home/dashboard page; display ticker cards with name, price, change (colored); link each to `/stocks/[ticker]`.
+- [x] **Mobile**: Add a trending section on the Home tab (below or in place of search when query is empty); FlatList of cards; tap navigates to stock detail.
 
 ### Acceptance criteria
 - `/api/stocks/trending` returns a list of tickers with price and change.
@@ -367,10 +367,10 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 - [x] M2-003: Stocks context (search and overview)
 - [x] M2-004: Analysis context — technical indicators and score
 - [x] M2-005: Unusual Whales integration — options flow and dark pool
-- [ ] M2-006: Stock search UI (web)
-- [ ] M2-007: Stock overview and Technical tab (web)
-- [ ] M2-008: Stock search and Technical tab (mobile)
-- [ ] M2-009: Trending stocks endpoint and UI
+- [x] M2-006: Stock search UI (web)
+- [x] M2-007: Stock overview and Technical tab (web)
+- [x] M2-008: Stock search and Technical tab (mobile)
+- [x] M2-009: Trending stocks endpoint and UI
 - [ ] M2-010: Deployment pipeline (Fly.io, Vercel, EAS)
 
 **Done when**: Users can search stocks, view overview and Technical Analysis tab with chart, indicators, and score on both web and mobile; basic institutional data (options flow, dark pool) is visible; all data is cached per TTL; full stack deployed to production.

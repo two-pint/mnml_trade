@@ -56,6 +56,80 @@ defmodule StockAnalysis.Stocks do
     end
   end
 
+  @trending_tickers ~w(AAPL MSFT GOOGL AMZN NVDA META TSLA JPM V JNJ)
+
+  @doc """
+  Returns a list of trending/popular stocks with price and change.
+
+  Uses cache (1h TTL). For MVP returns a static seed list; each ticker's
+  overview is fetched (via cache) and normalized to trending shape.
+  """
+  def get_trending do
+    cache_key = "stocks:trending:list"
+    ttl = Cache.default_ttl(:technical)
+
+    case Cache.get(cache_key) do
+      nil ->
+        list = fetch_trending_overviews()
+        Cache.put(cache_key, list, ttl)
+        {:ok, list}
+
+      cached ->
+        {:ok, cached}
+    end
+  end
+
+  defp fetch_trending_overviews do
+    @trending_tickers
+    |> Enum.reduce([], fn ticker, acc ->
+      case get_overview(ticker) do
+        {:ok, overview} ->
+          [overview_to_trending(overview) | acc]
+
+        _ ->
+          acc
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  defp overview_to_trending(overview) do
+    %{
+      ticker: overview.ticker,
+      name: overview.ticker,
+      price: overview.price,
+      change: overview.change,
+      change_percent: overview.change_percent
+    }
+  end
+
+  @doc """
+  Fetches daily OHLCV series for a ticker (for charts).
+
+  Uses cache (1h TTL). Returns `{:ok, [%{date: _, open: _, high: _, low: _, close: _, volume: _}, ...]}`
+  or `{:error, :not_found}`.
+  """
+  def get_daily(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+    cache_key = Cache.key("stocks", ticker, "daily")
+    ttl = Cache.default_ttl(:technical)
+
+    case Cache.get(cache_key) do
+      nil ->
+        case AlphaVantage.get_daily(ticker) do
+          {:ok, series} ->
+            Cache.put(cache_key, series, ttl)
+            {:ok, series}
+
+          {:error, _} ->
+            {:error, :not_found}
+        end
+
+      cached ->
+        {:ok, cached}
+    end
+  end
+
   defp quote_to_overview(ticker, quote) do
     %{
       ticker: ticker,
