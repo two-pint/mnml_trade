@@ -138,7 +138,7 @@ defmodule StockAnalysisWeb.StocksController do
   end
 
   defp enrich_with_recommendation(overview, ticker) do
-    case Recommendation.compute(ticker) do
+    case Recommendation.compute_from_cache(ticker) do
       {:ok, rec} ->
         Map.merge(overview, %{
           recommendation: rec.recommendation,

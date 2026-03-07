@@ -232,15 +232,15 @@ The stock overview shows an overall recommendation (Strong Buy / Buy / Hold / Se
 Users need to view valuation ratios, profitability metrics, financial health indicators, financial statements, and company overview in a dedicated tab. This ticket builds the Fundamental tab UI and wires it to the API endpoint from M3-002.
 
 ### Required tasks
-- [ ] Activate the "Fundamental" tab on the stock detail page (remove "Coming soon").
-- [ ] Fetch `api.getStockFundamental(ticker)` via React Query when tab is active.
-- [ ] **Valuation section**: display P/E (with industry avg if available), P/B, PEG, P/S in cards or table.
-- [ ] **Profitability section**: gross margin, operating margin, net margin, ROE, ROA.
-- [ ] **Financial health section**: current ratio, quick ratio, D/E, interest coverage.
-- [ ] **Financial statements**: collapsible or tabbed sections for income statement, balance sheet, cash flow; quarterly and annual toggle.
-- [ ] **Company overview**: description, sector, industry, market cap, employees, HQ.
-- [ ] **Fundamental score**: display score 0–100 with assessment label (Undervalued / Fairly Valued / Overvalued).
-- [ ] Loading skeletons and error handling.
+- [x] Activate the "Fundamental" tab on the stock detail page (remove "Coming soon").
+- [x] Fetch `api.getStockFundamental(ticker)` via React Query when tab is active.
+- [x] **Valuation section**: display P/E (with industry avg if available), P/B, PEG, P/S in cards or table.
+- [x] **Profitability section**: gross margin, operating margin, net margin, ROE, ROA.
+- [x] **Financial health section**: current ratio, quick ratio, D/E, interest coverage.
+- [x] **Financial statements**: collapsible or tabbed sections for income statement, balance sheet, cash flow; quarterly and annual toggle.
+- [x] **Company overview**: description, sector, industry, market cap, employees, HQ.
+- [x] **Fundamental score**: display score 0–100 with assessment label (Undervalued / Fairly Valued / Overvalued).
+- [x] Loading skeletons and error handling.
 
 ### Acceptance criteria
 - Fundamental tab loads data and displays all sections.
@@ -269,13 +269,13 @@ Users need to view valuation ratios, profitability metrics, financial health ind
 The Emotional tab is a unique differentiator — showing Reddit sentiment, news sentiment, and a smart money subsection. Users see what the crowd and institutions "feel" about a stock. This tab displays the sentiment score, social posts with labels, news, and a summary of whale activity.
 
 ### Required tasks
-- [ ] Activate the "Emotional" tab on the stock detail page.
-- [ ] Fetch `api.getStockSentiment(ticker)` via React Query.
-- [ ] **Sentiment overview**: gauge or visual meter (Very Bearish → Very Bullish); score; 7d/30d trend; mention count.
-- [ ] **Reddit section**: top 3–5 posts with subreddit, title excerpt, upvotes, sentiment label (Bullish/Bearish/Neutral), timestamp.
-- [ ] **News section**: recent headlines with source, date, sentiment label.
-- [ ] **Smart money subsection**: brief options flow and dark pool summary (from institutional data or separate call); link to full Institutional tab.
-- [ ] Loading skeletons and error handling.
+- [x] Activate the "Emotional" tab on the stock detail page.
+- [x] Fetch `api.getStockSentiment(ticker)` via React Query.
+- [x] **Sentiment overview**: gauge or visual meter (Very Bearish → Very Bullish); score; 7d/30d trend; mention count.
+- [x] **Reddit section**: top 3–5 posts with subreddit, title excerpt, upvotes, sentiment label (Bullish/Bearish/Neutral), timestamp.
+- [x] **News section**: recent headlines with source, date, sentiment label.
+- [x] **Smart money subsection**: brief options flow and dark pool summary (from institutional data or separate call); link to full Institutional tab.
+- [x] Loading skeletons and error handling.
 
 ### Acceptance criteria
 - Emotional tab loads and displays sentiment gauge, score, posts, news.
@@ -407,8 +407,8 @@ Mobile users need the same four tabs and recommendation as web. This ticket acti
 - [x] M3-004: Sentiment context and scoring engine
 - [x] M3-005: Unusual Whales — full institutional data
 - [x] M3-006: Recommendation algorithm
-- [ ] M3-007: Fundamental Analysis tab (web)
-- [ ] M3-008: Emotional Analysis tab (web)
+- [x] M3-007: Fundamental Analysis tab (web)
+- [x] M3-008: Emotional Analysis tab (web)
 - [ ] M3-009: Institutional Activity tab (web)
 - [ ] M3-010: Recommendation badge (web)
 - [ ] M3-011: All four tabs and recommendation (mobile)

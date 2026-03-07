@@ -16,6 +16,8 @@ import {
 } from "recharts";
 import type { DailyOhlcv, StockOverview, TechnicalAnalysis } from "@repo/types";
 import { stocksApi } from "@/lib/api";
+import FundamentalTab from "@/components/fundamental-tab";
+import EmotionalTab from "@/components/emotional-tab";
 
 type Timeframe = "1D" | "1M" | "6M" | "1Y";
 
@@ -60,7 +62,7 @@ function IndicatorRow({
   interpretation,
 }: {
   name: string;
-  value: string | number | null;
+  value: string | number | number[] | null;
   interpretation?: "bullish" | "bearish" | "neutral";
 }) {
   const color =
@@ -227,6 +229,31 @@ export default function StockPage() {
                 </dd>
               </div>
             </dl>
+            {overview.recommendation && (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <span
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                    overview.recommendation === "Strong Buy" || overview.recommendation === "Buy"
+                      ? "bg-bullish-light text-bullish-dark"
+                      : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
+                        ? "bg-bearish-light text-bearish-dark"
+                        : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {overview.recommendation}
+                </span>
+                {overview.recommendation_score != null && (
+                  <span className="text-sm text-gray-500">
+                    Score: {overview.recommendation_score}
+                  </span>
+                )}
+                {overview.confidence != null && (
+                  <span className="text-sm text-gray-400">
+                    Confidence: {overview.confidence}%
+                  </span>
+                )}
+              </div>
+            )}
             <p className="mt-2 text-xs text-gray-400">
               Market cap & 52w range coming soon
             </p>
@@ -426,7 +453,11 @@ export default function StockPage() {
         </section>
       )}
 
-      {(tab === "fundamental" || tab === "emotional" || tab === "institutional") && (
+      {tab === "fundamental" && <FundamentalTab ticker={ticker} />}
+
+      {tab === "emotional" && <EmotionalTab ticker={ticker} tabSetter={setTab} />}
+
+      {tab === "institutional" && (
         <section className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
           <p className="text-gray-500">Coming soon</p>
         </section>

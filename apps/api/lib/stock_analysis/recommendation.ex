@@ -14,6 +14,7 @@ defmodule StockAnalysis.Recommendation do
   require Logger
 
   alias StockAnalysis.Analysis
+  alias StockAnalysis.Cache
   alias StockAnalysis.Sentiment
   alias StockAnalysis.InstitutionalActivity
 
@@ -25,7 +26,8 @@ defmodule StockAnalysis.Recommendation do
   }
 
   @doc """
-  Computes the overall recommendation for a ticker.
+  Computes the overall recommendation for a ticker by fetching all sub-scores
+  (may trigger API calls if data is not cached).
 
   Returns `{:ok, %{recommendation: label, recommendation_score: 0-100, confidence: 0-100, components: map}}`
   or `{:error, :not_found}` if no sub-scores are available.
@@ -40,6 +42,30 @@ defmodule StockAnalysis.Recommendation do
       institutional: fetch_institutional_score(ticker)
     }
 
+    build_result(components)
+  end
+
+  @doc """
+  Computes a recommendation using only already-cached sub-scores. Never triggers
+  new API calls — returns `{:error, :not_found}` if no cached data exists.
+
+  Use this in hot paths (e.g. the stock overview endpoint) to avoid cascading
+  API calls that would overwhelm rate-limited upstream services.
+  """
+  def compute_from_cache(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+
+    components = %{
+      technical: cached_score("analysis", ticker, "technical", :score),
+      fundamental: cached_score("analysis", ticker, "fundamental", :score),
+      sentiment: cached_sentiment_score(ticker),
+      institutional: cached_institutional_score(ticker)
+    }
+
+    build_result(components)
+  end
+
+  defp build_result(components) do
     available = components |> Enum.reject(fn {_k, v} -> is_nil(v) end) |> Map.new()
 
     if map_size(available) == 0 do
@@ -129,4 +155,37 @@ defmodule StockAnalysis.Recommendation do
     round((score + 100) / 2)
   end
   defp normalize_sentiment(score) when is_number(score), do: max(0, min(100, score))
+
+  ## Private: cache-only score lookups (no API calls)
+
+  defp cached_score(scope, ticker, data_type, score_key) do
+    cache_key = Cache.key(scope, ticker, data_type)
+    case Cache.get(cache_key) do
+      %{^score_key => score} when is_number(score) -> score
+      _ -> nil
+    end
+  end
+
+  defp cached_sentiment_score(ticker) do
+    cache_key = Cache.key("sentiment", ticker, "aggregated")
+    case Cache.get(cache_key) do
+      %{score: score} when is_number(score) -> normalize_sentiment(score)
+      _ -> nil
+    end
+  end
+
+  defp cached_institutional_score(ticker) do
+    cache_key = Cache.key("institutional", ticker, "basic")
+    case Cache.get(cache_key) do
+      %{options_flow: flow, dark_pool: dp} ->
+        cong_key = Cache.key("institutional", ticker, "congressional")
+        insider_key = Cache.key("institutional", ticker, "insider")
+        cong = Cache.get(cong_key)
+        insider = Cache.get(insider_key)
+        %{score: score} = InstitutionalActivity.compute_smart_money_score(flow || [], dp || %{}, cong, insider)
+        score
+      _ ->
+        nil
+    end
+  end
 end

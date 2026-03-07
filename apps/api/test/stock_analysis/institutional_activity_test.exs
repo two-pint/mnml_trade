@@ -91,6 +91,8 @@ defmodule StockAnalysis.InstitutionalActivityTest do
 
   describe "get_market_tide/0" do
     test "returns market tide data", %{bypass: bypass} do
+      StockAnalysis.Cache.delete("institutional:_market:tide")
+
       Bypass.stub(bypass, "GET", "/api/market/tide", fn conn ->
         Plug.Conn.send_resp(conn, 200, ~s({"score": 65, "call_volume": 4000000, "put_volume": 3000000}))
       end)
