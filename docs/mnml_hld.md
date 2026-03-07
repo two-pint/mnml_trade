@@ -746,11 +746,36 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 
 ---
 
-### 12.6 Milestone 6 — Polish & Scale
+### 12.6 Milestone 6 — Multi-Agent LLM Analysis
+
+**Goal**: TradingAgents-style multi-agent LLM framework: analyst agents (technical, institutional), researcher debate (bull/bear), synthesis, and optional consideration signal—using existing data (Alpha Vantage, Unusual Whales, analysis contexts). Integrated with API, web, and mobile; research-only disclaimer.
+
+**Dependencies**: M1–M5.
+
+**Deliverables**
+
+| Layer | Deliverables |
+|-------|--------------|
+| **API** | LLM provider integration (env, client); Technical and Institutional analyst agents; Researcher (bull/bear) layer; Synthesis + optional consideration; pipeline orchestration and cache. `GET /api/stocks/:ticker/agent-analysis`. Optional watchlist batch. |
+| **Web** | Agent analysis section on stock detail (summary, debate, consideration, disclaimer). |
+| **Mobile** | Agent analysis block on stock detail screen; same disclaimer. |
+| **Docs** | Design doc (roles, data flow, Elixir vs Python); README and env vars; in-app research-only disclaimer. |
+
+**HLD sections**: New “Multi-Agent Analysis” subsection under §4 or §6; reference TradingAgents (Apache 2.0) as inspiration.
+
+**Acceptance criteria**
+
+- Analyst and researcher agents run in Phoenix (or approved sidecar); results cached.
+- API exposes agent analysis; web and mobile display summary and consideration with disclaimer.
+- No investment advice claim; guardrails in prompt and UI.
+
+---
+
+### 12.7 Milestone 7 — Polish & Scale
 
 **Goal**: App store submission, optional Redis, performance tuning, and advanced features (per PRD Phase 4).
 
-**Dependencies**: M1–M5.
+**Dependencies**: M1–M6.
 
 **Deliverables**
 
@@ -771,7 +796,7 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 
 ---
 
-### 12.7 Milestone Summary Table
+### 12.8 Milestone Summary Table
 
 | Milestone | Backend (Phoenix) | Web | Mobile | Deploy / Infra |
 |-----------|-------------------|-----|--------|----------------|
@@ -780,7 +805,8 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 | **M3** | FMP, Sentiment, full Institutional, recommendation | Fundamental, Emotional, Institutional tabs | All 4 tabs | Same |
 | **M4** | PaperTrading (portfolios, trades, performance) | Portfolio dashboard, trade modal, history | Portfolio tab, trade, history | Same |
 | **M5** | Watchlist, history, Shares, Oban, Push | Watchlist, share, profile | Watchlist, share, push | Same |
-| **M6** | Redis optional, Oban tune | Perf, SEO, analytics | Store submit, OTA, Sentry | Monitoring, stores |
+| **M6** | Multi-agent LLM (analysts, debate, synthesis), agent-analysis API | Agent analysis on stock page | Agent analysis on stock screen | Same |
+| **M7** | Redis optional, Oban tune | Perf, SEO, analytics | Store submit, OTA, Sentry | Monitoring, stores |
 
 ---
 

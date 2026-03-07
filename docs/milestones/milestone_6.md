@@ -1,361 +1,312 @@
-# Milestone 6 — Polish & Scale: Tickets
+# Milestone 6 — Multi-Agent LLM Analysis: Tickets
 
-**Goal**: App store submission, optional Redis, performance tuning, observability, and advanced features.  
-**Dependencies**: M1–M5.  
-**HLD reference**: §12.6 Logical Milestones — Milestone 6.
+**Goal**: Explore and implement a TradingAgents-style multi-agent LLM framework that consumes existing stock data (Alpha Vantage, Unusual Whales, technical analysis, fundamentals) and produces synthesized analysis, debate, and optional trade-style signals—integrated with the API, web, and mobile.  
+**Dependencies**: M1–M5 (auth, stocks, analysis, paper trading, watchlist).  
+**HLD reference**: §12.6 Logical Milestones — Milestone 6.  
+**Inspiration**: [TradingAgents](https://github.com/TauricResearch/TradingAgents) (Apache 2.0): analyst agents, researcher debate, trader/risk layers—adapted to our stack and data sources.
 
 ---
 
-## M6-001: Redis cache (optional multi-node)
+## M6-001: Research and design — agent architecture
 
 ### Ticket
 **ID**: M6-001  
-**Title**: Redis cache for multi-node Phoenix
+**Title**: Research and design — multi-agent LLM architecture and integration strategy
 
 ### Description (why this ticket is needed)
-ETS is per-node; if Phoenix is scaled to multiple instances behind a load balancer, each node has its own cache, leading to duplicate external API calls and inconsistent responses. Redis provides a shared cache layer that all nodes read/write. This ticket is only needed if scaling beyond a single Phoenix instance; it can be deferred if traffic stays low.
+Before building, we need a clear design: how agent roles map to our existing data (Stocks context, Analysis context, Alpha Vantage, Unusual Whales), whether to implement in Elixir or as a Python sidecar, how results are cached and exposed via the API, and how the pipeline ties into watchlist, paper trading, and UI.
 
 ### Required tasks
-- [ ] Add Redis client dependency (e.g. `Redix` or `Cachex` with Redis adapter).
-- [ ] Create a cache adapter interface (e.g. behaviour) so the app can switch between ETS and Redis via config.
-- [ ] Update `StockAnalysis.Cache` to use the adapter: in dev/test use ETS, in production use Redis (when configured).
-- [ ] Provision Redis (e.g. Upstash, Redis Cloud, or Fly Redis). Set `REDIS_URL` in Fly secrets.
-- [ ] Verify all existing cache operations (put, get, TTL) work with Redis.
-- [ ] Load test: verify two Phoenix nodes share cache (one writes, other reads).
+- [ ] Document TradingAgents-style roles relevant to our stack: **Technical Analyst** (our indicators + price), **Fundamental/Sentiment** (M3 data when available; or summary from overview), **Institutional Analyst** (options flow, dark pool from Unusual Whales), **Researcher** (bull/bear debate over analyst outputs), **Trader Agent** (synthesized view → optional “consideration” or paper-trade suggestion), **Risk** (guardrails, optional approval).
+- [ ] Decide integration approach: **Option A** — Elixir-native (HTTP client to OpenAI/Claude/etc., orchestration in Phoenix, cache in ETS/Redis); **Option B** — Python service (TradingAgents or minimal clone) called by Phoenix; **Option C** — hybrid (e.g. single “summary” agent in Elixir first, expand later). Document pros/cons and chosen path.
+- [ ] Define data flow: which existing API responses (stock overview, technical, options flow, etc.) are passed into which agents; where results are stored (e.g. `agent_analysis` table or cache key per ticker); TTL and invalidation.
+- [ ] Define API contract: e.g. `GET /api/stocks/:ticker/agent-analysis` (and optionally batch for watchlist); response shape (summary, debate excerpt, optional “consideration” label).
+- [ ] Add a short “Multi-Agent Analysis” section to HLD or design doc referencing this milestone.
 
 ### Acceptance criteria
-- Cache adapter is swappable via config.
-- All existing cache keys and TTLs work identically on Redis.
-- Two Phoenix nodes share the same cache when using Redis.
-- Falls back to ETS if Redis is not configured.
+- Written design doc (or HLD section) that specifies agent roles, data inputs, integration approach (Elixir vs Python), API contract, and cache strategy.
+- Decision recorded on whether to use a single provider (e.g. OpenAI) or multi-provider from the start.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Configure Redis in test env; run `mix test` for cache module | All cache tests pass on Redis backend |
-| 2 | Deploy two Phoenix instances on Fly; hit stock overview on instance A | Cache populated |
-| 3 | Hit same stock overview on instance B | Cache hit (no external API call) |
-| 4 | Remove REDIS_URL config; restart | App starts with ETS fallback |
+| 1 | Review design doc | All roles and data sources clearly mapped |
+| 2 | Confirm API contract with existing api-client/types | Compatible with web/mobile consumption |
 
 ---
 
-## M6-002: Web performance optimization
+## M6-002: LLM provider integration (Phoenix)
 
 ### Ticket
 **ID**: M6-002  
-**Title**: Web performance optimization (Next.js)
+**Title**: LLM provider integration — config, client, and single-agent call from Phoenix
 
 ### Description (why this ticket is needed)
-The PRD targets < 2s page load. As features have been added across M2–M5, bundle size and render paths may have grown. This ticket audits and optimizes: proper RSC/client component boundaries, code splitting, lazy-loaded tabs, image optimization, and Suspense boundaries for progressive loading.
+The app needs a reliable way to call an LLM (OpenAI, Anthropic, or other) from Elixir: API key via env, HTTP client, structured request/response, and timeouts. This ticket establishes the foundation so later tickets can implement analyst prompts and orchestration.
 
 ### Required tasks
-- [ ] Audit client vs server component boundaries: move data-fetching-only components to RSC where possible; reduce `'use client'` surface.
-- [ ] Add dynamic imports (`next/dynamic`) for heavy components: chart libraries, institutional data tables, trade modal.
-- [ ] Add `<Suspense>` boundaries with skeleton fallbacks for each stock tab and portfolio sections.
-- [ ] Use `next/image` for any images (stock logos, avatars); configure remote image domains.
-- [ ] Analyze bundle with `@next/bundle-analyzer`; remove unused dependencies.
-- [ ] Add `loading.tsx` files for route-level loading states.
-- [ ] Verify Lighthouse score: target 90+ on Performance.
-- [ ] Add `Cache-Control` headers for static assets and API responses where appropriate.
+- [ ] Add dependency for HTTP LLM calls (e.g. `req` to OpenAI/Anthropic API, or a small wrapper library). Ensure API key is read from env (e.g. `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`); never committed.
+- [ ] Create a behaviour or module (e.g. `StockAnalysis.AgentAnalysis.LLM`) with `complete(prompt, options)` returning `{:ok, text}` or `{:error, reason}`; support configurable model and max_tokens.
+- [ ] Implement at least one provider (e.g. OpenAI chat completions); add basic retries and timeout (e.g. 30s).
+- [ ] Add config in `runtime.exs` for prod: API key from env, model name, optional enable/disable flag so the feature can be turned off if key is missing.
+- [ ] (Optional) Add a second provider (e.g. Anthropic) behind the same behaviour for future multi-provider or fallback.
 
 ### Acceptance criteria
-- Stock detail page loads in < 2s on a simulated 4G connection (Lighthouse or WebPageTest).
-- Lighthouse Performance score >= 90.
-- Tabs lazy-load their content; switching tabs shows skeleton then data.
-- No layout shift on load (CLS < 0.1).
+- Phoenix can call the LLM with a prompt and receive plain-text completion.
+- API key and model are configured via env; no secrets in repo.
+- Feature can be disabled when key is not set (no runtime errors).
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Run Lighthouse on /stocks/AAPL | Performance score >= 90 |
-| 2 | Throttle to Slow 4G; load stock page | Renders within 2s; skeletons visible during load |
-| 3 | Switch between tabs | Skeleton → data; no full page reload |
-| 4 | Run `npx @next/bundle-analyzer` | No unexpected large dependencies |
+| 1 | Set env var; call LLM module with simple prompt | Returns `{:ok, "..."}` with non-empty text |
+| 2 | Unset API key; restart | Config loads; LLM calls return error or skip without crash |
+| 3 | Grep repo for API key string | Not present in source |
 
 ---
 
-## M6-003: SEO and metadata (web)
+## M6-003: Analyst agents — technical and institutional
 
 ### Ticket
 **ID**: M6-003  
-**Title**: SEO and metadata — web (Next.js)
+**Title**: Analyst agents — technical and institutional (LLM summaries from existing data)
 
 ### Description (why this ticket is needed)
-Public share pages and stock pages should be indexable by search engines. Proper Open Graph tags make shared links look professional on social media and messaging apps. Next.js metadata API provides a clean way to set per-page titles, descriptions, and OG images.
+Users benefit from a short, natural-language summary of what the numbers mean. This ticket implements two “analyst” agents that consume data we already have: (1) Technical Analyst — overview + indicators + score; (2) Institutional Analyst — options flow and dark pool summary. Both use the LLM to produce a concise paragraph (or bullets) suitable for the stock detail UI.
 
 ### Required tasks
-- [ ] Add `metadata` export or `generateMetadata` to stock detail page: title "AAPL Stock Analysis — MNML Trade", description with current price/recommendation, OG image (generic or dynamic).
-- [ ] Add metadata to share pages: title includes ticker or portfolio name; description with recommendation or performance summary.
-- [ ] Add root metadata: app name, default description, favicon, theme color.
-- [ ] Add `robots.txt` and `sitemap.xml` (or `next-sitemap` package) for public routes.
-- [ ] Test OG tags with social media debuggers (e.g. Facebook, Twitter/X card validator).
+- [ ] **Technical Analyst**: Build a prompt that includes ticker, price, change, key metrics, technical indicators (RSI, MACD, etc.), and technical score. Call LLM; parse and sanitize response (strip markdown if needed, length limit). Return structured result (e.g. `%{role: "technical", summary: "..."}`).
+- [ ] **Institutional Analyst**: Build a prompt that includes ticker, recent options flow summary, dark pool summary (from Unusual Whales integration). Call LLM; return structured result (e.g. `%{role: "institutional", summary: "..."}`).
+- [ ] Fetch required data via existing contexts (Stocks, Analysis, Unusual Whales); do not duplicate API calls—use cached/context data passed into the agent module.
+- [ ] Add unit tests or integration tests that stub LLM response and assert output shape and that no raw secrets appear in prompts.
 
 ### Acceptance criteria
-- Stock page has unique title and description in `<head>`.
-- Sharing a link on social media shows rich preview (title, description, image).
-- Public share pages are indexable; authenticated pages are not.
-- `robots.txt` exists and is correct.
+- Technical Analyst produces a short summary from overview + technical data.
+- Institutional Analyst produces a short summary from options/dark pool data.
+- Both use existing API/cache; no new external data sources.
+- Outputs are safe to display in UI (no injection; length bounded).
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | View page source of /stocks/AAPL | `<title>`, `<meta name="description">`, `<meta property="og:...">` present |
-| 2 | Paste share link into Twitter/Slack | Rich preview with title and description |
-| 3 | Check /robots.txt | Valid file, disallows authenticated routes if needed |
-| 4 | Verify /share/[id] pages are indexable | No `noindex` meta tag |
+| 1 | Call Technical Analyst with fixture overview + indicators | Returns summary string |
+| 2 | Call Institutional Analyst with fixture options/dark pool | Returns summary string |
+| 3 | Request analysis for ticker with missing institutional data | Graceful fallback (e.g. “No recent institutional data”) |
 
 ---
 
-## M6-004: Error boundaries and error pages (web)
+## M6-004: Researcher layer — bull/bear debate
 
 ### Ticket
 **ID**: M6-004  
-**Title**: Error boundaries and error pages — web (Next.js)
+**Title**: Researcher layer — bull and bear debate from analyst outputs
 
 ### Description (why this ticket is needed)
-Unhandled errors should not crash the entire page. Next.js `error.tsx` files catch per-route errors and show a user-friendly fallback with a retry option. A global 404 page handles invalid routes. These are essential for production quality.
+A TradingAgents-style “researcher” step adds balance: one agent argues bull case, one bear case, based on the same analyst summaries. This gives users a quick pros/cons view and reduces single-perspective bias. The output is consumed by the synthesis step or shown directly in the UI.
 
 ### Required tasks
-- [ ] Add `error.tsx` to key route groups: `stocks/[ticker]`, `portfolio`, `watchlist`, `share/[id]`. Show friendly message and "Try again" button that resets the error boundary.
-- [ ] Add `not-found.tsx` for root and `stocks/[ticker]` (for invalid tickers).
-- [ ] Add global `error.tsx` at `app/error.tsx` as a fallback.
-- [ ] Ensure no stack traces or internal details are shown in production.
-- [ ] Add toast notifications (e.g. via Sonner or react-hot-toast) for non-fatal errors (API timeout, network issue).
+- [ ] Define input: concatenated or structured output from Technical and Institutional analysts (and optionally Fundamental/Sentiment when M3 data exists).
+- [ ] **Bull researcher**: Prompt that asks for 2–4 bullet points supporting a bullish view given the data. Call LLM; return structured result.
+- [ ] **Bear researcher**: Prompt that asks for 2–4 bullet points supporting a bearish view given the data. Call LLM; return structured result.
+- [ ] Optionally combine into a single “debate” call (e.g. “Given the following analysis, list key bull and key bear points”) to save latency and cost.
+- [ ] Cache debate result per ticker (same TTL strategy as agent analysis) to avoid re-running on every request.
 
 ### Acceptance criteria
-- Navigating to /stocks/INVALIDXYZ shows custom 404 page.
-- If stock API fails, error boundary catches and shows friendly message with retry.
-- No stack traces visible in production.
-- Toast notifications for transient errors.
+- Bull and bear points are generated from the same analyst inputs.
+- Output is structured (e.g. `{bull: ["..."], bear: ["..."]}`) and length-bounded.
+- Debate is cached; cache key includes ticker and optionally data version.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Navigate to /stocks/XYZNOTREAL | Custom 404 page |
-| 2 | Navigate to /nonexistentroute | Global 404 page |
-| 3 | Simulate API failure on stock page (e.g. disconnect API) | Error boundary with "Something went wrong" and retry button |
-| 4 | Click retry | Page re-renders; if API is back, data loads |
+| 1 | Run researchers with fixed analyst output | Both bull and bear lists non-empty |
+| 2 | Request debate for same ticker twice within TTL | Second request uses cache (no extra LLM call) |
 
 ---
 
-## M6-005: Mobile — app store assets and configuration
+## M6-005: Synthesis and optional “consideration” signal
 
 ### Ticket
 **ID**: M6-005  
-**Title**: Mobile — app icon, splash screen, store assets, and app config
+**Title**: Synthesis — combined summary and optional trade consideration
 
 ### Description (why this ticket is needed)
-Before submitting to the App Store and Google Play, the app needs a polished icon, splash screen, store screenshots, descriptions, and correct `app.json` / EAS configuration. These assets are the first thing users see and heavily influence download decisions.
+The final step combines analyst summaries and debate into one coherent “agent analysis” and, optionally, a simple label (e.g. “Worth a look” / “Neutral” / “Caution”) that the UI can show and that could later feed into paper-trading suggestions. This ticket does not execute trades; it only produces a synthesized view and an optional consideration tag.
 
 ### Required tasks
-- [ ] Design app icon: 1024x1024 for App Store, 512x512 for Play Store; follow platform guidelines (no transparency on iOS).
-- [ ] Design splash screen: branded loading screen with logo; configure in `app.json`.
-- [ ] Update `app.json`: app name, slug, version, bundleIdentifier (iOS), package (Android), orientation, icon, splash, permissions.
-- [ ] Take screenshots for App Store (6.7" iPhone, 6.5", 5.5", iPad optional) and Play Store (phone, tablet optional): key screens (login, stock analysis, portfolio, watchlist).
-- [ ] Write App Store and Play Store descriptions: feature highlights, keywords.
-- [ ] Add privacy policy and terms of service pages/links (required by both stores).
-- [ ] Configure `eas.json` production build profile: distribution "store", auto-increment version.
+- [ ] **Synthesis agent**: Prompt that takes technical summary, institutional summary, and bull/bear points; outputs one short paragraph (2–4 sentences) and optionally a single “consideration” label. Call LLM; parse response into `%{summary: "...", consideration: "..."}` (consideration optional).
+- [ ] **Orchestration**: Implement a pipeline (e.g. in `StockAnalysis.AgentAnalysis` context): fetch data → Technical Analyst → Institutional Analyst → Researchers → Synthesis. Run in sequence or parallel where independent; respect timeouts and abort on critical failure.
+- [ ] **Persistence/cache**: Store or cache the full result (all analyst outputs + debate + synthesis) under a key like `agent_analysis:{ticker}` with TTL (e.g. 1–4 hours) so UI and API can serve it without re-running every time.
+- [ ] Define “risk” guardrails: e.g. no explicit “buy/sell” in synthesis; disclaimer that output is for research only, not advice. Enforce in prompt and/or post-processing.
 
 ### Acceptance criteria
-- App icon renders correctly on iOS and Android home screens.
-- Splash screen displays on cold start.
-- Screenshots capture all key flows.
-- Descriptions and keywords are complete.
-- Privacy policy URL is live.
-- `eas.json` production profile is configured.
+- Full pipeline runs for a given ticker and produces synthesis + optional consideration.
+- Result is cached with defined TTL.
+- Output includes disclaimer or is clearly framed as research-only.
+- Pipeline fails gracefully (e.g. returns partial result or error) if LLM or data is unavailable.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Build dev app; check icon on home screen | Correct icon, no cropping |
-| 2 | Cold-start the app | Splash screen visible briefly |
-| 3 | Review screenshots against store requirements | Correct dimensions and content |
-| 4 | Open privacy policy URL | Page loads with policy text |
-| 5 | Run `eas build --profile production --platform all --dry-run` (or validate config) | Config is valid |
+| 1 | Request agent analysis for AAPL | Cached result with summary and consideration |
+| 2 | Request again within TTL | Same result from cache; no new LLM calls |
+| 3 | Simulate LLM timeout | Partial or error response; no crash |
 
 ---
 
-## M6-006: Mobile — crash reporting and analytics
+## M6-006: API and types — agent analysis endpoint
 
 ### Ticket
 **ID**: M6-006  
-**Title**: Mobile — crash reporting (Sentry) and analytics
+**Title**: API and shared types — expose agent analysis to web and mobile
 
 ### Description (why this ticket is needed)
-Once the app is in users' hands, crashes need to be detected and diagnosed. Sentry captures native and JS crashes with stack traces. Basic analytics (screen views, feature usage) inform product decisions. Both are essential for a production mobile app.
+Web and mobile need a stable endpoint and types to display the multi-agent analysis on the stock detail page. This ticket adds the HTTP contract, auth, and shared TypeScript types so both clients can render summary, debate, and consideration consistently.
 
 ### Required tasks
-- [ ] Add `sentry-expo` (or `@sentry/react-native`); configure DSN via env.
-- [ ] Initialize Sentry in root layout; capture unhandled JS errors and native crashes.
-- [ ] Verify source maps are uploaded on EAS build so stack traces are readable.
-- [ ] Add basic analytics: integrate Expo Analytics, Mixpanel, or a lightweight solution. Track events: `screen_view`, `stock_search`, `stock_view`, `trade_executed`, `watchlist_add`.
-- [ ] Add analytics opt-out toggle in profile/settings (GDPR-friendly).
+- [ ] Add `GET /api/stocks/:ticker/agent-analysis` (auth required). Returns JSON: `{ summary, consideration?, technicalSummary?, institutionalSummary?, bullPoints?, bearPoints?, cachedAt? }`. Trigger pipeline if not cached (or return 202 + poll, or synchronous—per design from M6-001).
+- [ ] Add Ecto schema/migration if storing in DB (e.g. `agent_analyses`: user_id optional, ticker, payload JSONB, inserted_at); or document “cache only” and return from cache with `cachedAt`.
+- [ ] Add types in `@repo/types` and methods in `@repo/api-client` for agent analysis. Add to openapi/spec if present.
+- [ ] Document in API docs or README: endpoint, rate limits (if any), and that analysis is for research only.
 
 ### Acceptance criteria
-- A forced crash (e.g. throw in a component) appears in Sentry dashboard with readable stack trace.
-- Key events are tracked in the analytics platform.
-- Users can opt out of analytics.
+- Authenticated GET returns agent analysis for the ticker; unauthenticated returns 401.
+- Response shape matches shared types; web and mobile can consume it.
+- Invalid ticker returns 404 or empty analysis per product decision.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Trigger an intentional crash in dev build | Error appears in Sentry dashboard |
-| 2 | Verify stack trace has readable function names (source maps) | Readable, not minified |
-| 3 | Open stock detail; check analytics dashboard | `stock_view` event logged |
-| 4 | Execute a trade; check analytics | `trade_executed` event logged |
-| 5 | Toggle analytics off in settings; perform actions | No new events tracked |
+| 1 | GET with valid token and ticker | 200, JSON with summary and optional fields |
+| 2 | GET without token | 401 |
+| 3 | GET for ticker with no cached analysis | 200 with pipeline run, or 202 + location per design |
 
 ---
 
-## M6-007: Mobile — App Store and Play Store submission
+## M6-007: Web UI — agent analysis on stock detail
 
 ### Ticket
 **ID**: M6-007  
-**Title**: Mobile — App Store and Google Play submission
+**Title**: Web UI — agent analysis block on stock detail page
 
 ### Description (why this ticket is needed)
-This is the final step to get the app into users' hands via official stores. It involves building production binaries via EAS, submitting to Apple and Google for review, responding to any review feedback, and verifying the live listing. Beta testing via TestFlight / Internal Testing is done first.
+The stock detail page should show the synthesized agent analysis: summary paragraph, optional bull/bear bullets, and consideration badge. This gives users a single place to read both raw data (tabs) and the LLM-derived narrative.
 
 ### Required tasks
-- [ ] **Beta**: run `eas build --profile production --platform ios`; submit to TestFlight via `eas submit --platform ios`; invite 5–10 beta testers. Same for Android Internal Testing track.
-- [ ] Collect and address beta feedback (bug fixes, UI tweaks).
-- [ ] **Production submit**: after beta is stable, submit iOS build for App Store review; submit Android build for Play Store review.
-- [ ] Monitor review status; respond to any rejection feedback (common: missing permissions justification, privacy policy issues, crash on review device).
-- [ ] Once approved, release to public (phased or full rollout).
-- [ ] Verify live store listing: correct screenshots, description, icon, link to privacy policy.
-- [ ] Configure OTA updates: verify `eas update --branch production` delivers an update to installed apps.
+- [ ] Add a section or tab “AI Analysis” (or “Summary”) on the stock detail page that fetches `GET /api/stocks/:ticker/agent-analysis` and displays summary, consideration, and optionally bull/bear points.
+- [ ] Use existing api-client and types; show loading state and handle errors (e.g. “Analysis unavailable”).
+- [ ] Include short disclaimer: “For research only; not investment advice.”
+- [ ] Ensure layout works on mobile viewport (responsive).
 
 ### Acceptance criteria
-- iOS app approved and live on App Store.
-- Android app approved and live on Google Play.
-- Store listings match designed assets and descriptions.
-- OTA update mechanism works (push an update; installed app picks it up).
+- Agent analysis section visible on stock detail when data is available.
+- Loading and error states are handled.
+- Disclaimer is visible; no misleading “buy/sell” wording from UI.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Install from TestFlight (iOS); run through key flows | All features work; no crashes |
-| 2 | Install from Internal Testing (Android); run through key flows | All features work |
-| 3 | After store approval, download from App Store | App installs and runs correctly |
-| 4 | After store approval, download from Play Store | App installs and runs correctly |
-| 5 | Push OTA update via `eas update`; reopen installed app | Update applied; new behavior visible |
+| 1 | Open /stocks/AAPL; scroll to AI Analysis | Summary and consideration visible (or loading then content) |
+| 2 | Open stock with agent analysis disabled or failed | Graceful message or hidden section |
+| 3 | Resize to mobile width | Section readable and not broken |
 
 ---
 
-## M6-008: Observability — monitoring and health
+## M6-008: Mobile UI — agent analysis on stock screen
 
 ### Ticket
 **ID**: M6-008  
-**Title**: Observability — monitoring, metrics, and alerts
+**Title**: Mobile UI — agent analysis on stock detail screen
 
 ### Description (why this ticket is needed)
-In production, you need visibility into API health, latency, error rates, cache hit rates, and external API usage. Without monitoring, problems go undetected until users complain. This ticket adds structured logging, key metrics, and basic alerting.
+Mobile users should see the same agent analysis (summary, consideration, bull/bear) on the stock detail screen so the experience is consistent with web and they can quickly scan the AI-derived view on the go.
 
 ### Required tasks
-- [ ] **Structured logging**: ensure all Phoenix requests log request_id, user_id (if auth), path, status, and duration. Use Logger with JSON formatter for production.
-- [ ] **Health endpoint improvements**: `/api/health` checks DB and optionally Redis; returns service versions, uptime.
-- [ ] **Metrics** (choose approach: Telemetry + Prometheus, or Fly.io built-in metrics, or StatsD):
-  - Request count and latency by route and status code.
-  - Cache hit/miss rate by data type.
-  - External API call count and error rate per provider.
-  - Oban job count, success/failure rate.
-- [ ] **Alerting**: set up basic alerts (e.g. Fly.io alerts, or UptimeRobot/Better Uptime) for health endpoint down, high error rate, or high latency.
-- [ ] **Web analytics**: add Plausible or Umami (privacy-focused) to Next.js for page views and feature usage.
-- [ ] Phoenix LiveDashboard: enable in production (behind auth) for real-time system inspection.
+- [ ] Add “AI Analysis” section or collapsible block on the stock detail screen; call `api.getAgentAnalysis(ticker)` and display summary, consideration badge, and optional bull/bear lists.
+- [ ] Reuse shared types and api-client; match web disclaimer and tone.
+- [ ] Handle loading and error states; avoid blocking the rest of the screen if the agent endpoint is slow or fails.
 
 ### Acceptance criteria
-- Structured logs are queryable (e.g. by request_id or user_id).
-- Key metrics are being collected (viewable in dashboard or logs).
-- Health endpoint responds and is monitored; alert fires if it goes down.
-- Web analytics tracking page views.
+- Agent analysis visible on mobile stock detail when available.
+- Layout fits small screens; text readable.
+- Same disclaimer as web; no investment advice claim.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Make API requests; check logs | Structured JSON with request_id, path, status, duration |
-| 2 | Check cache hit rate metric after repeated stock requests | Hit rate > 0% |
-| 3 | Stop Phoenix; verify alert fires (or simulate) | Alert notification received |
-| 4 | Access Phoenix LiveDashboard at /dashboard (auth'd) | Dashboard loads with system info |
-| 5 | Check web analytics for page views | Recent views recorded |
+| 1 | Open stock detail on device/simulator | AI Analysis section shows summary (or loading) |
+| 2 | Tap to expand bull/bear if collapsed | Points displayed |
+| 3 | Turn off network; open stock | Error state or cached analysis if previously loaded |
 
 ---
 
-## M6-009: Oban tuning and job reliability
+## M6-009: Watchlist and batch (optional)
 
 ### Ticket
 **ID**: M6-009  
-**Title**: Oban tuning and job reliability
+**Title**: Agent analysis for watchlist — batch or on-demand
 
 ### Description (why this ticket is needed)
-As user count grows and more watchlist tickers need refreshing, Oban job volume increases. This ticket tunes concurrency, retry policies, and scheduling to maximize cache freshness while staying within rate limits and not overloading the database with job rows.
+Users with a watchlist may want to see agent summaries for multiple tickers without opening each one. This ticket adds a way to request or precompute agent analysis for watchlist tickers (e.g. batch endpoint or background job) and optionally surface a short “consideration” or summary on the watchlist UI.
 
 ### Required tasks
-- [ ] Review and tune Oban queue concurrency per queue (e.g. `:data_refresh` max 5, `:notifications` max 10) based on external API rate limits.
-- [ ] Configure retry policies: max attempts per worker, backoff strategy (exponential).
-- [ ] Add job pruning: configure Oban Pruner to remove completed/discarded jobs after N days (e.g. 7 days) to keep the `oban_jobs` table small.
-- [ ] Add unique job constraints where appropriate (e.g. only one RefreshStockData for AAPL at a time).
-- [ ] Verify job scheduling during market hours vs off-hours: more frequent during market hours.
-- [ ] Add error reporting: failed jobs logged with reason; optionally reported to Sentry.
+- [ ] **Option A**: `GET /api/user/watchlist/agent-summaries` — returns list of `{ticker, summary?, consideration?, cachedAt}` for the user’s watchlist; trigger pipeline for missing/stale entries (async or sync per design).
+- [ ] **Option B**: Oban job that precomputes agent analysis for each watchlist ticker on a schedule (e.g. daily or when user adds ticker); API only reads from cache.
+- [ ] Document rate/cost implications (LLM calls per user/watchlist size); add limits if needed (e.g. max 10 tickers per batch, or only cached).
+- [ ] (Optional) Add a compact “AI take” or consideration badge next to each ticker on the watchlist page (web and/or mobile).
 
 ### Acceptance criteria
-- No duplicate concurrent jobs for the same ticker.
-- Failed jobs retry with backoff and eventually stop after max attempts.
-- Completed jobs are pruned after configured retention period.
-- Rate limits are not exceeded by job throughput.
+- Watchlist can be associated with agent analysis (batch or precomputed).
+- No unbounded LLM usage; limits or caching strategy documented and enforced.
+- Optional UI shows at least consideration or “summary available” on watchlist.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Enqueue two RefreshStockData jobs for same ticker simultaneously | Only one executes (unique constraint) |
-| 2 | Force a job to fail; check retries | Retries with increasing delay; stops at max attempts |
-| 3 | Check `oban_jobs` table after 7+ days | Old completed jobs pruned |
-| 4 | Monitor external API calls during peak job run | Calls within rate limit |
+| 1 | Add 3 tickers to watchlist; call batch endpoint or wait for job | Each ticker has agent analysis or pending state |
+| 2 | Exceed batch limit (if any) | Clear error or truncation |
 
 ---
 
-## M6-010: Advanced features (optional scope)
+## M6-010: Documentation and disclaimer
 
 ### Ticket
 **ID**: M6-010  
-**Title**: Advanced features — leaderboard, multiple portfolios, CSV export
+**Title**: Documentation and legal disclaimer for agent analysis
 
 ### Description (why this ticket is needed)
-These are PRD Phase 4 enhancements that add engagement and utility: a friends leaderboard for paper trading, support for multiple portfolios, and data export (CSV for transactions, optionally PDF for portfolio reports). Each is independently scoped and can be implemented as time permits.
+Multi-agent LLM output must be clearly framed as research/educational only, not investment advice. Documentation helps operators run and tune the feature; a clear disclaimer protects users and the product.
 
 ### Required tasks
-- [ ] **Multiple portfolios**: remove single-portfolio constraint; allow users to create N portfolios; add portfolio selector dropdown in web and mobile; update trade flow to select target portfolio.
-- [ ] **Leaderboard** (Phase 2, opt-in): create `GET /api/paper-trading/leaderboard` endpoint; rank users by total return %, win rate; friends only (if social graph exists) or global; add leaderboard UI on web and mobile.
-- [ ] **CSV export**: add `GET /api/paper-trading/portfolios/:id/transactions/export?format=csv` endpoint; generate CSV file; add "Export CSV" button on web transaction history page.
-- [ ] **PDF report** (optional): generate portfolio summary PDF server-side; downloadable from web.
-- [ ] **Achievements** (optional): track milestones (first trade, 10 trades, profit milestone); display badges on profile.
+- [ ] Add “Multi-Agent Analysis” section to README or docs: what it is, which data it uses, how to enable/disable (env), and that it is for research only.
+- [ ] Ensure in-app disclaimer is visible wherever agent analysis is shown (web and mobile): e.g. “AI-generated analysis for research only; not investment advice.”
+- [ ] Document env vars: `OPENAI_API_KEY` (or equivalent), any feature flag or model name; add to deployment docs (e.g. M2-010 env list or M7).
+- [ ] (Optional) Add a link to a short “How we use AI” or “Research disclaimer” page in app footer or profile.
 
 ### Acceptance criteria
-- Multiple portfolios: user can create, switch between, and trade in multiple portfolios.
-- Leaderboard: ranked list of users by performance (opt-in only).
-- CSV export: downloads a valid CSV file with all transactions.
-- Each feature works independently; none blocks the others.
+- README or docs describe the feature and configuration.
+- Disclaimer is present in UI wherever agent analysis is displayed.
+- No claim that the system provides investment advice.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Create 3 portfolios; trade in each | All portfolios track independently |
-| 2 | View leaderboard | Ranked list of users (or friends) |
-| 3 | Click "Export CSV" on transaction history | CSV downloads with correct data |
-| 4 | Open CSV in spreadsheet app | Columns and data match transaction history |
+| 1 | Read README multi-agent section | Clear description and env vars |
+| 2 | View agent analysis on web and mobile | Disclaimer text visible |
 
 ---
 
 ## Milestone 6 completion checklist
 
-- [ ] M6-001: Redis cache (if multi-node)
-- [ ] M6-002: Web performance optimization
-- [ ] M6-003: SEO and metadata
-- [ ] M6-004: Error boundaries and error pages
-- [ ] M6-005: Mobile — store assets and config
-- [ ] M6-006: Mobile — crash reporting and analytics
-- [ ] M6-007: Mobile — App Store and Play Store submission
-- [ ] M6-008: Observability — monitoring and health
-- [ ] M6-009: Oban tuning and job reliability
-- [ ] M6-010: Advanced features (optional)
+- [ ] M6-001: Research and design — agent architecture
+- [ ] M6-002: LLM provider integration (Phoenix)
+- [ ] M6-003: Analyst agents — technical and institutional
+- [ ] M6-004: Researcher layer — bull/bear debate
+- [ ] M6-005: Synthesis and optional consideration signal
+- [ ] M6-006: API and types — agent analysis endpoint
+- [ ] M6-007: Web UI — agent analysis on stock detail
+- [ ] M6-008: Mobile UI — agent analysis on stock screen
+- [ ] M6-009: Watchlist and batch (optional)
+- [ ] M6-010: Documentation and disclaimer
 
-**Done when**: Web meets performance and SEO targets; mobile apps are live on App Store and Google Play with crash reporting and analytics; monitoring is active with alerting; cache and Oban are tuned for production traffic; optional advanced features shipped as scoped.
+**Done when**: Multi-agent LLM analysis is designed and implemented; Technical and Institutional analysts plus Researcher debate and Synthesis run in Phoenix (or approved sidecar); API exposes agent analysis; web and mobile show summary and consideration with clear research-only disclaimer; optional watchlist integration and full documentation in place.
