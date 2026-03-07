@@ -3,6 +3,7 @@ defmodule StockAnalysisWeb.StocksController do
 
   alias StockAnalysis.Analysis
   alias StockAnalysis.InstitutionalActivity
+  alias StockAnalysis.Recommendation
   alias StockAnalysis.Sentiment
   alias StockAnalysis.Stocks
 
@@ -124,14 +125,29 @@ defmodule StockAnalysisWeb.StocksController do
   def show(conn, %{"ticker" => ticker}) do
     case Stocks.get_overview(ticker) do
       {:ok, overview} ->
+        enriched = enrich_with_recommendation(overview, ticker)
         conn
         |> put_status(:ok)
-        |> json(overview)
+        |> json(enriched)
 
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "not_found", message: "Stock not found"})
+    end
+  end
+
+  defp enrich_with_recommendation(overview, ticker) do
+    case Recommendation.compute(ticker) do
+      {:ok, rec} ->
+        Map.merge(overview, %{
+          recommendation: rec.recommendation,
+          recommendation_score: rec.recommendation_score,
+          confidence: rec.confidence
+        })
+
+      {:error, _} ->
+        overview
     end
   end
 end

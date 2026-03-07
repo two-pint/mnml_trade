@@ -5,6 +5,12 @@ import type {
   FundamentalAnalysis,
   SentimentAnalysis,
   InstitutionalData,
+  FullInstitutionalData,
+  CongressionalTrade,
+  InsiderTrade,
+  InstitutionalHolding,
+  MarketTide,
+  SmartMoneyScore,
   DailySeries,
   TrendingStock,
 } from "@repo/types";
@@ -49,6 +55,30 @@ export function createStocksApi(client: ApiClient) {
 
     getTrending(): Promise<TrendingStock[]> {
       return client.get<TrendingStock[]>("/api/stocks/trending");
+    },
+
+    getCongressional(ticker: string): Promise<{ ticker: string; trades: CongressionalTrade[]; data_as_of: string }> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get(`/api/institutional/${encoded}/congressional`);
+    },
+
+    getInsiderTrades(ticker: string): Promise<{ ticker: string; trades: InsiderTrade[]; data_as_of: string }> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get(`/api/institutional/${encoded}/insider-trades`);
+    },
+
+    getHoldings(ticker: string): Promise<{ ticker: string; holdings: InstitutionalHolding[]; data_as_of: string }> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get(`/api/institutional/${encoded}/holdings`);
+    },
+
+    getMarketTide(): Promise<MarketTide> {
+      return client.get<MarketTide>("/api/institutional/market-tide");
+    },
+
+    getSmartMoneyScore(ticker: string): Promise<SmartMoneyScore> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get<SmartMoneyScore>(`/api/institutional/${encoded}/smart-money-score`);
     },
   };
 }

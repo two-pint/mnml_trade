@@ -5,6 +5,13 @@ export interface SearchResult {
   region: string;
 }
 
+export type RecommendationLabel =
+  | "Strong Buy"
+  | "Buy"
+  | "Hold"
+  | "Sell"
+  | "Strong Sell";
+
 export interface StockOverview {
   ticker: string;
   symbol: string;
@@ -17,6 +24,9 @@ export interface StockOverview {
   low: number | null;
   previous_close: number | null;
   latest_trading_day: string | null;
+  recommendation?: RecommendationLabel;
+  recommendation_score?: number;
+  confidence?: number;
 }
 
 export type TechnicalSignal = "bullish" | "bearish" | "neutral";
@@ -57,6 +67,69 @@ export interface InstitutionalData {
   ticker: string;
   options_flow: OptionsFlowTrade[];
   dark_pool: DarkPoolSummary;
+  data_as_of: string;
+  stale: boolean;
+}
+
+export interface CongressionalTrade {
+  representative: string | null;
+  transaction_type: string | null;
+  amount: string | null;
+  date: string | null;
+  party: string | null;
+  ticker: string | null;
+}
+
+export interface InsiderTrade {
+  insider_name: string | null;
+  title: string | null;
+  transaction_type: string | null;
+  shares: number | null;
+  price: number | null;
+  value: number | null;
+  date: string | null;
+}
+
+export interface InstitutionalHolding {
+  holder: string | null;
+  shares: number | null;
+  value: number | null;
+  change: number | null;
+  change_percent: number | null;
+  date: string | null;
+}
+
+export interface MarketTide {
+  score: number | null;
+  label: string | null;
+  call_volume: number | null;
+  put_volume: number | null;
+  ratio: number | null;
+}
+
+export type SmartMoneyLabel =
+  | "Strong Institutional Buy"
+  | "Institutional Buy"
+  | "Neutral"
+  | "Institutional Sell"
+  | "Strong Institutional Sell";
+
+export interface SmartMoneyScore {
+  ticker: string;
+  score: number;
+  label: SmartMoneyLabel;
+}
+
+export interface FullInstitutionalData {
+  ticker: string;
+  options_flow: OptionsFlowTrade[];
+  dark_pool: DarkPoolSummary;
+  congressional: CongressionalTrade[] | null;
+  insider: InsiderTrade[] | null;
+  holdings: InstitutionalHolding[] | null;
+  market_tide: MarketTide | null;
+  smart_money_score: number;
+  smart_money_label: SmartMoneyLabel;
   data_as_of: string;
   stale: boolean;
 }

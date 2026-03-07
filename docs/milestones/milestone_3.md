@@ -152,18 +152,18 @@ Raw posts and articles need to be analyzed for sentiment polarity (bullish/beari
 M2 added basic options flow and dark pool. The full Institutional Activity tab (PRD §3.6) adds congressional trades, insider transactions, institutional holdings (13F), market tide, and a smart money score. These endpoints complete the institutional picture and feed the 20% weight in the recommendation.
 
 ### Required tasks
-- [ ] Extend `StockAnalysis.Integrations.UnusualWhales` with: `get_congressional(ticker)` (last 90d), `get_insider_trades(ticker)` (last 90d), `get_institutional_holdings(ticker)` (13F, top holders), `get_market_tide()` (overall market sentiment).
-- [ ] Normalize each response into typed structs.
-- [ ] Cache TTLs: congressional/insider 24h, holdings 7d, market tide 1h.
-- [ ] Extend `StockAnalysis.InstitutionalActivity` context: `get_full(ticker)` returns options flow + dark pool + congressional + insider + holdings + market tide.
-- [ ] Implement `compute_smart_money_score(options_flow, dark_pool, congressional, insider)`: aggregate institutional sentiment into 0–100 score.
-- [ ] Expose additional endpoints or extend existing:
+- [x] Extend `StockAnalysis.Integrations.UnusualWhales` with: `get_congressional(ticker)` (last 90d), `get_insider_trades(ticker)` (last 90d), `get_institutional_holdings(ticker)` (13F, top holders), `get_market_tide()` (overall market sentiment).
+- [x] Normalize each response into typed structs.
+- [x] Cache TTLs: congressional/insider 24h, holdings 7d, market tide 1h.
+- [x] Extend `StockAnalysis.InstitutionalActivity` context: `get_full(ticker)` returns options flow + dark pool + congressional + insider + holdings + market tide.
+- [x] Implement `compute_smart_money_score(options_flow, dark_pool, congressional, insider)`: aggregate institutional sentiment into 0–100 score.
+- [x] Expose additional endpoints or extend existing:
   - `GET /api/institutional/:ticker/congressional`
   - `GET /api/institutional/:ticker/insider-trades`
   - `GET /api/institutional/:ticker/holdings`
   - `GET /api/institutional/market-tide`
   - `GET /api/institutional/:ticker/smart-money-score`
-- [ ] Add types and api-client methods for each.
+- [x] Add types and api-client methods for each.
 
 ### Acceptance criteria
 - All institutional endpoints return data with correct cache TTLs and `data_as_of` timestamps.
@@ -193,7 +193,7 @@ M2 added basic options flow and dark pool. The full Institutional Activity tab (
 The stock overview shows an overall recommendation (Strong Buy / Buy / Hold / Sell / Strong Sell) with a confidence score. This is the product's core value proposition — combining four analysis dimensions into one actionable label. The algorithm must be transparent and tunable.
 
 ### Required tasks
-- [ ] Create module or function in Analysis context: `compute_recommendation(ticker)`.
+- [x] Create module or function in Analysis context: `compute_recommendation(ticker)`.
   1. Get technical score (0–100) from Analysis.
   2. Get fundamental score (0–100) from Analysis.
   3. Get sentiment score (normalized to 0–100) from Sentiment.
@@ -201,9 +201,9 @@ The stock overview shows an overall recommendation (Strong Buy / Buy / Hold / Se
   5. Weighted sum: `0.30*tech + 0.30*fund + 0.20*sentiment + 0.20*institutional`.
   6. Map to label: 0–20 Strong Sell, 20–40 Sell, 40–60 Hold, 60–80 Buy, 80–100 Strong Buy.
   7. Confidence: derived from sub-score agreement (e.g. low variance = high confidence).
-- [ ] Update `GET /api/stocks/:ticker` response to include `recommendation`, `recommendation_score`, and `confidence`.
-- [ ] Handle partial data: if a sub-score is unavailable, compute with available scores and note reduced confidence.
-- [ ] Add recommendation fields to `StockOverview` type in `packages/types`.
+- [x] Update `GET /api/stocks/:ticker` response to include `recommendation`, `recommendation_score`, and `confidence`.
+- [x] Handle partial data: if a sub-score is unavailable, compute with available scores and note reduced confidence.
+- [x] Add recommendation fields to `StockOverview` type in `packages/types`.
 
 ### Acceptance criteria
 - Stock overview JSON includes recommendation label, score, and confidence.
@@ -405,8 +405,8 @@ Mobile users need the same four tabs and recommendation as web. This ticket acti
 - [x] M3-002: Fundamental metrics and score
 - [x] M3-003: Reddit and news sentiment integration
 - [x] M3-004: Sentiment context and scoring engine
-- [ ] M3-005: Unusual Whales — full institutional data
-- [ ] M3-006: Recommendation algorithm
+- [x] M3-005: Unusual Whales — full institutional data
+- [x] M3-006: Recommendation algorithm
 - [ ] M3-007: Fundamental Analysis tab (web)
 - [ ] M3-008: Emotional Analysis tab (web)
 - [ ] M3-009: Institutional Activity tab (web)
