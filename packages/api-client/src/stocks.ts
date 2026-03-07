@@ -2,6 +2,8 @@ import type {
   SearchResult,
   StockOverview,
   TechnicalAnalysis,
+  FundamentalAnalysis,
+  SentimentAnalysis,
   InstitutionalData,
   DailySeries,
   TrendingStock,
@@ -23,6 +25,16 @@ export function createStocksApi(client: ApiClient) {
     getStockTechnical(ticker: string): Promise<TechnicalAnalysis> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<TechnicalAnalysis>(`/api/stocks/${encoded}/technical`);
+    },
+
+    getStockFundamental(ticker: string): Promise<FundamentalAnalysis> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get<FundamentalAnalysis>(`/api/stocks/${encoded}/fundamental`);
+    },
+
+    getStockSentiment(ticker: string): Promise<SentimentAnalysis> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get<SentimentAnalysis>(`/api/stocks/${encoded}/sentiment`);
     },
 
     getStockInstitutional(ticker: string): Promise<InstitutionalData> {

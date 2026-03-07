@@ -12,7 +12,9 @@ defmodule StockAnalysis.Cache do
   @default_ttls %{
     price: 15,
     technical: 3600,
-    institutional: 3600
+    institutional: 3600,
+    fundamental: 86_400,
+    sentiment: 1800
   }
 
   ## Public start_link for supervision

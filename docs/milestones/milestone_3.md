@@ -16,12 +16,12 @@
 FMP provides financial statements, valuation ratios, profitability metrics, and company profiles needed for the Fundamental Analysis tab. A dedicated integration module encapsulates API auth, HTTP, error handling, and response normalization, keeping the Analysis context clean.
 
 ### Required tasks
-- [ ] Create module `StockAnalysis.Integrations.FMP`.
-- [ ] Configure API key via env `FMP_API_KEY`.
-- [ ] Implement functions: `get_profile(ticker)` (description, sector, industry, market cap, employees, HQ), `get_ratios(ticker)` (P/E, P/B, PEG, P/S, ROE, ROA, margins, current ratio, quick ratio, D/E, interest coverage), `get_income_statement(ticker, period)` (quarterly/annual, last 4q / 3y), `get_balance_sheet(ticker, period)`, `get_cash_flow(ticker, period)`.
-- [ ] Normalize responses into consistent structs/maps.
-- [ ] Handle errors: invalid ticker, HTTP failures, rate limit (250/day free).
-- [ ] Write tests with mocked HTTP responses.
+- [x] Create module `StockAnalysis.Integrations.FMP`.
+- [x] Configure API key via env `FMP_API_KEY`.
+- [x] Implement functions: `get_profile(ticker)` (description, sector, industry, market cap, employees, HQ), `get_ratios(ticker)` (P/E, P/B, PEG, P/S, ROE, ROA, margins, current ratio, quick ratio, D/E, interest coverage), `get_income_statement(ticker, period)` (quarterly/annual, last 4q / 3y), `get_balance_sheet(ticker, period)`, `get_cash_flow(ticker, period)`.
+- [x] Normalize responses into consistent structs/maps.
+- [x] Handle errors: invalid ticker, HTTP failures, rate limit (250/day free).
+- [x] Write tests with mocked HTTP responses.
 
 ### Acceptance criteria
 - `FMP.get_profile("AAPL")` returns `{:ok, %{sector: _, industry: _, ...}}`.
@@ -50,11 +50,11 @@ FMP provides financial statements, valuation ratios, profitability metrics, and 
 The Fundamental Analysis tab needs aggregated metrics (valuation, profitability, financial health) and a fundamental score (0–100). The Analysis context calls FMP via cache, computes a score based on how metrics compare to industry norms or absolute thresholds, and returns a value assessment (undervalued/fairly valued/overvalued).
 
 ### Required tasks
-- [ ] Extend `StockAnalysis.Analysis` with `get_fundamental(ticker)`.
-- [ ] Fetch profile, ratios, and statements via cache (24h TTL) → FMP integration.
-- [ ] Implement `compute_fundamental_score(ratios, profile)`: scoring algorithm based on valuation (P/E vs industry), profitability (margins, ROE), and financial health (current ratio, D/E). Return score 0–100, value assessment label, growth rating, health rating.
-- [ ] Expose endpoint: `GET /api/stocks/:ticker/fundamental` → JSON with ratios, statements, profile, score, assessment.
-- [ ] Add `FundamentalAnalysis` type to `packages/types`; update api-client with `getStockFundamental(ticker)`.
+- [x] Extend `StockAnalysis.Analysis` with `get_fundamental(ticker)`.
+- [x] Fetch profile, ratios, and statements via cache (24h TTL) → FMP integration.
+- [x] Implement `compute_fundamental_score(ratios, profile)`: scoring algorithm based on valuation (P/E vs industry), profitability (margins, ROE), and financial health (current ratio, D/E). Return score 0–100, value assessment label, growth rating, health rating.
+- [x] Expose endpoint: `GET /api/stocks/:ticker/fundamental` → JSON with ratios, statements, profile, score, assessment.
+- [x] Add `FundamentalAnalysis` type to `packages/types`; update api-client with `getStockFundamental(ticker)`.
 
 ### Acceptance criteria
 - Endpoint returns valuation ratios, profitability metrics, health metrics, statements, score 0–100, and assessment label.
@@ -81,11 +81,11 @@ The Fundamental Analysis tab needs aggregated metrics (valuation, profitability,
 The Emotional Analysis tab surfaces social sentiment from Reddit (r/wallstreetbets, r/stocks, r/investing) and news headlines. Raw posts and articles need to be fetched, filtered by ticker, and passed through a sentiment engine. This ticket builds the data pipeline; M3-004 does the scoring.
 
 ### Required tasks
-- [ ] Create module `StockAnalysis.Integrations.Reddit`: fetch recent posts mentioning a ticker from target subreddits via Reddit HTTP API or PRAW-equivalent Elixir client. Return list of `%{title, body, score, num_comments, subreddit, created_utc, url}`.
-- [ ] Create module `StockAnalysis.Integrations.Finnhub` (news): `get_news(ticker)` → list of `%{headline, summary, source, datetime, url, sentiment_from_source}`.
-- [ ] Cache Reddit results per ticker, 30min TTL; cache news per ticker, 30min TTL.
-- [ ] Handle rate limits: Reddit 60/min, Finnhub 60/min.
-- [ ] Write tests with mocked responses for both.
+- [x] Create module `StockAnalysis.Integrations.Reddit`: fetch recent posts mentioning a ticker from target subreddits via Reddit HTTP API or PRAW-equivalent Elixir client. Return list of `%{title, body, score, num_comments, subreddit, created_utc, url}`.
+- [x] Create module `StockAnalysis.Integrations.Finnhub` (news): `get_news(ticker)` → list of `%{headline, summary, source, datetime, url, sentiment_from_source}`.
+- [x] Cache Reddit results per ticker, 30min TTL; cache news per ticker, 30min TTL.
+- [x] Handle rate limits: Reddit 60/min, Finnhub 60/min.
+- [x] Write tests with mocked responses for both.
 
 ### Acceptance criteria
 - Reddit integration returns recent posts mentioning ticker from target subreddits.
@@ -113,17 +113,17 @@ The Emotional Analysis tab surfaces social sentiment from Reddit (r/wallstreetbe
 Raw posts and articles need to be analyzed for sentiment polarity (bullish/bearish/neutral). The Sentiment context orchestrates fetching, analysis (via LLM or FinBERT/VADER), and aggregation into an overall sentiment score (-100 to +100, normalized to 0–100 for the recommendation). The result powers the Emotional Analysis tab and feeds into the recommendation algorithm.
 
 ### Required tasks
-- [ ] Create `StockAnalysis.Sentiment` context module.
-- [ ] Implement sentiment engine: call OpenAI/Claude (e.g. GPT-4o-mini or Claude Haiku) or local model (FinBERT/VADER) to classify text as bullish/bearish/neutral with confidence.
-- [ ] Implement `get_sentiment(ticker)`:
+- [x] Create `StockAnalysis.Sentiment` context module.
+- [x] Implement sentiment engine: call OpenAI/Claude (e.g. GPT-4o-mini or Claude Haiku) or local model (FinBERT/VADER) to classify text as bullish/bearish/neutral with confidence.
+- [x] Implement `get_sentiment(ticker)`:
   1. Fetch Reddit posts and news articles (from integrations / cache).
   2. Run each through sentiment engine; cache individual results if desired.
   3. Aggregate: weighted average of post/article sentiments (weight by engagement for Reddit).
   4. Compute overall sentiment score (-100 to +100), trend (7d, 30d), mention count.
-- [ ] Return structured payload: overall score, trend, mention count, top posts with sentiment labels, news with sentiment.
-- [ ] Cache aggregated sentiment per ticker, 30min TTL.
-- [ ] Expose endpoint: `GET /api/stocks/:ticker/sentiment` → JSON.
-- [ ] Add `SentimentAnalysis` type to `packages/types`; update api-client with `getStockSentiment(ticker)`.
+- [x] Return structured payload: overall score, trend, mention count, top posts with sentiment labels, news with sentiment.
+- [x] Cache aggregated sentiment per ticker, 30min TTL.
+- [x] Expose endpoint: `GET /api/stocks/:ticker/sentiment` → JSON.
+- [x] Add `SentimentAnalysis` type to `packages/types`; update api-client with `getStockSentiment(ticker)`.
 
 ### Acceptance criteria
 - Endpoint returns sentiment score, trend, mention count, top posts with labels, news with labels.
@@ -401,10 +401,10 @@ Mobile users need the same four tabs and recommendation as web. This ticket acti
 
 ## Milestone 3 completion checklist
 
-- [ ] M3-001: FMP integration module
-- [ ] M3-002: Fundamental metrics and score
-- [ ] M3-003: Reddit and news sentiment integration
-- [ ] M3-004: Sentiment context and scoring engine
+- [x] M3-001: FMP integration module
+- [x] M3-002: Fundamental metrics and score
+- [x] M3-003: Reddit and news sentiment integration
+- [x] M3-004: Sentiment context and scoring engine
 - [ ] M3-005: Unusual Whales — full institutional data
 - [ ] M3-006: Recommendation algorithm
 - [ ] M3-007: Fundamental Analysis tab (web)

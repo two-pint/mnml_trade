@@ -3,6 +3,7 @@ defmodule StockAnalysisWeb.StocksController do
 
   alias StockAnalysis.Analysis
   alias StockAnalysis.InstitutionalActivity
+  alias StockAnalysis.Sentiment
   alias StockAnalysis.Stocks
 
   def trending(conn, _params) do
@@ -84,6 +85,34 @@ defmodule StockAnalysisWeb.StocksController do
         conn
         |> put_status(:ok)
         |> json(technical)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "not_found", message: "Stock not found"})
+    end
+  end
+
+  def sentiment(conn, %{"ticker" => ticker}) do
+    case Sentiment.get_sentiment(ticker) do
+      {:ok, sentiment} ->
+        conn
+        |> put_status(:ok)
+        |> json(sentiment)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "not_found", message: "No sentiment data found"})
+    end
+  end
+
+  def fundamental(conn, %{"ticker" => ticker}) do
+    case Analysis.get_fundamental(ticker) do
+      {:ok, fundamental} ->
+        conn
+        |> put_status(:ok)
+        |> json(fundamental)
 
       {:error, :not_found} ->
         conn

@@ -10,6 +10,16 @@ if System.get_env("UNUSUAL_WHALES_API_KEY") do
   config :stock_analysis, :unusual_whales_api_key, System.get_env("UNUSUAL_WHALES_API_KEY")
 end
 
+# FMP API key (optional in dev/test; set FMP_API_KEY or config)
+if System.get_env("FMP_API_KEY") do
+  config :stock_analysis, :fmp_api_key, System.get_env("FMP_API_KEY")
+end
+
+# Finnhub API key (optional in dev/test; set FINNHUB_API_KEY or config)
+if System.get_env("FINNHUB_API_KEY") do
+  config :stock_analysis, :finnhub_api_key, System.get_env("FINNHUB_API_KEY")
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
