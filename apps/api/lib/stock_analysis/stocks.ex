@@ -51,12 +51,15 @@ defmodule StockAnalysis.Stocks do
         Cache.put(cache_key, overview, ttl)
         {:ok, overview}
 
+      {:error, :rate_limit} ->
+        {:error, :rate_limit}
+
       {:error, _reason} ->
         {:error, :not_found}
     end
   end
 
-  @trending_tickers ~w(AAPL MSFT GOOGL AMZN NVDA META TSLA JPM V JNJ)
+  @trending_tickers ~w(AAPL MSFT GOOGL AMZN NVDA)
 
   @doc """
   Returns a list of trending/popular stocks with price and change.
@@ -81,15 +84,24 @@ defmodule StockAnalysis.Stocks do
 
   defp fetch_trending_overviews do
     @trending_tickers
-    |> Enum.reduce([], fn ticker, acc ->
-      case get_overview(ticker) do
-        {:ok, overview} ->
-          [overview_to_trending(overview) | acc]
+    |> Enum.reduce({[], false}, fn ticker, {acc, rate_limited} ->
+      if rate_limited do
+        {acc, true}
+      else
+        case get_overview(ticker) do
+          {:ok, overview} ->
+            Process.sleep(1_500)
+            {[overview_to_trending(overview) | acc], false}
 
-        _ ->
-          acc
+          {:error, :rate_limit} ->
+            {acc, true}
+
+          _ ->
+            {acc, false}
+        end
       end
     end)
+    |> elem(0)
     |> Enum.reverse()
   end
 
@@ -120,6 +132,9 @@ defmodule StockAnalysis.Stocks do
           {:ok, series} ->
             Cache.put(cache_key, series, ttl)
             {:ok, series}
+
+          {:error, :rate_limit} ->
+            {:error, :rate_limit}
 
           {:error, _} ->
             {:error, :not_found}

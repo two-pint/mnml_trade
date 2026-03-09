@@ -38,7 +38,7 @@ config :logger, :default_formatter,
 config :stock_analysis, StockAnalysis.Guardian,
   issuer: "stock_analysis",
   secret_key: "dev-only-secret-key-replace-in-production",
-  ttl: {1, :hour}
+  ttl: {7, :day}
 
 # CORS configuration
 config :stock_analysis, :cors,

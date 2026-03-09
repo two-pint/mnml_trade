@@ -78,6 +78,7 @@ defmodule StockAnalysis.Analysis do
       Cache.put(cache_key, technical, ttl)
       {:ok, technical}
     else
+      {:error, :rate_limit} -> {:error, :rate_limit}
       _ -> {:error, :not_found}
     end
   end

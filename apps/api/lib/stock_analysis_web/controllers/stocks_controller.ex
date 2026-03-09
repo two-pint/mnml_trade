@@ -73,6 +73,11 @@ defmodule StockAnalysisWeb.StocksController do
         |> put_status(:ok)
         |> json(series)
 
+      {:error, :rate_limit} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "service_unavailable", message: "Daily data temporarily unavailable — API rate limit reached."})
+
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
@@ -86,6 +91,11 @@ defmodule StockAnalysisWeb.StocksController do
         conn
         |> put_status(:ok)
         |> json(technical)
+
+      {:error, :rate_limit} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "service_unavailable", message: "Technical data temporarily unavailable — API rate limit reached."})
 
       {:error, :not_found} ->
         conn
@@ -129,6 +139,11 @@ defmodule StockAnalysisWeb.StocksController do
         conn
         |> put_status(:ok)
         |> json(enriched)
+
+      {:error, :rate_limit} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "service_unavailable", message: "Stock data temporarily unavailable — API rate limit reached. Try again in a minute."})
 
       {:error, :not_found} ->
         conn
