@@ -20,6 +20,9 @@ config :stock_analysis, StockAnalysisWeb.Endpoint,
   secret_key_base: "gKy/QwYKD4IB4ymmCCsFgCL8XEXpkEimNdU7ELh1OtV1REUrg/WT9OHbTev5osf5",
   server: false
 
+# Disable Req retries so stubbed 500/429 responses don't cause 7s backoff loops
+config :stock_analysis, :req_retry, false
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

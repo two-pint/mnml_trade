@@ -44,5 +44,7 @@ defmodule StockAnalysisWeb.Router do
     get "/institutional/:ticker/holdings", InstitutionalController, :holdings
     get "/institutional/:ticker/smart-money-score", InstitutionalController, :smart_money_score
     get "/institutional/market-tide", InstitutionalController, :market_tide
+
+    resources "/paper-trading/portfolios", PortfolioController, only: [:index, :create, :show, :update, :delete]
   end
 end

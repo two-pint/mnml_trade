@@ -177,7 +177,7 @@ defmodule StockAnalysis.Integrations.AlphaVantage do
       opts = [
         params: params,
         receive_timeout: 15_000,
-        retry: :transient
+        retry: Application.get_env(:stock_analysis, :req_retry, :transient)
       ]
 
       case Req.get(base_url(), opts) do

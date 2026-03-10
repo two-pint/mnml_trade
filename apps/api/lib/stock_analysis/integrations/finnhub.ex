@@ -58,7 +58,7 @@ defmodule StockAnalysis.Integrations.Finnhub do
       opts = [
         params: params,
         receive_timeout: 10_000,
-        retry: :transient
+        retry: Application.get_env(:stock_analysis, :req_retry, :transient)
       ]
 
       case Req.get(url, opts) do

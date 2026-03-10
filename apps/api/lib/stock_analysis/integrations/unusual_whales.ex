@@ -169,7 +169,7 @@ defmodule StockAnalysis.Integrations.UnusualWhales do
       opts = [
         headers: [{"authorization", "Bearer " <> key}],
         receive_timeout: 15_000,
-        retry: :transient
+        retry: Application.get_env(:stock_analysis, :req_retry, :transient)
       ]
 
       case Req.get(url, opts) do
