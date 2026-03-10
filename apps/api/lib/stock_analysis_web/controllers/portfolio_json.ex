@@ -9,6 +9,23 @@ defmodule StockAnalysisWeb.PortfolioJSON do
     %{data: portfolio_detail(portfolio)}
   end
 
+  def trade(%{result: %{transaction: tx, portfolio: portfolio}}) do
+    %{
+      data: %{
+        transaction: %{
+          id: tx.id,
+          ticker: tx.ticker,
+          side: tx.transaction_type,
+          quantity: tx.quantity,
+          price_per_share: tx.price_per_share,
+          total_amount: tx.total_amount,
+          executed_at: tx.executed_at
+        },
+        portfolio: portfolio_detail(portfolio)
+      }
+    }
+  end
+
   defp portfolio_summary(%Portfolio{} = p) do
     %{
       id: p.id,

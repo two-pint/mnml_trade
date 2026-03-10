@@ -30,3 +30,24 @@ export interface UpdatePortfolioRequest {
   name?: string;
   description?: string;
 }
+
+export interface ExecuteTradeRequest {
+  ticker: string;
+  side: "buy" | "sell";
+  quantity: number;
+}
+
+export interface PaperTransaction {
+  id: string;
+  ticker: string;
+  side: string;
+  quantity: string;
+  price_per_share: string;
+  total_amount: string;
+  executed_at: string;
+}
+
+export interface TradeResult {
+  transaction: PaperTransaction;
+  portfolio: PaperPortfolio;
+}

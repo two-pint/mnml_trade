@@ -21,7 +21,7 @@ defmodule StockAnalysis.PaperTrading.Transaction do
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(transaction, attrs) do
+  def create_changeset(transaction, attrs, portfolio_id) do
     transaction
     |> cast(attrs, [
       :ticker,
@@ -31,8 +31,7 @@ defmodule StockAnalysis.PaperTrading.Transaction do
       :total_amount,
       :recommendation_at_time,
       :notes,
-      :executed_at,
-      :portfolio_id
+      :executed_at
     ])
     |> validate_required([
       :ticker,
@@ -40,9 +39,9 @@ defmodule StockAnalysis.PaperTrading.Transaction do
       :quantity,
       :price_per_share,
       :total_amount,
-      :executed_at,
-      :portfolio_id
+      :executed_at
     ])
+    |> put_change(:portfolio_id, portfolio_id)
     |> validate_inclusion(:transaction_type, ["buy", "sell"])
     |> foreign_key_constraint(:portfolio_id)
     |> update_change(:ticker, &String.upcase/1)

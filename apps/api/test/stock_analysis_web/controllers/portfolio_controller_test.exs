@@ -232,4 +232,170 @@ defmodule StockAnalysisWeb.PortfolioControllerTest do
       assert json_response(conn, 404)
     end
   end
+
+  describe "POST /api/paper-trading/portfolios/:portfolio_id/trade" do
+    defp seed_price_in_cache(ticker, price) do
+      cache_key = StockAnalysis.Cache.key("stocks", String.upcase(ticker), "price")
+      StockAnalysis.Cache.put(cache_key, %{price: price}, 60)
+    end
+
+    test "executes a buy trade", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "Trade Test"})
+
+      seed_price_in_cache("AAPL", "175")
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "buy",
+          "quantity" => 10
+        })
+
+      assert %{
+               "data" => %{
+                 "transaction" => %{
+                   "ticker" => "AAPL",
+                   "side" => "buy",
+                   "quantity" => "10",
+                   "price_per_share" => "175",
+                   "total_amount" => "1750"
+                 },
+                 "portfolio" => %{
+                   "cash_balance" => "98250",
+                   "holdings" => [%{"ticker" => "AAPL", "quantity" => "10"}]
+                 }
+               }
+             } = json_response(conn, 201)
+    end
+
+    test "executes a sell trade", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "Sell Test"})
+
+      seed_price_in_cache("AAPL", "175")
+
+      build_conn()
+      |> auth_conn(token)
+      |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+        "ticker" => "AAPL",
+        "side" => "buy",
+        "quantity" => 10
+      })
+
+      seed_price_in_cache("AAPL", "180")
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "sell",
+          "quantity" => 5
+        })
+
+      assert %{
+               "data" => %{
+                 "transaction" => %{"side" => "sell", "quantity" => "5"},
+                 "portfolio" => %{
+                   "holdings" => [%{"quantity" => "5"}]
+                 }
+               }
+             } = json_response(conn, 201)
+    end
+
+    test "returns 422 for insufficient funds", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{
+          "name" => "Broke",
+          "starting_balance" => "100"
+        })
+
+      seed_price_in_cache("AAPL", "175")
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "buy",
+          "quantity" => 10
+        })
+
+      assert %{"error" => "insufficient_funds"} = json_response(conn, 422)
+    end
+
+    test "returns 422 for invalid side", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "Bad Side"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "hold",
+          "quantity" => 1
+        })
+
+      assert %{"error" => "invalid_side"} = json_response(conn, 422)
+    end
+
+    test "returns 422 for invalid quantity", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "Bad Qty"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "buy",
+          "quantity" => 0
+        })
+
+      assert %{"error" => "invalid_quantity"} = json_response(conn, 422)
+    end
+
+    test "returns 404 for another user's portfolio", %{conn: conn, token: token} do
+      {:ok, other} =
+        Accounts.register_user(%{
+          "email" => "other_trade@example.com",
+          "password" => "password123",
+          "username" => "other_trade"
+        })
+
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(other.id, %{"name" => "Private"})
+
+      seed_price_in_cache("AAPL", "100")
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "buy",
+          "quantity" => 1
+        })
+
+      assert json_response(conn, 404)
+    end
+
+    test "returns 401 without auth", %{conn: conn, user: user} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "No Auth"})
+
+      conn =
+        post(conn, ~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL",
+          "side" => "buy",
+          "quantity" => 1
+        })
+
+      assert json_response(conn, 401)
+    end
+  end
 end

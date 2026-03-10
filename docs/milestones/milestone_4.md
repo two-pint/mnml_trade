@@ -94,7 +94,7 @@ Users need to create, view, update, and delete paper portfolios. The context lay
 The core paper trading action: users buy or sell shares at the current cached price. The context must validate the trade (sufficient cash or shares, min/max size), execute it atomically (create transaction, update holding, update cash), and return the result. Correctness here is critical — an off-by-one in cash or quantity breaks user trust.
 
 ### Required tasks
-- [ ] Implement `execute_trade(user_id, portfolio_id, %{ticker, side, quantity})` in PaperTrading context.
+- [x] Implement `execute_trade(user_id, portfolio_id, %{ticker, side, quantity})` in PaperTrading context.
   - Verify ownership.
   - Get current price from Stocks cache (same 15s cache used by the UI).
   - **Buy**: validate `quantity >= 1`, `quantity <= 10_000`, `total_amount <= cash_balance`; optionally warn if `total_amount > 0.20 * portfolio_value`.
@@ -104,10 +104,10 @@ The core paper trading action: users buy or sell shares at the current cached pr
     2. Update or insert `PaperHolding`: on buy, increase quantity and recalculate average cost; on sell, decrease quantity (delete holding if quantity reaches 0).
     3. Update portfolio `cash_balance`: subtract on buy, add on sell.
   - Return `{:ok, %{transaction: tx, portfolio: updated_portfolio}}` or `{:error, reason}`.
-- [ ] Implement average cost calculation: `new_avg = (old_total_cost + new_total_cost) / (old_qty + new_qty)`.
+- [x] Implement average cost calculation: `new_avg = (old_total_cost + new_total_cost) / (old_qty + new_qty)`.
 - [ ] Optionally capture `recommendation_at_time` from current recommendation (if available).
-- [ ] Expose endpoint: `POST /api/paper-trading/portfolios/:id/trade` with body `{ticker, side, quantity}`.
-- [ ] Add `ExecuteTradeRequest` and `TradeResult` types to `packages/types`; update api-client.
+- [x] Expose endpoint: `POST /api/paper-trading/portfolios/:id/trade` with body `{ticker, side, quantity}`.
+- [x] Add `ExecuteTradeRequest` and `TradeResult` types to `packages/types`; update api-client.
 
 ### Acceptance criteria
 - Buy deducts cash, creates/updates holding with correct average cost, and records transaction.
@@ -354,7 +354,7 @@ Mobile users need the same paper trading capabilities as web: portfolio dashboar
 
 - [x] M4-001: Database schemas and migrations
 - [x] M4-002: Portfolio CRUD
-- [ ] M4-003: Trade execution
+- [x] M4-003: Trade execution
 - [ ] M4-004: Holdings and transaction history endpoints
 - [ ] M4-005: Performance metrics endpoint
 - [ ] M4-006: Portfolio dashboard (web)

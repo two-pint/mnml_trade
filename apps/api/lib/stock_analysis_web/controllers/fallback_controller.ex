@@ -13,4 +13,19 @@ defmodule StockAnalysisWeb.FallbackController do
     |> put_status(:not_found)
     |> json(%{error: "not_found", message: "Resource not found"})
   end
+
+  @trade_errors %{
+    insufficient_funds: "Insufficient cash balance for this trade",
+    insufficient_shares: "Insufficient shares to sell",
+    price_unavailable: "Unable to fetch current price for this ticker",
+    invalid_ticker: "Ticker is required",
+    invalid_side: "Side must be \"buy\" or \"sell\"",
+    invalid_quantity: "Quantity must be between 1 and 10,000"
+  }
+
+  def call(conn, {:error, reason}) when is_map_key(@trade_errors, reason) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{error: to_string(reason), message: @trade_errors[reason]})
+  end
 end
