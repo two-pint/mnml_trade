@@ -167,7 +167,7 @@ defmodule StockAnalysis.Recommendation do
   end
 
   defp cached_sentiment_score(ticker) do
-    cache_key = Cache.key("sentiment", ticker, "aggregated")
+    cache_key = Cache.key("sentiment", ticker, "aggregate")
     case Cache.get(cache_key) do
       %{score: score} when is_number(score) -> normalize_sentiment(score)
       _ -> nil
