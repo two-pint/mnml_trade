@@ -27,6 +27,12 @@ export interface StockOverview {
   recommendation?: RecommendationLabel;
   recommendation_score?: number;
   confidence?: number;
+  sub_scores?: {
+    technical: number | null;
+    fundamental: number | null;
+    sentiment: number | null;
+    institutional: number | null;
+  };
 }
 
 export type TechnicalSignal = "bullish" | "bearish" | "neutral";

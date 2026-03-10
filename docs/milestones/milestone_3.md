@@ -409,8 +409,8 @@ Mobile users need the same four tabs and recommendation as web. This ticket acti
 - [x] M3-006: Recommendation algorithm
 - [x] M3-007: Fundamental Analysis tab (web)
 - [x] M3-008: Emotional Analysis tab (web)
-- [ ] M3-009: Institutional Activity tab (web)
-- [ ] M3-010: Recommendation badge (web)
-- [ ] M3-011: All four tabs and recommendation (mobile)
+- [x] M3-009: Institutional Activity tab (web)
+- [x] M3-010: Recommendation badge (web)
+- [x] M3-011: All four tabs and recommendation (mobile)
 
 **Done when**: All four analysis tabs display real data on web and mobile; recommendation badge shows weighted score, label, and confidence; institutional tab shows options flow, dark pool, congressional, insider, and holdings with correct cache and rate-limit behavior.

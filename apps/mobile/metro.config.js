@@ -12,6 +12,10 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(monorepoRoot, "node_modules"),
 ];
+config.resolver.extraNodeModules = {
+  "@repo/api-client": path.resolve(monorepoRoot, "packages/api-client"),
+  "@repo/types": path.resolve(monorepoRoot, "packages/types"),
+};
 config.resolver.disableHierarchicalLookup = true;
 
 module.exports = withNativeWind(config, { input: "./global.css" });

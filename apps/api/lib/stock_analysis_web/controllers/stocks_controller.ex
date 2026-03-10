@@ -158,7 +158,13 @@ defmodule StockAnalysisWeb.StocksController do
         Map.merge(overview, %{
           recommendation: rec.recommendation,
           recommendation_score: rec.recommendation_score,
-          confidence: rec.confidence
+          confidence: rec.confidence,
+          sub_scores: %{
+            technical: rec.components[:technical],
+            fundamental: rec.components[:fundamental],
+            sentiment: rec.components[:sentiment],
+            institutional: rec.components[:institutional]
+          }
         })
 
       {:error, _} ->
