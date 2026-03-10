@@ -55,4 +55,14 @@ defmodule StockAnalysisWeb.PortfolioController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  def trade(conn, %{"portfolio_id" => portfolio_id} = params) do
+    user = Guardian.Plug.current_resource(conn)
+
+    with {:ok, result} <- PaperTrading.execute_trade(user.id, portfolio_id, params) do
+      conn
+      |> put_status(:created)
+      |> render(:trade, result: result)
+    end
+  end
 end

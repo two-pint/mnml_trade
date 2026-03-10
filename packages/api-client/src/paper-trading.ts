@@ -2,6 +2,8 @@ import type {
   PaperPortfolio,
   CreatePortfolioRequest,
   UpdatePortfolioRequest,
+  ExecuteTradeRequest,
+  TradeResult,
 } from "@repo/types";
 import type { ApiClient } from "./client";
 
@@ -29,6 +31,13 @@ export function createPaperTradingApi(client: ApiClient) {
 
     deletePortfolio(id: string): Promise<void> {
       return client.delete<void>(`/api/paper-trading/portfolios/${id}`);
+    },
+
+    executeTrade(portfolioId: string, payload: ExecuteTradeRequest): Promise<DataResponse<TradeResult>> {
+      return client.post<DataResponse<TradeResult>>(
+        `/api/paper-trading/portfolios/${portfolioId}/trade`,
+        payload,
+      );
     },
   };
 }

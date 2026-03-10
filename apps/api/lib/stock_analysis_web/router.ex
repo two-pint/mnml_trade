@@ -46,5 +46,6 @@ defmodule StockAnalysisWeb.Router do
     get "/institutional/market-tide", InstitutionalController, :market_tide
 
     resources "/paper-trading/portfolios", PortfolioController, only: [:index, :create, :show, :update, :delete]
+    post "/paper-trading/portfolios/:portfolio_id/trade", PortfolioController, :trade
   end
 end

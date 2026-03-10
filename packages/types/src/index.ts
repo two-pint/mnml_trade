@@ -55,4 +55,7 @@ export type {
   PaperHolding,
   CreatePortfolioRequest,
   UpdatePortfolioRequest,
+  ExecuteTradeRequest,
+  PaperTransaction,
+  TradeResult,
 } from "./paper-trading";
