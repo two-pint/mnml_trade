@@ -16,11 +16,11 @@
 Paper trading requires three new database tables — portfolios, holdings, and transactions — with relationships to the existing User table. Getting the schemas and indexes right up front prevents data integrity issues and expensive migrations later. These tables back the entire paper trading feature.
 
 ### Required tasks
-- [ ] Create Ecto schema and migration for `paper_portfolios`: `user_id` (references users), `name` (string), `description` (text, nullable), `starting_balance` (decimal, default 100_000), `cash_balance` (decimal), `is_active` (boolean, default true), timestamps. Index on `user_id`.
-- [ ] Create Ecto schema and migration for `paper_holdings`: `portfolio_id` (references paper_portfolios, on_delete cascade), `ticker` (string), `quantity` (decimal), `average_cost` (decimal), `total_cost` (decimal), `last_updated` (utc_datetime), timestamps. Unique index on `(portfolio_id, ticker)`.
-- [ ] Create Ecto schema and migration for `paper_transactions`: `portfolio_id` (references paper_portfolios, on_delete cascade), `ticker` (string), `transaction_type` (string: "buy"/"sell"), `quantity` (decimal), `price_per_share` (decimal), `total_amount` (decimal), `recommendation_at_time` (string, nullable), `notes` (text, nullable), `executed_at` (utc_datetime), timestamps. Index on `(portfolio_id, executed_at DESC)`, index on `(portfolio_id, ticker)`.
-- [ ] Add associations in schemas: Portfolio `has_many` holdings and transactions; holdings and transactions `belongs_to` portfolio.
-- [ ] Run migrations and verify in dev and test.
+- [x] Create Ecto schema and migration for `paper_portfolios`: `user_id` (references users), `name` (string), `description` (text, nullable), `starting_balance` (decimal, default 100_000), `cash_balance` (decimal), `is_active` (boolean, default true), timestamps. Index on `user_id`.
+- [x] Create Ecto schema and migration for `paper_holdings`: `portfolio_id` (references paper_portfolios, on_delete cascade), `ticker` (string), `quantity` (decimal), `average_cost` (decimal), `total_cost` (decimal), `last_updated` (utc_datetime), timestamps. Unique index on `(portfolio_id, ticker)`.
+- [x] Create Ecto schema and migration for `paper_transactions`: `portfolio_id` (references paper_portfolios, on_delete cascade), `ticker` (string), `transaction_type` (string: "buy"/"sell"), `quantity` (decimal), `price_per_share` (decimal), `total_amount` (decimal), `recommendation_at_time` (string, nullable), `notes` (text, nullable), `executed_at` (utc_datetime), timestamps. Index on `(portfolio_id, executed_at DESC)`, index on `(portfolio_id, ticker)`.
+- [x] Add associations in schemas: Portfolio `has_many` holdings and transactions; holdings and transactions `belongs_to` portfolio.
+- [x] Run migrations and verify in dev and test.
 
 ### Acceptance criteria
 - All three tables created with correct columns, types, and constraints.
@@ -50,19 +50,19 @@ Paper trading requires three new database tables — portfolios, holdings, and t
 Users need to create, view, update, and delete paper portfolios. The context layer encapsulates all business logic — validation, ownership checks, and default values — so controllers stay thin. Each user gets at least one portfolio; the default starting balance is $100,000.
 
 ### Required tasks
-- [ ] Create `StockAnalysis.PaperTrading` context module.
-- [ ] Implement `create_portfolio(user_id, attrs)`: validate name required; set `cash_balance = starting_balance`; default starting balance 100_000 if not provided. Return `{:ok, portfolio}` or `{:error, changeset}`.
-- [ ] Implement `list_portfolios(user_id)`: return all portfolios for user with preloaded holdings count.
-- [ ] Implement `get_portfolio(user_id, portfolio_id)`: return portfolio with preloaded holdings; return `{:error, :not_found}` if not found or not owned by user.
-- [ ] Implement `update_portfolio(user_id, portfolio_id, attrs)`: allow updating name and description only (not balances).
-- [ ] Implement `delete_portfolio(user_id, portfolio_id)`: soft-delete (set `is_active = false`) or hard-delete; verify ownership.
-- [ ] Expose endpoints:
+- [x] Create `StockAnalysis.PaperTrading` context module.
+- [x] Implement `create_portfolio(user_id, attrs)`: validate name required; set `cash_balance = starting_balance`; default starting balance 100_000 if not provided. Return `{:ok, portfolio}` or `{:error, changeset}`.
+- [x] Implement `list_portfolios(user_id)`: return all portfolios for user with preloaded holdings count.
+- [x] Implement `get_portfolio(user_id, portfolio_id)`: return portfolio with preloaded holdings; return `{:error, :not_found}` if not found or not owned by user.
+- [x] Implement `update_portfolio(user_id, portfolio_id, attrs)`: allow updating name and description only (not balances).
+- [x] Implement `delete_portfolio(user_id, portfolio_id)`: soft-delete (set `is_active = false`) or hard-delete; verify ownership.
+- [x] Expose endpoints:
   - `GET /api/paper-trading/portfolios` — list
   - `POST /api/paper-trading/portfolios` — create
   - `GET /api/paper-trading/portfolios/:id` — show
   - `PUT /api/paper-trading/portfolios/:id` — update
   - `DELETE /api/paper-trading/portfolios/:id` — delete
-- [ ] Add types (`PaperPortfolio`, `CreatePortfolioRequest`) to `packages/types`; add api-client methods.
+- [x] Add types (`PaperPortfolio`, `CreatePortfolioRequest`) to `packages/types`; add api-client methods.
 
 ### Acceptance criteria
 - User can create a portfolio; `cash_balance` equals `starting_balance`.
@@ -352,8 +352,8 @@ Mobile users need the same paper trading capabilities as web: portfolio dashboar
 
 ## Milestone 4 completion checklist
 
-- [ ] M4-001: Database schemas and migrations
-- [ ] M4-002: Portfolio CRUD
+- [x] M4-001: Database schemas and migrations
+- [x] M4-002: Portfolio CRUD
 - [ ] M4-003: Trade execution
 - [ ] M4-004: Holdings and transaction history endpoints
 - [ ] M4-005: Performance metrics endpoint

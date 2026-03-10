@@ -50,3 +50,9 @@ export type {
   SentimentItemLabel,
   SentimentTrend,
 } from "./stocks";
+export type {
+  PaperPortfolio,
+  PaperHolding,
+  CreatePortfolioRequest,
+  UpdatePortfolioRequest,
+} from "./paper-trading";

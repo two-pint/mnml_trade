@@ -52,7 +52,7 @@ defmodule StockAnalysis.Integrations.Reddit do
       params: params,
       headers: [{"user-agent", @user_agent}],
       receive_timeout: 10_000,
-      retry: :transient
+      retry: Application.get_env(:stock_analysis, :req_retry, :transient)
     ]
 
     case Req.get(url, opts) do

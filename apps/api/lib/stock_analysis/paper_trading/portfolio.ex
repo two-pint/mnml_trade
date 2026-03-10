@@ -21,17 +21,18 @@ defmodule StockAnalysis.PaperTrading.Portfolio do
     timestamps(type: :utc_datetime)
   end
 
-  def create_changeset(portfolio, attrs) do
+  def create_changeset(portfolio, attrs, user_id) do
     portfolio
-    |> cast(attrs, [:name, :description, :starting_balance, :is_active, :user_id])
-    |> validate_required([:name, :user_id])
+    |> cast(attrs, [:name, :description, :starting_balance, :is_active])
+    |> validate_required([:name])
+    |> put_change(:user_id, user_id)
     |> foreign_key_constraint(:user_id)
     |> set_initial_cash_balance()
   end
 
   def changeset(portfolio, attrs) do
     portfolio
-    |> cast(attrs, [:name, :description, :cash_balance, :is_active])
+    |> cast(attrs, [:name, :description])
     |> validate_required([:name])
   end
 
