@@ -16,6 +16,9 @@ import {
 } from "recharts";
 import type { DailyOhlcv, StockOverview, TechnicalAnalysis } from "@repo/types";
 import { stocksApi } from "@/lib/api";
+import FundamentalTab from "@/components/fundamental-tab";
+import EmotionalTab from "@/components/emotional-tab";
+import InstitutionalTab from "@/components/institutional-tab";
 
 type Timeframe = "1D" | "1M" | "6M" | "1Y";
 
@@ -60,7 +63,7 @@ function IndicatorRow({
   interpretation,
 }: {
   name: string;
-  value: string | number | null;
+  value: string | number | number[] | null;
   interpretation?: "bullish" | "bearish" | "neutral";
 }) {
   const color =
@@ -227,6 +230,72 @@ export default function StockPage() {
                 </dd>
               </div>
             </dl>
+            {overview.recommendation && (
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className={`rounded-full px-4 py-1.5 text-sm font-bold ${
+                      overview.recommendation === "Strong Buy" || overview.recommendation === "Buy"
+                        ? "bg-bullish-light text-bullish-dark"
+                        : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
+                          ? "bg-bearish-light text-bearish-dark"
+                          : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {overview.recommendation}
+                  </span>
+                  {overview.recommendation_score != null && (
+                    <span className="text-sm font-medium text-gray-600">
+                      Score: {overview.recommendation_score}/100
+                    </span>
+                  )}
+                  {overview.confidence != null && (
+                    <span className="text-sm text-gray-400">
+                      {overview.confidence}% confidence
+                    </span>
+                  )}
+                </div>
+                {overview.sub_scores && (
+                  <div className="flex flex-wrap gap-3">
+                    {(
+                      [
+                        { key: "technical" as const, label: "Technical", weight: "30%" },
+                        { key: "fundamental" as const, label: "Fundamental", weight: "30%" },
+                        { key: "sentiment" as const, label: "Sentiment", weight: "20%" },
+                        { key: "institutional" as const, label: "Institutional", weight: "20%" },
+                      ] as const
+                    ).map(({ key, label, weight }) => {
+                      const val = overview.sub_scores?.[key];
+                      const barColor =
+                        val != null && val >= 60
+                          ? "bg-bullish"
+                          : val != null && val < 40
+                            ? "bg-bearish"
+                            : "bg-gray-400";
+                      return (
+                        <div key={key} className="flex-1 min-w-[100px]">
+                          <div className="flex items-baseline justify-between text-xs">
+                            <span className="text-gray-500">{label}</span>
+                            <span className="font-medium text-gray-700">
+                              {val != null ? val : "—"}
+                            </span>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full rounded-full bg-gray-100">
+                            {val != null && (
+                              <div
+                                className={`h-full rounded-full ${barColor}`}
+                                style={{ width: `${val}%` }}
+                              />
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-[10px] text-gray-400">{weight}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
             <p className="mt-2 text-xs text-gray-400">
               Market cap & 52w range coming soon
             </p>
@@ -426,11 +495,11 @@ export default function StockPage() {
         </section>
       )}
 
-      {(tab === "fundamental" || tab === "emotional" || tab === "institutional") && (
-        <section className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-          <p className="text-gray-500">Coming soon</p>
-        </section>
-      )}
+      {tab === "fundamental" && <FundamentalTab ticker={ticker} />}
+
+      {tab === "emotional" && <EmotionalTab ticker={ticker} tabSetter={setTab} />}
+
+      {tab === "institutional" && <InstitutionalTab ticker={ticker} />}
     </div>
   );
 }

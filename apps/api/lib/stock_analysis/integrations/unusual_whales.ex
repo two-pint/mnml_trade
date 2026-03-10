@@ -59,6 +59,96 @@ defmodule StockAnalysis.Integrations.UnusualWhales do
     end
   end
 
+  @doc """
+  Fetches congressional trades for a ticker (last 90 days).
+
+  Returns `{:ok, [%{representative: _, transaction_type: _, amount: _, date: _, party: _}, ...]}`
+  or `{:error, reason}`.
+  """
+  def get_congressional(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+    path = "/api/congressional-trading/#{ticker}"
+
+    case get(path, []) do
+      {:ok, body} when is_map(body) ->
+        trades = extract_list(body)
+        {:ok, Enum.map(trades, &normalize_congressional/1)}
+
+      {:ok, _} ->
+        {:error, :invalid_response}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Fetches insider trades for a ticker (last 90 days).
+
+  Returns `{:ok, [%{insider_name: _, title: _, transaction_type: _, shares: _, price: _, date: _}, ...]}`
+  or `{:error, reason}`.
+  """
+  def get_insider_trades(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+    path = "/api/insider-trading/#{ticker}"
+
+    case get(path, []) do
+      {:ok, body} when is_map(body) ->
+        trades = extract_list(body)
+        {:ok, Enum.map(trades, &normalize_insider/1)}
+
+      {:ok, _} ->
+        {:error, :invalid_response}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Fetches institutional holdings (13F) for a ticker.
+
+  Returns `{:ok, [%{holder: _, shares: _, value: _, change: _, date: _}, ...]}`
+  or `{:error, reason}`.
+  """
+  def get_institutional_holdings(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+    path = "/api/institutional-holdings/#{ticker}"
+
+    case get(path, []) do
+      {:ok, body} when is_map(body) ->
+        holdings = extract_list(body)
+        {:ok, Enum.map(holdings, &normalize_holding/1)}
+
+      {:ok, _} ->
+        {:error, :invalid_response}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Fetches overall market tide (market-wide sentiment indicator).
+
+  Returns `{:ok, %{score: _, label: _, call_volume: _, put_volume: _, ratio: _}}`
+  or `{:error, reason}`.
+  """
+  def get_market_tide do
+    path = "/api/market/tide"
+
+    case get(path, []) do
+      {:ok, body} when is_map(body) ->
+        {:ok, normalize_market_tide(body)}
+
+      {:ok, _} ->
+        {:error, :invalid_response}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   ## Private: HTTP
 
   defp api_key do
@@ -142,6 +232,70 @@ defmodule StockAnalysis.Integrations.UnusualWhales do
       volume: num_or_nil(raw["volume"] || raw["total_volume"] || raw["dark_pool_volume"]),
       net_buy_sell: num_or_nil(raw["net_buy_sell"] || raw["net"] || raw["net_volume"]),
       block_trades: raw["block_trades"] || raw["blocks"] || []
+    }
+  end
+
+  defp extract_list(%{"data" => list}) when is_list(list), do: list
+  defp extract_list(%{"trades" => list}) when is_list(list), do: list
+  defp extract_list(%{"holdings" => list}) when is_list(list), do: list
+  defp extract_list(%{"results" => list}) when is_list(list), do: list
+  defp extract_list(list) when is_list(list), do: list
+  defp extract_list(_), do: []
+
+  defp normalize_congressional(raw) when is_map(raw) do
+    %{
+      representative: str_or_nil(raw["representative"] || raw["name"] || raw["politician"]),
+      transaction_type: str_or_nil(raw["transaction_type"] || raw["type"]),
+      amount: str_or_nil(raw["amount"] || raw["range"]),
+      date: str_or_nil(raw["transaction_date"] || raw["date"]),
+      party: str_or_nil(raw["party"]),
+      ticker: str_or_nil(raw["ticker"] || raw["symbol"])
+    }
+  end
+
+  defp normalize_insider(raw) when is_map(raw) do
+    %{
+      insider_name: str_or_nil(raw["insider_name"] || raw["name"] || raw["owner"]),
+      title: str_or_nil(raw["title"] || raw["relationship"]),
+      transaction_type: str_or_nil(raw["transaction_type"] || raw["type"]),
+      shares: num_or_nil(raw["shares"] || raw["quantity"]),
+      price: num_or_nil(raw["price"] || raw["avg_price"]),
+      value: num_or_nil(raw["value"] || raw["total_value"]),
+      date: str_or_nil(raw["filing_date"] || raw["date"])
+    }
+  end
+
+  defp normalize_holding(raw) when is_map(raw) do
+    %{
+      holder: str_or_nil(raw["holder"] || raw["institution"] || raw["name"]),
+      shares: num_or_nil(raw["shares"] || raw["quantity"]),
+      value: num_or_nil(raw["value"] || raw["market_value"]),
+      change: num_or_nil(raw["change"] || raw["shares_change"]),
+      change_percent: num_or_nil(raw["change_percent"] || raw["percent_change"]),
+      date: str_or_nil(raw["date"] || raw["report_date"])
+    }
+  end
+
+  defp normalize_market_tide(raw) when is_map(raw) do
+    call_vol = num_or_nil(raw["call_volume"] || raw["calls"])
+    put_vol = num_or_nil(raw["put_volume"] || raw["puts"])
+    ratio = if call_vol && put_vol && put_vol > 0, do: Float.round(call_vol / put_vol, 2), else: nil
+
+    score = num_or_nil(raw["score"] || raw["tide_score"])
+    label =
+      cond do
+        is_number(score) and score > 60 -> "Bullish"
+        is_number(score) and score < 40 -> "Bearish"
+        is_number(score) -> "Neutral"
+        true -> str_or_nil(raw["label"] || raw["sentiment"])
+      end
+
+    %{
+      score: score,
+      label: label,
+      call_volume: call_vol,
+      put_volume: put_vol,
+      ratio: ratio
     }
   end
 

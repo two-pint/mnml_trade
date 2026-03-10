@@ -16,12 +16,12 @@
 FMP provides financial statements, valuation ratios, profitability metrics, and company profiles needed for the Fundamental Analysis tab. A dedicated integration module encapsulates API auth, HTTP, error handling, and response normalization, keeping the Analysis context clean.
 
 ### Required tasks
-- [ ] Create module `StockAnalysis.Integrations.FMP`.
-- [ ] Configure API key via env `FMP_API_KEY`.
-- [ ] Implement functions: `get_profile(ticker)` (description, sector, industry, market cap, employees, HQ), `get_ratios(ticker)` (P/E, P/B, PEG, P/S, ROE, ROA, margins, current ratio, quick ratio, D/E, interest coverage), `get_income_statement(ticker, period)` (quarterly/annual, last 4q / 3y), `get_balance_sheet(ticker, period)`, `get_cash_flow(ticker, period)`.
-- [ ] Normalize responses into consistent structs/maps.
-- [ ] Handle errors: invalid ticker, HTTP failures, rate limit (250/day free).
-- [ ] Write tests with mocked HTTP responses.
+- [x] Create module `StockAnalysis.Integrations.FMP`.
+- [x] Configure API key via env `FMP_API_KEY`.
+- [x] Implement functions: `get_profile(ticker)` (description, sector, industry, market cap, employees, HQ), `get_ratios(ticker)` (P/E, P/B, PEG, P/S, ROE, ROA, margins, current ratio, quick ratio, D/E, interest coverage), `get_income_statement(ticker, period)` (quarterly/annual, last 4q / 3y), `get_balance_sheet(ticker, period)`, `get_cash_flow(ticker, period)`.
+- [x] Normalize responses into consistent structs/maps.
+- [x] Handle errors: invalid ticker, HTTP failures, rate limit (250/day free).
+- [x] Write tests with mocked HTTP responses.
 
 ### Acceptance criteria
 - `FMP.get_profile("AAPL")` returns `{:ok, %{sector: _, industry: _, ...}}`.
@@ -50,11 +50,11 @@ FMP provides financial statements, valuation ratios, profitability metrics, and 
 The Fundamental Analysis tab needs aggregated metrics (valuation, profitability, financial health) and a fundamental score (0–100). The Analysis context calls FMP via cache, computes a score based on how metrics compare to industry norms or absolute thresholds, and returns a value assessment (undervalued/fairly valued/overvalued).
 
 ### Required tasks
-- [ ] Extend `StockAnalysis.Analysis` with `get_fundamental(ticker)`.
-- [ ] Fetch profile, ratios, and statements via cache (24h TTL) → FMP integration.
-- [ ] Implement `compute_fundamental_score(ratios, profile)`: scoring algorithm based on valuation (P/E vs industry), profitability (margins, ROE), and financial health (current ratio, D/E). Return score 0–100, value assessment label, growth rating, health rating.
-- [ ] Expose endpoint: `GET /api/stocks/:ticker/fundamental` → JSON with ratios, statements, profile, score, assessment.
-- [ ] Add `FundamentalAnalysis` type to `packages/types`; update api-client with `getStockFundamental(ticker)`.
+- [x] Extend `StockAnalysis.Analysis` with `get_fundamental(ticker)`.
+- [x] Fetch profile, ratios, and statements via cache (24h TTL) → FMP integration.
+- [x] Implement `compute_fundamental_score(ratios, profile)`: scoring algorithm based on valuation (P/E vs industry), profitability (margins, ROE), and financial health (current ratio, D/E). Return score 0–100, value assessment label, growth rating, health rating.
+- [x] Expose endpoint: `GET /api/stocks/:ticker/fundamental` → JSON with ratios, statements, profile, score, assessment.
+- [x] Add `FundamentalAnalysis` type to `packages/types`; update api-client with `getStockFundamental(ticker)`.
 
 ### Acceptance criteria
 - Endpoint returns valuation ratios, profitability metrics, health metrics, statements, score 0–100, and assessment label.
@@ -81,11 +81,11 @@ The Fundamental Analysis tab needs aggregated metrics (valuation, profitability,
 The Emotional Analysis tab surfaces social sentiment from Reddit (r/wallstreetbets, r/stocks, r/investing) and news headlines. Raw posts and articles need to be fetched, filtered by ticker, and passed through a sentiment engine. This ticket builds the data pipeline; M3-004 does the scoring.
 
 ### Required tasks
-- [ ] Create module `StockAnalysis.Integrations.Reddit`: fetch recent posts mentioning a ticker from target subreddits via Reddit HTTP API or PRAW-equivalent Elixir client. Return list of `%{title, body, score, num_comments, subreddit, created_utc, url}`.
-- [ ] Create module `StockAnalysis.Integrations.Finnhub` (news): `get_news(ticker)` → list of `%{headline, summary, source, datetime, url, sentiment_from_source}`.
-- [ ] Cache Reddit results per ticker, 30min TTL; cache news per ticker, 30min TTL.
-- [ ] Handle rate limits: Reddit 60/min, Finnhub 60/min.
-- [ ] Write tests with mocked responses for both.
+- [x] Create module `StockAnalysis.Integrations.Reddit`: fetch recent posts mentioning a ticker from target subreddits via Reddit HTTP API or PRAW-equivalent Elixir client. Return list of `%{title, body, score, num_comments, subreddit, created_utc, url}`.
+- [x] Create module `StockAnalysis.Integrations.Finnhub` (news): `get_news(ticker)` → list of `%{headline, summary, source, datetime, url, sentiment_from_source}`.
+- [x] Cache Reddit results per ticker, 30min TTL; cache news per ticker, 30min TTL.
+- [x] Handle rate limits: Reddit 60/min, Finnhub 60/min.
+- [x] Write tests with mocked responses for both.
 
 ### Acceptance criteria
 - Reddit integration returns recent posts mentioning ticker from target subreddits.
@@ -113,17 +113,17 @@ The Emotional Analysis tab surfaces social sentiment from Reddit (r/wallstreetbe
 Raw posts and articles need to be analyzed for sentiment polarity (bullish/bearish/neutral). The Sentiment context orchestrates fetching, analysis (via LLM or FinBERT/VADER), and aggregation into an overall sentiment score (-100 to +100, normalized to 0–100 for the recommendation). The result powers the Emotional Analysis tab and feeds into the recommendation algorithm.
 
 ### Required tasks
-- [ ] Create `StockAnalysis.Sentiment` context module.
-- [ ] Implement sentiment engine: call OpenAI/Claude (e.g. GPT-4o-mini or Claude Haiku) or local model (FinBERT/VADER) to classify text as bullish/bearish/neutral with confidence.
-- [ ] Implement `get_sentiment(ticker)`:
+- [x] Create `StockAnalysis.Sentiment` context module.
+- [x] Implement sentiment engine: call OpenAI/Claude (e.g. GPT-4o-mini or Claude Haiku) or local model (FinBERT/VADER) to classify text as bullish/bearish/neutral with confidence.
+- [x] Implement `get_sentiment(ticker)`:
   1. Fetch Reddit posts and news articles (from integrations / cache).
   2. Run each through sentiment engine; cache individual results if desired.
   3. Aggregate: weighted average of post/article sentiments (weight by engagement for Reddit).
   4. Compute overall sentiment score (-100 to +100), trend (7d, 30d), mention count.
-- [ ] Return structured payload: overall score, trend, mention count, top posts with sentiment labels, news with sentiment.
-- [ ] Cache aggregated sentiment per ticker, 30min TTL.
-- [ ] Expose endpoint: `GET /api/stocks/:ticker/sentiment` → JSON.
-- [ ] Add `SentimentAnalysis` type to `packages/types`; update api-client with `getStockSentiment(ticker)`.
+- [x] Return structured payload: overall score, trend, mention count, top posts with sentiment labels, news with sentiment.
+- [x] Cache aggregated sentiment per ticker, 30min TTL.
+- [x] Expose endpoint: `GET /api/stocks/:ticker/sentiment` → JSON.
+- [x] Add `SentimentAnalysis` type to `packages/types`; update api-client with `getStockSentiment(ticker)`.
 
 ### Acceptance criteria
 - Endpoint returns sentiment score, trend, mention count, top posts with labels, news with labels.
@@ -152,18 +152,18 @@ Raw posts and articles need to be analyzed for sentiment polarity (bullish/beari
 M2 added basic options flow and dark pool. The full Institutional Activity tab (PRD §3.6) adds congressional trades, insider transactions, institutional holdings (13F), market tide, and a smart money score. These endpoints complete the institutional picture and feed the 20% weight in the recommendation.
 
 ### Required tasks
-- [ ] Extend `StockAnalysis.Integrations.UnusualWhales` with: `get_congressional(ticker)` (last 90d), `get_insider_trades(ticker)` (last 90d), `get_institutional_holdings(ticker)` (13F, top holders), `get_market_tide()` (overall market sentiment).
-- [ ] Normalize each response into typed structs.
-- [ ] Cache TTLs: congressional/insider 24h, holdings 7d, market tide 1h.
-- [ ] Extend `StockAnalysis.InstitutionalActivity` context: `get_full(ticker)` returns options flow + dark pool + congressional + insider + holdings + market tide.
-- [ ] Implement `compute_smart_money_score(options_flow, dark_pool, congressional, insider)`: aggregate institutional sentiment into 0–100 score.
-- [ ] Expose additional endpoints or extend existing:
+- [x] Extend `StockAnalysis.Integrations.UnusualWhales` with: `get_congressional(ticker)` (last 90d), `get_insider_trades(ticker)` (last 90d), `get_institutional_holdings(ticker)` (13F, top holders), `get_market_tide()` (overall market sentiment).
+- [x] Normalize each response into typed structs.
+- [x] Cache TTLs: congressional/insider 24h, holdings 7d, market tide 1h.
+- [x] Extend `StockAnalysis.InstitutionalActivity` context: `get_full(ticker)` returns options flow + dark pool + congressional + insider + holdings + market tide.
+- [x] Implement `compute_smart_money_score(options_flow, dark_pool, congressional, insider)`: aggregate institutional sentiment into 0–100 score.
+- [x] Expose additional endpoints or extend existing:
   - `GET /api/institutional/:ticker/congressional`
   - `GET /api/institutional/:ticker/insider-trades`
   - `GET /api/institutional/:ticker/holdings`
   - `GET /api/institutional/market-tide`
   - `GET /api/institutional/:ticker/smart-money-score`
-- [ ] Add types and api-client methods for each.
+- [x] Add types and api-client methods for each.
 
 ### Acceptance criteria
 - All institutional endpoints return data with correct cache TTLs and `data_as_of` timestamps.
@@ -193,7 +193,7 @@ M2 added basic options flow and dark pool. The full Institutional Activity tab (
 The stock overview shows an overall recommendation (Strong Buy / Buy / Hold / Sell / Strong Sell) with a confidence score. This is the product's core value proposition — combining four analysis dimensions into one actionable label. The algorithm must be transparent and tunable.
 
 ### Required tasks
-- [ ] Create module or function in Analysis context: `compute_recommendation(ticker)`.
+- [x] Create module or function in Analysis context: `compute_recommendation(ticker)`.
   1. Get technical score (0–100) from Analysis.
   2. Get fundamental score (0–100) from Analysis.
   3. Get sentiment score (normalized to 0–100) from Sentiment.
@@ -201,9 +201,9 @@ The stock overview shows an overall recommendation (Strong Buy / Buy / Hold / Se
   5. Weighted sum: `0.30*tech + 0.30*fund + 0.20*sentiment + 0.20*institutional`.
   6. Map to label: 0–20 Strong Sell, 20–40 Sell, 40–60 Hold, 60–80 Buy, 80–100 Strong Buy.
   7. Confidence: derived from sub-score agreement (e.g. low variance = high confidence).
-- [ ] Update `GET /api/stocks/:ticker` response to include `recommendation`, `recommendation_score`, and `confidence`.
-- [ ] Handle partial data: if a sub-score is unavailable, compute with available scores and note reduced confidence.
-- [ ] Add recommendation fields to `StockOverview` type in `packages/types`.
+- [x] Update `GET /api/stocks/:ticker` response to include `recommendation`, `recommendation_score`, and `confidence`.
+- [x] Handle partial data: if a sub-score is unavailable, compute with available scores and note reduced confidence.
+- [x] Add recommendation fields to `StockOverview` type in `packages/types`.
 
 ### Acceptance criteria
 - Stock overview JSON includes recommendation label, score, and confidence.
@@ -232,15 +232,15 @@ The stock overview shows an overall recommendation (Strong Buy / Buy / Hold / Se
 Users need to view valuation ratios, profitability metrics, financial health indicators, financial statements, and company overview in a dedicated tab. This ticket builds the Fundamental tab UI and wires it to the API endpoint from M3-002.
 
 ### Required tasks
-- [ ] Activate the "Fundamental" tab on the stock detail page (remove "Coming soon").
-- [ ] Fetch `api.getStockFundamental(ticker)` via React Query when tab is active.
-- [ ] **Valuation section**: display P/E (with industry avg if available), P/B, PEG, P/S in cards or table.
-- [ ] **Profitability section**: gross margin, operating margin, net margin, ROE, ROA.
-- [ ] **Financial health section**: current ratio, quick ratio, D/E, interest coverage.
-- [ ] **Financial statements**: collapsible or tabbed sections for income statement, balance sheet, cash flow; quarterly and annual toggle.
-- [ ] **Company overview**: description, sector, industry, market cap, employees, HQ.
-- [ ] **Fundamental score**: display score 0–100 with assessment label (Undervalued / Fairly Valued / Overvalued).
-- [ ] Loading skeletons and error handling.
+- [x] Activate the "Fundamental" tab on the stock detail page (remove "Coming soon").
+- [x] Fetch `api.getStockFundamental(ticker)` via React Query when tab is active.
+- [x] **Valuation section**: display P/E (with industry avg if available), P/B, PEG, P/S in cards or table.
+- [x] **Profitability section**: gross margin, operating margin, net margin, ROE, ROA.
+- [x] **Financial health section**: current ratio, quick ratio, D/E, interest coverage.
+- [x] **Financial statements**: collapsible or tabbed sections for income statement, balance sheet, cash flow; quarterly and annual toggle.
+- [x] **Company overview**: description, sector, industry, market cap, employees, HQ.
+- [x] **Fundamental score**: display score 0–100 with assessment label (Undervalued / Fairly Valued / Overvalued).
+- [x] Loading skeletons and error handling.
 
 ### Acceptance criteria
 - Fundamental tab loads data and displays all sections.
@@ -269,13 +269,13 @@ Users need to view valuation ratios, profitability metrics, financial health ind
 The Emotional tab is a unique differentiator — showing Reddit sentiment, news sentiment, and a smart money subsection. Users see what the crowd and institutions "feel" about a stock. This tab displays the sentiment score, social posts with labels, news, and a summary of whale activity.
 
 ### Required tasks
-- [ ] Activate the "Emotional" tab on the stock detail page.
-- [ ] Fetch `api.getStockSentiment(ticker)` via React Query.
-- [ ] **Sentiment overview**: gauge or visual meter (Very Bearish → Very Bullish); score; 7d/30d trend; mention count.
-- [ ] **Reddit section**: top 3–5 posts with subreddit, title excerpt, upvotes, sentiment label (Bullish/Bearish/Neutral), timestamp.
-- [ ] **News section**: recent headlines with source, date, sentiment label.
-- [ ] **Smart money subsection**: brief options flow and dark pool summary (from institutional data or separate call); link to full Institutional tab.
-- [ ] Loading skeletons and error handling.
+- [x] Activate the "Emotional" tab on the stock detail page.
+- [x] Fetch `api.getStockSentiment(ticker)` via React Query.
+- [x] **Sentiment overview**: gauge or visual meter (Very Bearish → Very Bullish); score; 7d/30d trend; mention count.
+- [x] **Reddit section**: top 3–5 posts with subreddit, title excerpt, upvotes, sentiment label (Bullish/Bearish/Neutral), timestamp.
+- [x] **News section**: recent headlines with source, date, sentiment label.
+- [x] **Smart money subsection**: brief options flow and dark pool summary (from institutional data or separate call); link to full Institutional tab.
+- [x] Loading skeletons and error handling.
 
 ### Acceptance criteria
 - Emotional tab loads and displays sentiment gauge, score, posts, news.
@@ -401,16 +401,16 @@ Mobile users need the same four tabs and recommendation as web. This ticket acti
 
 ## Milestone 3 completion checklist
 
-- [ ] M3-001: FMP integration module
-- [ ] M3-002: Fundamental metrics and score
-- [ ] M3-003: Reddit and news sentiment integration
-- [ ] M3-004: Sentiment context and scoring engine
-- [ ] M3-005: Unusual Whales — full institutional data
-- [ ] M3-006: Recommendation algorithm
-- [ ] M3-007: Fundamental Analysis tab (web)
-- [ ] M3-008: Emotional Analysis tab (web)
-- [ ] M3-009: Institutional Activity tab (web)
-- [ ] M3-010: Recommendation badge (web)
-- [ ] M3-011: All four tabs and recommendation (mobile)
+- [x] M3-001: FMP integration module
+- [x] M3-002: Fundamental metrics and score
+- [x] M3-003: Reddit and news sentiment integration
+- [x] M3-004: Sentiment context and scoring engine
+- [x] M3-005: Unusual Whales — full institutional data
+- [x] M3-006: Recommendation algorithm
+- [x] M3-007: Fundamental Analysis tab (web)
+- [x] M3-008: Emotional Analysis tab (web)
+- [x] M3-009: Institutional Activity tab (web)
+- [x] M3-010: Recommendation badge (web)
+- [x] M3-011: All four tabs and recommendation (mobile)
 
 **Done when**: All four analysis tabs display real data on web and mobile; recommendation badge shows weighted score, label, and confidence; institutional tab shows options flow, dark pool, congressional, insider, and holdings with correct cache and rate-limit behavior.

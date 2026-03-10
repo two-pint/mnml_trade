@@ -1,13 +1,16 @@
 defmodule StockAnalysis.Analysis do
   @moduledoc """
-  Context for technical analysis: indicators and aggregated score.
+  Context for technical and fundamental analysis.
 
-  Fetches RSI, MACD, SMAs (20/50/200), Bollinger Bands, ATR, ADX, Stochastic from
-  Alpha Vantage, caches the combined result per ticker (1h TTL), and computes
-  a 0–100 technical score with trend direction and support/resistance estimate.
+  Technical: fetches RSI, MACD, SMAs (20/50/200), Bollinger Bands, ATR, ADX,
+  Stochastic from Alpha Vantage, caches (1h TTL), computes 0-100 score.
+
+  Fundamental: fetches profile, ratios, and financial statements from FMP,
+  caches (24h TTL), computes 0-100 score with value assessment.
   """
   alias StockAnalysis.Cache
   alias StockAnalysis.Integrations.AlphaVantage
+  alias StockAnalysis.Integrations.FMP
 
   @doc """
   Fetches full technical analysis for a ticker.
@@ -75,6 +78,7 @@ defmodule StockAnalysis.Analysis do
       Cache.put(cache_key, technical, ttl)
       {:ok, technical}
     else
+      {:error, :rate_limit} -> {:error, :rate_limit}
       _ -> {:error, :not_found}
     end
   end
@@ -216,7 +220,6 @@ defmodule StockAnalysis.Analysis do
   defp score_to_signal(_), do: :neutral
 
   defp estimate_support_resistance(indicators, price) do
-    # Simple estimate: use recent SMA-20 and SMA-200 as proxy, or fixed % around price
     sma_20 = num_value(Map.get(indicators, :sma_20))
     sma_200 = num_value(Map.get(indicators, :sma_200))
 
@@ -235,4 +238,219 @@ defmodule StockAnalysis.Analysis do
 
     %{support: support, resistance: resistance}
   end
+
+  # ---------------------------------------------------------------------------
+  # Fundamental analysis
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Fetches full fundamental analysis for a ticker.
+
+  Uses cache (24h TTL); on miss fetches profile, ratios, and financial
+  statements from FMP, computes a 0-100 score, and returns the combined result.
+
+  Returns `{:ok, fundamental}` map with `:profile`, `:ratios`, `:income_statement`,
+  `:balance_sheet`, `:cash_flow`, `:score`, `:assessment`, `:growth_rating`,
+  `:health_rating`, or `{:error, :not_found}`.
+  """
+  def get_fundamental(ticker) when is_binary(ticker) do
+    ticker = String.upcase(String.trim(ticker))
+    cache_key = Cache.key("analysis", ticker, "fundamental")
+    ttl = Cache.default_ttl(:fundamental)
+
+    case Cache.get(cache_key) do
+      nil ->
+        fetch_and_cache_fundamental(ticker, cache_key, ttl)
+
+      cached ->
+        {:ok, cached}
+    end
+  end
+
+  @doc """
+  Computes a fundamental score (0-100) and value assessment from ratios and profile.
+
+  Scoring dimensions:
+  - Valuation: P/E, P/B, PEG
+  - Profitability: ROE, net margin, operating margin
+  - Financial health: current ratio, D/E, interest coverage
+
+  Returns `%{score: 0..100, assessment: label, growth_rating: label, health_rating: label}`.
+  """
+  def compute_fundamental_score(ratios, _profile) when is_map(ratios) do
+    valuation = valuation_score(ratios)
+    profitability = profitability_score(ratios)
+    health = health_score(ratios)
+
+    raw = (valuation * 0.35 + profitability * 0.35 + health * 0.30)
+    score = round(max(0, min(100, raw)))
+
+    %{
+      score: score,
+      assessment: assessment_label(score),
+      growth_rating: profitability_label(profitability),
+      health_rating: health_label(health)
+    }
+  end
+
+  def compute_fundamental_score(_, _), do: %{score: 50, assessment: "Fairly Valued", growth_rating: "Average", health_rating: "Average"}
+
+  defp fetch_and_cache_fundamental(ticker, cache_key, ttl) do
+    with {:ok, profile} <- FMP.get_profile(ticker),
+         {:ok, ratios} <- FMP.get_ratios(ticker) do
+      income = safe_fetch(fn -> FMP.get_income_statement(ticker, :quarterly) end)
+      balance = safe_fetch(fn -> FMP.get_balance_sheet(ticker) end)
+      cashflow = safe_fetch(fn -> FMP.get_cash_flow(ticker) end)
+
+      score_result = compute_fundamental_score(ratios, profile)
+
+      fundamental = %{
+        ticker: ticker,
+        profile: profile,
+        ratios: ratios,
+        income_statement: income,
+        balance_sheet: balance,
+        cash_flow: cashflow,
+        score: score_result.score,
+        assessment: score_result.assessment,
+        growth_rating: score_result.growth_rating,
+        health_rating: score_result.health_rating
+      }
+
+      Cache.put(cache_key, fundamental, ttl)
+      {:ok, fundamental}
+    else
+      {:error, :rate_limit} -> {:error, :rate_limit}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp safe_fetch(fun) do
+    case fun.() do
+      {:ok, data} -> data
+      {:error, _} -> []
+    end
+  end
+
+  ## Fundamental scoring helpers
+
+  defp valuation_score(ratios) do
+    pe = safe_num(ratios.pe_ratio)
+    pb = safe_num(ratios.pb_ratio)
+    peg = safe_num(ratios.peg_ratio)
+
+    pe_score = cond do
+      is_nil(pe) -> 50
+      pe < 0 -> 20
+      pe < 10 -> 90
+      pe < 15 -> 75
+      pe < 25 -> 55
+      pe < 40 -> 35
+      true -> 15
+    end
+
+    pb_score = cond do
+      is_nil(pb) -> 50
+      pb < 1 -> 85
+      pb < 3 -> 65
+      pb < 5 -> 45
+      true -> 25
+    end
+
+    peg_score = cond do
+      is_nil(peg) -> 50
+      peg < 0 -> 20
+      peg < 1 -> 85
+      peg < 2 -> 60
+      true -> 30
+    end
+
+    (pe_score * 0.4 + pb_score * 0.3 + peg_score * 0.3)
+  end
+
+  defp profitability_score(ratios) do
+    roe = safe_num(ratios.roe)
+    net_margin = safe_num(ratios.net_margin)
+    op_margin = safe_num(ratios.operating_margin)
+
+    roe_score = cond do
+      is_nil(roe) -> 50
+      roe > 0.25 -> 90
+      roe > 0.15 -> 70
+      roe > 0.08 -> 50
+      roe > 0 -> 30
+      true -> 15
+    end
+
+    margin_score = cond do
+      is_nil(net_margin) -> 50
+      net_margin > 0.20 -> 85
+      net_margin > 0.10 -> 65
+      net_margin > 0.05 -> 45
+      net_margin > 0 -> 30
+      true -> 15
+    end
+
+    op_score = cond do
+      is_nil(op_margin) -> 50
+      op_margin > 0.25 -> 85
+      op_margin > 0.15 -> 65
+      op_margin > 0.08 -> 45
+      op_margin > 0 -> 30
+      true -> 15
+    end
+
+    (roe_score * 0.4 + margin_score * 0.3 + op_score * 0.3)
+  end
+
+  defp health_score(ratios) do
+    cr = safe_num(ratios.current_ratio)
+    de = safe_num(ratios.debt_to_equity)
+    ic = safe_num(ratios.interest_coverage)
+
+    cr_score = cond do
+      is_nil(cr) -> 50
+      cr > 2.0 -> 85
+      cr > 1.5 -> 70
+      cr > 1.0 -> 55
+      cr > 0.5 -> 35
+      true -> 15
+    end
+
+    de_score = cond do
+      is_nil(de) -> 50
+      de < 0.3 -> 85
+      de < 0.6 -> 70
+      de < 1.0 -> 55
+      de < 2.0 -> 35
+      true -> 15
+    end
+
+    ic_score = cond do
+      is_nil(ic) -> 50
+      ic > 15 -> 85
+      ic > 8 -> 70
+      ic > 3 -> 50
+      ic > 1 -> 30
+      true -> 15
+    end
+
+    (cr_score * 0.35 + de_score * 0.35 + ic_score * 0.30)
+  end
+
+  defp safe_num(nil), do: nil
+  defp safe_num(n) when is_number(n), do: n
+  defp safe_num(_), do: nil
+
+  defp assessment_label(score) when score >= 70, do: "Undervalued"
+  defp assessment_label(score) when score >= 40, do: "Fairly Valued"
+  defp assessment_label(_), do: "Overvalued"
+
+  defp profitability_label(score) when score >= 70, do: "Strong"
+  defp profitability_label(score) when score >= 40, do: "Average"
+  defp profitability_label(_), do: "Weak"
+
+  defp health_label(score) when score >= 70, do: "Healthy"
+  defp health_label(score) when score >= 40, do: "Average"
+  defp health_label(_), do: "Weak"
 end

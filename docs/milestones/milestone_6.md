@@ -1,312 +1,272 @@
-# Milestone 6 — Multi-Agent LLM Analysis: Tickets
+# Milestone 6 — Historical Data & Background Sync: Tickets
 
-**Goal**: Explore and implement a TradingAgents-style multi-agent LLM framework that consumes existing stock data (Alpha Vantage, Unusual Whales, technical analysis, fundamentals) and produces synthesized analysis, debate, and optional trade-style signals—integrated with the API, web, and mobile.  
-**Dependencies**: M1–M5 (auth, stocks, analysis, paper trading, watchlist).  
-**HLD reference**: §12.6 Logical Milestones — Milestone 6.  
-**Inspiration**: [TradingAgents](https://github.com/TauricResearch/TradingAgents) (Apache 2.0): analyst agents, researcher debate, trader/risk layers—adapted to our stack and data sources.
+**Goal**: Persist ticker metadata, daily price snapshots, and analysis score snapshots in Postgres so the app can show historical charts and trends without re-calling external APIs for every request. Background workers (Oban) keep the data fresh on a schedule.  
+**Dependencies**: M2 (stocks/cache), M3 (analysis/scores), M5 (watchlist).  
+**HLD reference**: §12.6 Logical Milestones — Milestone 6.
 
 ---
 
-## M6-001: Research and design — agent architecture
+## M6-001: Add Oban dependency and configure
 
 ### Ticket
 **ID**: M6-001  
-**Title**: Research and design — multi-agent LLM architecture and integration strategy
+**Title**: Add Oban dependency, configure queues, and add to supervision tree
 
 ### Description (why this ticket is needed)
-Before building, we need a clear design: how agent roles map to our existing data (Stocks context, Analysis context, Alpha Vantage, Unusual Whales), whether to implement in Elixir or as a Python sidecar, how results are cached and exposed via the API, and how the pipeline ties into watchlist, paper trading, and UI.
+Background jobs are needed to fetch and store price/score data on a schedule without blocking user requests. Oban is a robust, Postgres-backed job queue for Elixir that provides scheduling, retries, uniqueness constraints, and cron-like recurring jobs. Adding it now establishes the infrastructure that M6-005 workers will use.
 
 ### Required tasks
-- [ ] Document TradingAgents-style roles relevant to our stack: **Technical Analyst** (our indicators + price), **Fundamental/Sentiment** (M3 data when available; or summary from overview), **Institutional Analyst** (options flow, dark pool from Unusual Whales), **Researcher** (bull/bear debate over analyst outputs), **Trader Agent** (synthesized view → optional “consideration” or paper-trade suggestion), **Risk** (guardrails, optional approval).
-- [ ] Decide integration approach: **Option A** — Elixir-native (HTTP client to OpenAI/Claude/etc., orchestration in Phoenix, cache in ETS/Redis); **Option B** — Python service (TradingAgents or minimal clone) called by Phoenix; **Option C** — hybrid (e.g. single “summary” agent in Elixir first, expand later). Document pros/cons and chosen path.
-- [ ] Define data flow: which existing API responses (stock overview, technical, options flow, etc.) are passed into which agents; where results are stored (e.g. `agent_analysis` table or cache key per ticker); TTL and invalidation.
-- [ ] Define API contract: e.g. `GET /api/stocks/:ticker/agent-analysis` (and optionally batch for watchlist); response shape (summary, debate excerpt, optional “consideration” label).
-- [ ] Add a short “Multi-Agent Analysis” section to HLD or design doc referencing this milestone.
+- [ ] Add `oban` dependency to `mix.exs` (latest stable version). Oban is a Postgres-backed job processing library for Elixir — [docs](https://hexdocs.pm/oban).
+- [ ] Run `mix deps.get` to fetch the dependency.
+- [ ] Generate the Oban migrations: `mix ecto.gen.migration add_oban_jobs_table`, then call `Oban.Migration.up()` inside the migration.
+- [ ] Configure Oban in `config/config.exs`: set repo to `StockAnalysis.Repo`, define queues (`:sync` with concurrency 5, `:default` with concurrency 10).
+- [ ] Add `{Oban, Application.fetch_env!(:stock_analysis, Oban)}` to the supervision tree in `application.ex`.
+- [ ] Configure test env in `config/test.exs`: set `testing: :manual` so jobs don't run automatically during tests.
+- [ ] Verify `mix test` still passes and Oban tables exist after `mix ecto.migrate`.
 
 ### Acceptance criteria
-- Written design doc (or HLD section) that specifies agent roles, data inputs, integration approach (Elixir vs Python), API contract, and cache strategy.
-- Decision recorded on whether to use a single provider (e.g. OpenAI) or multi-provider from the start.
+- Oban is installed and configured with at least one queue.
+- `oban_jobs` table exists in the database after migration.
+- Supervision tree starts Oban without errors.
+- Test environment uses manual testing mode (jobs don't auto-execute).
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Review design doc | All roles and data sources clearly mapped |
-| 2 | Confirm API contract with existing api-client/types | Compatible with web/mobile consumption |
+| 1 | Run `mix ecto.migrate` | `oban_jobs` table created |
+| 2 | Start Phoenix server | No Oban-related errors in logs |
+| 3 | Run `mix test` | All existing tests pass; Oban is in manual mode |
+| 4 | Check `Oban.config()` in IEx | Shows configured queues and repo |
 
 ---
 
-## M6-002: LLM provider integration (Phoenix)
+## M6-002: Ecto migrations and schemas
 
 ### Ticket
 **ID**: M6-002  
-**Title**: LLM provider integration — config, client, and single-agent call from Phoenix
+**Title**: Ecto migrations and schemas — tickers, price_snapshots, score_snapshots
 
 ### Description (why this ticket is needed)
-The app needs a reliable way to call an LLM (OpenAI, Anthropic, or other) from Elixir: API key via env, HTTP client, structured request/response, and timeouts. This ticket establishes the foundation so later tickets can implement analyst prompts and orchestration.
+Three new tables store the historical data: `tickers` holds the master list of tracked symbols with metadata (name, sector, market cap); `price_snapshots` stores one row per ticker per day with OHLCV data; `score_snapshots` stores one row per ticker per day with all computed analysis scores. These tables let the app serve historical charts and trend analysis from Postgres instead of repeatedly hitting external APIs.
 
 ### Required tasks
-- [ ] Add dependency for HTTP LLM calls (e.g. `req` to OpenAI/Anthropic API, or a small wrapper library). Ensure API key is read from env (e.g. `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`); never committed.
-- [ ] Create a behaviour or module (e.g. `StockAnalysis.AgentAnalysis.LLM`) with `complete(prompt, options)` returning `{:ok, text}` or `{:error, reason}`; support configurable model and max_tokens.
-- [ ] Implement at least one provider (e.g. OpenAI chat completions); add basic retries and timeout (e.g. 30s).
-- [ ] Add config in `runtime.exs` for prod: API key from env, model name, optional enable/disable flag so the feature can be turned off if key is missing.
-- [ ] (Optional) Add a second provider (e.g. Anthropic) behind the same behaviour for future multi-provider or fallback.
+- [ ] Create migration for `tickers` table: `symbol` (string, unique index), `name` (string), `sector` (string, nullable), `market_cap` (bigint, nullable), `is_active` (boolean, default true), timestamps.
+- [ ] Create migration for `price_snapshots` table: `ticker_id` (references tickers), `date` (date), `open` (decimal), `high` (decimal), `low` (decimal), `close` (decimal), `volume` (bigint), timestamps. Unique index on `(ticker_id, date)`.
+- [ ] Create migration for `score_snapshots` table: `ticker_id` (references tickers), `date` (date), `technical_score` (float, nullable), `fundamental_score` (float, nullable), `sentiment_score` (float, nullable), `smart_money_score` (float, nullable), `recommendation_score` (float, nullable), `recommendation_label` (string, nullable), `confidence` (float, nullable), timestamps. Unique index on `(ticker_id, date)`.
+- [ ] Create Ecto schemas: `StockAnalysis.Market.Ticker`, `StockAnalysis.Market.PriceSnapshot`, `StockAnalysis.Market.ScoreSnapshot` with appropriate changesets and validations.
+- [ ] Run `mix ecto.migrate` and verify tables exist.
 
 ### Acceptance criteria
-- Phoenix can call the LLM with a prompt and receive plain-text completion.
-- API key and model are configured via env; no secrets in repo.
-- Feature can be disabled when key is not set (no runtime errors).
+- All three tables exist with correct columns, types, and indexes.
+- Ecto schemas have `changeset/2` functions with validations.
+- Unique indexes prevent duplicate entries per ticker+date.
+- Foreign keys enforce referential integrity from snapshots to tickers.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Set env var; call LLM module with simple prompt | Returns `{:ok, "..."}` with non-empty text |
-| 2 | Unset API key; restart | Config loads; LLM calls return error or skip without crash |
-| 3 | Grep repo for API key string | Not present in source |
+| 1 | Run `mix ecto.migrate` | Tables created without errors |
+| 2 | Insert a ticker via IEx | Row created with timestamps |
+| 3 | Insert two price_snapshots for same ticker+date | Second insert fails (unique constraint) |
+| 4 | Insert a price_snapshot referencing non-existent ticker_id | Foreign key error |
 
 ---
 
-## M6-003: Analyst agents — technical and institutional
+## M6-003: Market context module
 
 ### Ticket
 **ID**: M6-003  
-**Title**: Analyst agents — technical and institutional (LLM summaries from existing data)
+**Title**: Market context module — queries, inserts, and historical lookups
 
 ### Description (why this ticket is needed)
-Users benefit from a short, natural-language summary of what the numbers mean. This ticket implements two “analyst” agents that consume data we already have: (1) Technical Analyst — overview + indicators + score; (2) Institutional Analyst — options flow and dark pool summary. Both use the LLM to produce a concise paragraph (or bullets) suitable for the stock detail UI.
+The Market context (`StockAnalysis.Market`) provides the public API for reading and writing ticker and snapshot data. Controllers and workers use this module instead of calling Repo directly. It encapsulates queries like "get 30-day price history for AAPL" and insert/upsert operations that the background workers call.
 
 ### Required tasks
-- [ ] **Technical Analyst**: Build a prompt that includes ticker, price, change, key metrics, technical indicators (RSI, MACD, etc.), and technical score. Call LLM; parse and sanitize response (strip markdown if needed, length limit). Return structured result (e.g. `%{role: "technical", summary: "..."}`).
-- [ ] **Institutional Analyst**: Build a prompt that includes ticker, recent options flow summary, dark pool summary (from Unusual Whales integration). Call LLM; return structured result (e.g. `%{role: "institutional", summary: "..."}`).
-- [ ] Fetch required data via existing contexts (Stocks, Analysis, Unusual Whales); do not duplicate API calls—use cached/context data passed into the agent module.
-- [ ] Add unit tests or integration tests that stub LLM response and assert output shape and that no raw secrets appear in prompts.
+- [ ] Create `StockAnalysis.Market` context module.
+- [ ] Implement `upsert_ticker(attrs)`: insert or update ticker by symbol; return `{:ok, ticker}`.
+- [ ] Implement `get_ticker(symbol)`: find ticker by symbol; return `{:ok, ticker}` or `{:error, :not_found}`.
+- [ ] Implement `list_active_tickers()`: return all tickers where `is_active == true`.
+- [ ] Implement `insert_price_snapshots(ticker_id, list_of_attrs)`: bulk insert price snapshots; use `on_conflict: :nothing` to skip duplicates.
+- [ ] Implement `insert_score_snapshot(ticker_id, date, scores_map)`: insert or update score snapshot for given date.
+- [ ] Implement `get_price_history(symbol, days \\ 30)`: return list of price_snapshots for ticker, ordered by date descending, limited to N days.
+- [ ] Implement `get_score_history(symbol, days \\ 30)`: return list of score_snapshots for ticker, ordered by date descending, limited to N days.
+- [ ] Write ExUnit tests for all context functions using the test database.
 
 ### Acceptance criteria
-- Technical Analyst produces a short summary from overview + technical data.
-- Institutional Analyst produces a short summary from options/dark pool data.
-- Both use existing API/cache; no new external data sources.
-- Outputs are safe to display in UI (no injection; length bounded).
+- All CRUD and query functions work correctly.
+- Upsert operations are idempotent (re-running does not create duplicates).
+- History queries respect the day limit and return data in correct order.
+- All functions are covered by tests.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Call Technical Analyst with fixture overview + indicators | Returns summary string |
-| 2 | Call Institutional Analyst with fixture options/dark pool | Returns summary string |
-| 3 | Request analysis for ticker with missing institutional data | Graceful fallback (e.g. “No recent institutional data”) |
+| 1 | `upsert_ticker(%{symbol: "AAPL", name: "Apple"})` twice | Same row returned both times |
+| 2 | Insert 60 price snapshots; call `get_price_history("AAPL", 30)` | Returns 30 most recent rows |
+| 3 | `insert_score_snapshot` for same ticker+date twice | Updates existing row (no duplicate) |
+| 4 | `list_active_tickers()` with mix of active/inactive | Only active tickers returned |
+| 5 | Run `mix test test/stock_analysis/market_test.exs` | All tests pass |
 
 ---
 
-## M6-004: Researcher layer — bull/bear debate
+## M6-004: FMP bulk endpoints
 
 ### Ticket
 **ID**: M6-004  
-**Title**: Researcher layer — bull and bear debate from analyst outputs
+**Title**: FMP bulk endpoints — bulk quote and S&P 500 constituents
 
 ### Description (why this ticket is needed)
-A TradingAgents-style “researcher” step adds balance: one agent argues bull case, one bear case, based on the same analyst summaries. This gives users a quick pros/cons view and reduces single-perspective bias. The output is consumed by the synthesis step or shown directly in the UI.
+Financial Modeling Prep (FMP) offers bulk endpoints that return data for many tickers in a single API call, which is far more efficient than calling per-ticker endpoints when seeding or refreshing the entire universe. The bulk quote endpoint returns current price data for all tickers at once; the S&P 500 constituents endpoint provides the list of symbols to track.
 
 ### Required tasks
-- [ ] Define input: concatenated or structured output from Technical and Institutional analysts (and optionally Fundamental/Sentiment when M3 data exists).
-- [ ] **Bull researcher**: Prompt that asks for 2–4 bullet points supporting a bullish view given the data. Call LLM; return structured result.
-- [ ] **Bear researcher**: Prompt that asks for 2–4 bullet points supporting a bearish view given the data. Call LLM; return structured result.
-- [ ] Optionally combine into a single “debate” call (e.g. “Given the following analysis, list key bull and key bear points”) to save latency and cost.
-- [ ] Cache debate result per ticker (same TTL strategy as agent analysis) to avoid re-running on every request.
+- [ ] Add `get_sp500_constituents/0` to `StockAnalysis.Integrations.FMP`: calls `GET /api/v3/sp500_constituent` and returns list of `%{symbol, name, sector, ...}`.
+- [ ] Add `get_bulk_quote/0` to `StockAnalysis.Integrations.FMP`: calls `GET /api/v3/stock/full/real-time-price` (or equivalent bulk endpoint) and returns list of `%{symbol, price, volume, ...}`.
+- [ ] Normalize responses to match the shapes needed by the Market context (ticker upsert and price snapshot insert).
+- [ ] Add appropriate caching (constituents: 7-day TTL; bulk quote: 15-minute TTL).
+- [ ] Add Bypass-based tests for both endpoints.
 
 ### Acceptance criteria
-- Bull and bear points are generated from the same analyst inputs.
-- Output is structured (e.g. `{bull: ["..."], bear: ["..."]}`) and length-bounded.
-- Debate is cached; cache key includes ticker and optionally data version.
+- `get_sp500_constituents/0` returns ~500 symbols with name and sector.
+- `get_bulk_quote/0` returns current price data for tracked tickers.
+- Both endpoints handle API errors gracefully (rate limit, timeout).
+- Cached to avoid excessive API calls.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Run researchers with fixed analyst output | Both bull and bear lists non-empty |
-| 2 | Request debate for same ticker twice within TTL | Second request uses cache (no extra LLM call) |
+| 1 | Call `get_sp500_constituents()` with mock | Returns list of ~500 maps with symbol, name, sector |
+| 2 | Call `get_bulk_quote()` with mock | Returns list of maps with symbol, price, volume |
+| 3 | Call again within TTL | Returns cached data (no HTTP call) |
+| 4 | Simulate API error | Returns `{:error, reason}` without crash |
 
 ---
 
-## M6-005: Synthesis and optional “consideration” signal
+## M6-005: Oban workers
 
 ### Ticket
 **ID**: M6-005  
-**Title**: Synthesis — combined summary and optional trade consideration
+**Title**: Oban workers — SeedTickersJob, PriceSnapshotJob, ScoreSnapshotJob
 
 ### Description (why this ticket is needed)
-The final step combines analyst summaries and debate into one coherent “agent analysis” and, optionally, a simple label (e.g. “Worth a look” / “Neutral” / “Caution”) that the UI can show and that could later feed into paper-trading suggestions. This ticket does not execute trades; it only produces a synthesized view and an optional consideration tag.
+Background workers automate data collection on a schedule. `SeedTickersJob` refreshes the ticker universe (weekly). `PriceSnapshotJob` captures daily OHLCV data for all active tickers. `ScoreSnapshotJob` computes and stores all analysis scores for each ticker daily. Together, they build the historical dataset without any manual intervention.
 
 ### Required tasks
-- [ ] **Synthesis agent**: Prompt that takes technical summary, institutional summary, and bull/bear points; outputs one short paragraph (2–4 sentences) and optionally a single “consideration” label. Call LLM; parse response into `%{summary: "...", consideration: "..."}` (consideration optional).
-- [ ] **Orchestration**: Implement a pipeline (e.g. in `StockAnalysis.AgentAnalysis` context): fetch data → Technical Analyst → Institutional Analyst → Researchers → Synthesis. Run in sequence or parallel where independent; respect timeouts and abort on critical failure.
-- [ ] **Persistence/cache**: Store or cache the full result (all analyst outputs + debate + synthesis) under a key like `agent_analysis:{ticker}` with TTL (e.g. 1–4 hours) so UI and API can serve it without re-running every time.
-- [ ] Define “risk” guardrails: e.g. no explicit “buy/sell” in synthesis; disclaimer that output is for research only, not advice. Enforce in prompt and/or post-processing.
+- [ ] Create `StockAnalysis.Workers.SeedTickersJob` (Oban worker, `:sync` queue):
+  - Fetches S&P 500 constituents via FMP.
+  - Upserts each into the `tickers` table via `Market.upsert_ticker/1`.
+  - Scheduled weekly (e.g. every Sunday at 00:00 UTC) via Oban cron.
+- [ ] Create `StockAnalysis.Workers.PriceSnapshotJob` (Oban worker, `:sync` queue):
+  - For each active ticker, fetch current price data (via FMP bulk quote or Alpha Vantage daily).
+  - Insert into `price_snapshots` via `Market.insert_price_snapshots/2`.
+  - Scheduled daily at market close + 1 hour (e.g. 21:00 UTC for US markets).
+  - Rate-limit aware: batch tickers and pause between batches if needed.
+- [ ] Create `StockAnalysis.Workers.ScoreSnapshotJob` (Oban worker, `:sync` queue):
+  - For each active ticker, compute scores using `Recommendation.compute/1` (or `compute_from_cache/1` if data is already cached).
+  - Insert into `score_snapshots` via `Market.insert_score_snapshot/3`.
+  - Scheduled daily after `PriceSnapshotJob` completes (e.g. 22:00 UTC).
+- [ ] Configure Oban crontab in `config/config.exs` with the schedules above.
+- [ ] Add unique job constraints to prevent duplicate concurrent runs.
+- [ ] Write ExUnit tests for each worker using `Oban.Testing`.
 
 ### Acceptance criteria
-- Full pipeline runs for a given ticker and produces synthesis + optional consideration.
-- Result is cached with defined TTL.
-- Output includes disclaimer or is clearly framed as research-only.
-- Pipeline fails gracefully (e.g. returns partial result or error) if LLM or data is unavailable.
+- `SeedTickersJob` populates ~500 tickers from FMP.
+- `PriceSnapshotJob` creates one price_snapshot per active ticker per day.
+- `ScoreSnapshotJob` creates one score_snapshot per active ticker per day.
+- Jobs run on schedule and do not duplicate.
+- Workers handle partial failures gracefully (one ticker failing doesn't stop the rest).
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Request agent analysis for AAPL | Cached result with summary and consideration |
-| 2 | Request again within TTL | Same result from cache; no new LLM calls |
-| 3 | Simulate LLM timeout | Partial or error response; no crash |
+| 1 | Manually enqueue `SeedTickersJob`; check `tickers` table | ~500 rows inserted/updated |
+| 2 | Manually enqueue `PriceSnapshotJob`; check `price_snapshots` | One row per active ticker for today |
+| 3 | Manually enqueue `ScoreSnapshotJob`; check `score_snapshots` | One row per active ticker for today |
+| 4 | Enqueue same job twice simultaneously | Only one executes (unique constraint) |
+| 5 | Simulate FMP error for one ticker in batch | Other tickers still processed; error logged |
+| 6 | Run `mix test` for worker tests | All pass with Oban testing mode |
 
 ---
 
-## M6-006: API and types — agent analysis endpoint
+## M6-006: History API endpoints and TypeScript types
 
 ### Ticket
 **ID**: M6-006  
-**Title**: API and shared types — expose agent analysis to web and mobile
+**Title**: History API endpoints, TypeScript types, and api-client methods
 
 ### Description (why this ticket is needed)
-Web and mobile need a stable endpoint and types to display the multi-agent analysis on the stock detail page. This ticket adds the HTTP contract, auth, and shared TypeScript types so both clients can render summary, debate, and consideration consistently.
+The web and mobile apps need HTTP endpoints to fetch historical price and score data so they can render trend charts and historical analysis views. Shared TypeScript types and api-client methods ensure both frontends consume the data consistently.
 
 ### Required tasks
-- [ ] Add `GET /api/stocks/:ticker/agent-analysis` (auth required). Returns JSON: `{ summary, consideration?, technicalSummary?, institutionalSummary?, bullPoints?, bearPoints?, cachedAt? }`. Trigger pipeline if not cached (or return 202 + poll, or synchronous—per design from M6-001).
-- [ ] Add Ecto schema/migration if storing in DB (e.g. `agent_analyses`: user_id optional, ticker, payload JSONB, inserted_at); or document “cache only” and return from cache with `cachedAt`.
-- [ ] Add types in `@repo/types` and methods in `@repo/api-client` for agent analysis. Add to openapi/spec if present.
-- [ ] Document in API docs or README: endpoint, rate limits (if any), and that analysis is for research only.
+- [ ] Add Phoenix routes and controller actions:
+  - `GET /api/stocks/:ticker/price-history?days=30` — returns array of `{date, open, high, low, close, volume}`.
+  - `GET /api/stocks/:ticker/score-history?days=30` — returns array of `{date, technical_score, fundamental_score, sentiment_score, smart_money_score, recommendation_score, recommendation_label, confidence}`.
+- [ ] Controller fetches data via `StockAnalysis.Market` context; returns 404 if ticker not found.
+- [ ] Add TypeScript types in `@repo/types`:
+  - `PriceSnapshot`: `{ date: string; open: number; high: number; low: number; close: number; volume: number }`.
+  - `ScoreSnapshot`: `{ date: string; technicalScore: number | null; fundamentalScore: number | null; sentimentScore: number | null; smartMoneyScore: number | null; recommendationScore: number | null; recommendationLabel: string | null; confidence: number | null }`.
+- [ ] Add api-client methods:
+  - `getPriceHistory(ticker: string, days?: number): Promise<PriceSnapshot[]>`.
+  - `getScoreHistory(ticker: string, days?: number): Promise<ScoreSnapshot[]>`.
+- [ ] Export new types from `@repo/types/src/index.ts`.
 
 ### Acceptance criteria
-- Authenticated GET returns agent analysis for the ticker; unauthenticated returns 401.
-- Response shape matches shared types; web and mobile can consume it.
-- Invalid ticker returns 404 or empty analysis per product decision.
+- Both endpoints return correct JSON arrays ordered by date descending.
+- `days` query parameter defaults to 30 and is respected.
+- 404 returned for unknown tickers.
+- TypeScript types and api-client methods are available for web and mobile.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | GET with valid token and ticker | 200, JSON with summary and optional fields |
-| 2 | GET without token | 401 |
-| 3 | GET for ticker with no cached analysis | 200 with pipeline run, or 202 + location per design |
+| 1 | `GET /api/stocks/AAPL/price-history` (with seeded data) | 200, array of price snapshots |
+| 2 | `GET /api/stocks/AAPL/price-history?days=7` | 200, at most 7 entries |
+| 3 | `GET /api/stocks/INVALID/price-history` | 404 |
+| 4 | `GET /api/stocks/AAPL/score-history` | 200, array of score snapshots |
+| 5 | Call `api.getPriceHistory("AAPL")` from TypeScript | Returns typed array |
 
 ---
 
-## M6-007: Web UI — agent analysis on stock detail
+## M6-007: Seed S&P 500 tickers and backfill initial price data
 
 ### Ticket
 **ID**: M6-007  
-**Title**: Web UI — agent analysis block on stock detail page
+**Title**: Seed S&P 500 tickers and backfill initial price data
 
 ### Description (why this ticket is needed)
-The stock detail page should show the synthesized agent analysis: summary paragraph, optional bull/bear bullets, and consideration badge. This gives users a single place to read both raw data (tabs) and the LLM-derived narrative.
+Once the infrastructure is in place, the database needs to be populated with an initial set of tickers and at least a few days of historical price data. This ticket provides a mix task that runs the seeding process manually (outside of Oban schedules) so the app has data from day one. It also serves as a verification that the full pipeline works end-to-end.
 
 ### Required tasks
-- [ ] Add a section or tab “AI Analysis” (or “Summary”) on the stock detail page that fetches `GET /api/stocks/:ticker/agent-analysis` and displays summary, consideration, and optionally bull/bear points.
-- [ ] Use existing api-client and types; show loading state and handle errors (e.g. “Analysis unavailable”).
-- [ ] Include short disclaimer: “For research only; not investment advice.”
-- [ ] Ensure layout works on mobile viewport (responsive).
+- [ ] Create `mix mnml.seed_tickers` task: calls `SeedTickersJob.perform/1` logic to fetch and upsert S&P 500 constituents.
+- [ ] Create `mix mnml.backfill_prices` task: for each active ticker, fetch recent daily prices (e.g. last 30 days from FMP historical endpoint or Alpha Vantage TIME_SERIES_DAILY) and insert into `price_snapshots`.
+- [ ] Add rate-limiting logic to backfill task: batch tickers (e.g. 5 at a time), pause between batches to respect API limits.
+- [ ] Document both tasks in README or a `docs/` file: what they do, when to run them, expected runtime.
+- [ ] Verify end-to-end: after running both tasks, `GET /api/stocks/AAPL/price-history` returns data.
 
 ### Acceptance criteria
-- Agent analysis section visible on stock detail when data is available.
-- Loading and error states are handled.
-- Disclaimer is visible; no misleading “buy/sell” wording from UI.
+- `mix mnml.seed_tickers` populates ~500 rows in `tickers` table.
+- `mix mnml.backfill_prices` populates price_snapshots for active tickers with at least 30 days of data.
+- API endpoints return the seeded data.
+- Tasks are idempotent (safe to re-run without creating duplicates).
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Open /stocks/AAPL; scroll to AI Analysis | Summary and consideration visible (or loading then content) |
-| 2 | Open stock with agent analysis disabled or failed | Graceful message or hidden section |
-| 3 | Resize to mobile width | Section readable and not broken |
-
----
-
-## M6-008: Mobile UI — agent analysis on stock screen
-
-### Ticket
-**ID**: M6-008  
-**Title**: Mobile UI — agent analysis on stock detail screen
-
-### Description (why this ticket is needed)
-Mobile users should see the same agent analysis (summary, consideration, bull/bear) on the stock detail screen so the experience is consistent with web and they can quickly scan the AI-derived view on the go.
-
-### Required tasks
-- [ ] Add “AI Analysis” section or collapsible block on the stock detail screen; call `api.getAgentAnalysis(ticker)` and display summary, consideration badge, and optional bull/bear lists.
-- [ ] Reuse shared types and api-client; match web disclaimer and tone.
-- [ ] Handle loading and error states; avoid blocking the rest of the screen if the agent endpoint is slow or fails.
-
-### Acceptance criteria
-- Agent analysis visible on mobile stock detail when available.
-- Layout fits small screens; text readable.
-- Same disclaimer as web; no investment advice claim.
-
-### Test plan
-| Step | Action | Expected result |
-|------|--------|-----------------|
-| 1 | Open stock detail on device/simulator | AI Analysis section shows summary (or loading) |
-| 2 | Tap to expand bull/bear if collapsed | Points displayed |
-| 3 | Turn off network; open stock | Error state or cached analysis if previously loaded |
-
----
-
-## M6-009: Watchlist and batch (optional)
-
-### Ticket
-**ID**: M6-009  
-**Title**: Agent analysis for watchlist — batch or on-demand
-
-### Description (why this ticket is needed)
-Users with a watchlist may want to see agent summaries for multiple tickers without opening each one. This ticket adds a way to request or precompute agent analysis for watchlist tickers (e.g. batch endpoint or background job) and optionally surface a short “consideration” or summary on the watchlist UI.
-
-### Required tasks
-- [ ] **Option A**: `GET /api/user/watchlist/agent-summaries` — returns list of `{ticker, summary?, consideration?, cachedAt}` for the user’s watchlist; trigger pipeline for missing/stale entries (async or sync per design).
-- [ ] **Option B**: Oban job that precomputes agent analysis for each watchlist ticker on a schedule (e.g. daily or when user adds ticker); API only reads from cache.
-- [ ] Document rate/cost implications (LLM calls per user/watchlist size); add limits if needed (e.g. max 10 tickers per batch, or only cached).
-- [ ] (Optional) Add a compact “AI take” or consideration badge next to each ticker on the watchlist page (web and/or mobile).
-
-### Acceptance criteria
-- Watchlist can be associated with agent analysis (batch or precomputed).
-- No unbounded LLM usage; limits or caching strategy documented and enforced.
-- Optional UI shows at least consideration or “summary available” on watchlist.
-
-### Test plan
-| Step | Action | Expected result |
-|------|--------|-----------------|
-| 1 | Add 3 tickers to watchlist; call batch endpoint or wait for job | Each ticker has agent analysis or pending state |
-| 2 | Exceed batch limit (if any) | Clear error or truncation |
-
----
-
-## M6-010: Documentation and disclaimer
-
-### Ticket
-**ID**: M6-010  
-**Title**: Documentation and legal disclaimer for agent analysis
-
-### Description (why this ticket is needed)
-Multi-agent LLM output must be clearly framed as research/educational only, not investment advice. Documentation helps operators run and tune the feature; a clear disclaimer protects users and the product.
-
-### Required tasks
-- [ ] Add “Multi-Agent Analysis” section to README or docs: what it is, which data it uses, how to enable/disable (env), and that it is for research only.
-- [ ] Ensure in-app disclaimer is visible wherever agent analysis is shown (web and mobile): e.g. “AI-generated analysis for research only; not investment advice.”
-- [ ] Document env vars: `OPENAI_API_KEY` (or equivalent), any feature flag or model name; add to deployment docs (e.g. M2-010 env list or M7).
-- [ ] (Optional) Add a link to a short “How we use AI” or “Research disclaimer” page in app footer or profile.
-
-### Acceptance criteria
-- README or docs describe the feature and configuration.
-- Disclaimer is present in UI wherever agent analysis is displayed.
-- No claim that the system provides investment advice.
-
-### Test plan
-| Step | Action | Expected result |
-|------|--------|-----------------|
-| 1 | Read README multi-agent section | Clear description and env vars |
-| 2 | View agent analysis on web and mobile | Disclaimer text visible |
+| 1 | Run `mix mnml.seed_tickers` | `tickers` table has ~500 rows |
+| 2 | Run `mix mnml.seed_tickers` again | No duplicates; same row count |
+| 3 | Run `mix mnml.backfill_prices` | `price_snapshots` table populated |
+| 4 | `GET /api/stocks/AAPL/price-history` | Returns 30 data points |
+| 5 | Run `mix mnml.backfill_prices` again | No duplicates; idempotent |
 
 ---
 
 ## Milestone 6 completion checklist
 
-- [ ] M6-001: Research and design — agent architecture
-- [ ] M6-002: LLM provider integration (Phoenix)
-- [ ] M6-003: Analyst agents — technical and institutional
-- [ ] M6-004: Researcher layer — bull/bear debate
-- [ ] M6-005: Synthesis and optional consideration signal
-- [ ] M6-006: API and types — agent analysis endpoint
-- [ ] M6-007: Web UI — agent analysis on stock detail
-- [ ] M6-008: Mobile UI — agent analysis on stock screen
-- [ ] M6-009: Watchlist and batch (optional)
-- [ ] M6-010: Documentation and disclaimer
+- [ ] M6-001: Oban dependency and configuration
+- [ ] M6-002: Ecto migrations and schemas
+- [ ] M6-003: Market context module
+- [ ] M6-004: FMP bulk endpoints
+- [ ] M6-005: Oban workers (seed, price, score)
+- [ ] M6-006: History API endpoints and TypeScript types
+- [ ] M6-007: Seed and backfill initial data
 
-**Done when**: Multi-agent LLM analysis is designed and implemented; Technical and Institutional analysts plus Researcher debate and Synthesis run in Phoenix (or approved sidecar); API exposes agent analysis; web and mobile show summary and consideration with clear research-only disclaimer; optional watchlist integration and full documentation in place.
+**Done when**: Oban is running in the supervision tree; tickers, price_snapshots, and score_snapshots tables exist and are populated; background workers refresh data on schedule; history API endpoints serve stored data to web and mobile; S&P 500 tickers are seeded with at least 30 days of price history.

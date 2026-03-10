@@ -14,6 +14,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { DailyOhlcv, StockOverview, TechnicalAnalysis } from "@repo/types";
 import { stocksApi } from "@/lib/api";
+import FundamentalTab from "@/components/FundamentalTab";
+import EmotionalTab from "@/components/EmotionalTab";
+import InstitutionalTab from "@/components/InstitutionalTab";
 
 type Timeframe = "1D" | "1M" | "6M" | "1Y";
 
@@ -188,6 +191,79 @@ export default function StockDetailScreen() {
                   {overview.low != null ? overview.low.toFixed(2) : "—"}
                 </Text>
               </View>
+              {overview.recommendation && (
+                <View className="mt-3">
+                  <View className="flex-row items-center gap-2">
+                    <View
+                      className={`rounded-full px-3 py-1 ${
+                        overview.recommendation === "Strong Buy" || overview.recommendation === "Buy"
+                          ? "bg-green-100"
+                          : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
+                            ? "bg-red-100"
+                            : "bg-gray-100"
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm font-bold ${
+                          overview.recommendation === "Strong Buy" || overview.recommendation === "Buy"
+                            ? "text-green-800"
+                            : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
+                              ? "text-red-800"
+                              : "text-gray-700"
+                        }`}
+                      >
+                        {overview.recommendation}
+                      </Text>
+                    </View>
+                    {overview.recommendation_score != null && (
+                      <Text className="text-sm text-gray-500">
+                        {overview.recommendation_score}/100
+                      </Text>
+                    )}
+                    {overview.confidence != null && (
+                      <Text className="text-xs text-gray-400">
+                        {overview.confidence}% conf
+                      </Text>
+                    )}
+                  </View>
+                  {overview.sub_scores && (
+                    <View className="mt-2 flex-row gap-2">
+                      {([
+                        { key: "technical" as const, label: "Tech" },
+                        { key: "fundamental" as const, label: "Fund" },
+                        { key: "sentiment" as const, label: "Sent" },
+                        { key: "institutional" as const, label: "Inst" },
+                      ] as const).map(({ key, label }) => {
+                        const val = overview.sub_scores?.[key];
+                        const barColor =
+                          val != null && val >= 60
+                            ? "bg-green-500"
+                            : val != null && val < 40
+                              ? "bg-red-500"
+                              : "bg-gray-400";
+                        return (
+                          <View key={key} className="flex-1">
+                            <View className="flex-row justify-between">
+                              <Text className="text-[10px] text-gray-500">{label}</Text>
+                              <Text className="text-[10px] font-medium text-gray-700">
+                                {val ?? "—"}
+                              </Text>
+                            </View>
+                            <View className="mt-0.5 h-1 w-full rounded-full bg-gray-200">
+                              {val != null && (
+                                <View
+                                  className={`h-full rounded-full ${barColor}`}
+                                  style={{ width: `${val}%` }}
+                                />
+                              )}
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              )}
             </>
           ) : null}
         </View>
@@ -358,11 +434,9 @@ export default function StockDetailScreen() {
           </View>
         )}
 
-        {(tab === "fundamental" || tab === "emotional" || tab === "institutional") && (
-          <View className="items-center justify-center py-12">
-            <Text className="text-gray-500">Coming soon</Text>
-          </View>
-        )}
+        {tab === "fundamental" && <FundamentalTab ticker={ticker} />}
+        {tab === "emotional" && <EmotionalTab ticker={ticker} />}
+        {tab === "institutional" && <InstitutionalTab ticker={ticker} />}
       </ScrollView>
     </SafeAreaView>
   );

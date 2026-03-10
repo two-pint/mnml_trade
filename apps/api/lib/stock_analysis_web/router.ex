@@ -33,8 +33,16 @@ defmodule StockAnalysisWeb.Router do
     get "/stocks/search", StocksController, :search
     get "/stocks/trending", StocksController, :trending
     get "/stocks/:ticker/technical", StocksController, :technical
+    get "/stocks/:ticker/fundamental", StocksController, :fundamental
+    get "/stocks/:ticker/sentiment", StocksController, :sentiment
     get "/stocks/:ticker/daily", StocksController, :daily
     get "/stocks/:ticker/institutional", StocksController, :institutional
     get "/stocks/:ticker", StocksController, :show
+
+    get "/institutional/:ticker/congressional", InstitutionalController, :congressional
+    get "/institutional/:ticker/insider-trades", InstitutionalController, :insider_trades
+    get "/institutional/:ticker/holdings", InstitutionalController, :holdings
+    get "/institutional/:ticker/smart-money-score", InstitutionalController, :smart_money_score
+    get "/institutional/market-tide", InstitutionalController, :market_tide
   end
 end

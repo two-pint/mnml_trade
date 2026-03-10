@@ -87,39 +87,43 @@ defmodule StockAnalysisWeb.StocksControllerTest do
 
   describe "GET /api/stocks/:ticker" do
     test "returns overview with valid JWT", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.expect(bypass, fn conn ->
-        assert conn.query_string =~ "function=GLOBAL_QUOTE"
-        assert conn.query_string =~ "symbol=AAPL"
-        Plug.Conn.send_resp(conn, 200, """
-        {"Global Quote": {
-          "01. symbol": "AAPL",
-          "02. open": "148",
-          "03. high": "151",
-          "04. low": "147",
-          "05. price": "150.25",
-          "06. volume": "1000000",
-          "07. latest trading day": "2024-01-15",
-          "08. previous close": "148.5",
-          "09. change": "1.75",
-          "10. change percent": "1.18%"
-        }}
-        """)
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
+        q = conn.query_string || ""
+        body =
+          if q =~ "function=GLOBAL_QUOTE" do
+            ~s({"Global Quote": {"01. symbol": "OVW1", "02. open": "148", "03. high": "151", "04. low": "147", "05. price": "150.25", "06. volume": "1000000", "07. latest trading day": "2024-01-15", "08. previous close": "148.5", "09. change": "1.75", "10. change percent": "1.18%"}})
+          else
+            ~s({})
+          end
+        Plug.Conn.send_resp(conn, 200, body)
+      end)
+      Bypass.stub(bypass, "GET", "/api/option-trades/flow-alerts", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/darkpool/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"volume": 0, "net_buy_sell": 0, "block_trades": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/congressional-trading/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/insider-trading/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
       end)
 
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{token}")
-        |> get("/api/stocks/AAPL")
+        |> get("/api/stocks/OVW1")
 
       data = json_response(conn, 200)
-      assert data["ticker"] == "AAPL"
+      assert data["ticker"] == "OVW1"
       assert data["price"] == 150.25
       assert data["change"] == 1.75
       assert data["volume"] == 1_000_000
     end
 
     test "returns 404 for invalid ticker", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.expect(bypass, fn conn ->
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
         Plug.Conn.send_resp(conn, 200, ~s({"Global Quote": {}}))
       end)
 

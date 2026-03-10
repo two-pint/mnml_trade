@@ -24,7 +24,7 @@ This High-Level Design (HLD) describes the technical architecture of the Stock A
 
 ### 1.3 Logical Milestones (Overview)
 
-The HLD is implemented in six logical milestones. Each milestone is a shippable slice of the system with clear scope and dependencies.
+The HLD is implemented in eight logical milestones. Each milestone is a shippable slice of the system with clear scope and dependencies.
 
 ```
 M1 Foundation ──► M2 Stock Analysis Core ──► M3 Full Analysis & Institutional
@@ -38,7 +38,13 @@ M1 Foundation ──► M2 Stock Analysis Core ──► M3 Full Analysis & Inst
                               M5 Engagement & Sharing
                                          │
                                          ▼
-                              M6 Polish & Scale
+                          M6 Historical Data & Background Sync
+                                         │
+                                         ▼
+                          M7 Multi-Agent LLM Analysis
+                                         │
+                                         ▼
+                              M8 Polish & Scale
 ```
 
 | Milestone | Focus | PRD Phase |
@@ -48,7 +54,9 @@ M1 Foundation ──► M2 Stock Analysis Core ──► M3 Full Analysis & Inst
 | **M3** | Fundamental + Sentiment + Institutional, recommendation, all 4 tabs | Phase 2 (Weeks 6–8) |
 | **M4** | Paper trading (backend + web + mobile) | Phase 2 (Weeks 7–10) |
 | **M5** | Watchlist, history, share links, push, Oban refresh | Phase 3 (Weeks 11–13) |
-| **M6** | Store submission, Redis optional, performance, advanced features | Phase 4 (Weeks 14–16) |
+| **M6** | Historical data in Postgres, Oban workers, price/score snapshots | Phase 3 |
+| **M7** | Multi-agent LLM analysis (analysts, debate, synthesis) | Phase 3–4 |
+| **M8** | Store submission, Redis optional, performance, advanced features | Phase 4 (Weeks 14–16) |
 
 Detailed scope, deliverables, and HLD section mapping for each milestone are in **Section 12 (Logical Milestones)**.
 
@@ -746,11 +754,37 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 
 ---
 
-### 12.6 Milestone 6 — Multi-Agent LLM Analysis
+### 12.6 Milestone 6 — Historical Data & Background Sync
+
+**Goal**: Persist ticker metadata, daily price snapshots, and analysis score snapshots in Postgres. Background workers (Oban) keep data fresh on a schedule. History API endpoints let web and mobile render trend charts without re-calling external APIs.
+
+**Dependencies**: M2, M3, M5.
+
+**Deliverables**
+
+| Layer | Deliverables |
+|-------|--------------|
+| **API** | Oban setup (dependency, config, supervision). Ecto schemas and migrations: `tickers`, `price_snapshots`, `score_snapshots`. Market context module (upsert, query, history). FMP bulk endpoints (S&P 500 constituents, bulk quote). Oban workers: `SeedTickersJob`, `PriceSnapshotJob`, `ScoreSnapshotJob`. History endpoints: `GET /api/stocks/:ticker/price-history`, `GET /api/stocks/:ticker/score-history`. Seed and backfill mix tasks. |
+| **Web** | Consume history endpoints via api-client for trend charts (future milestone). |
+| **Mobile** | Same api-client methods available for mobile charts. |
+| **Types** | `PriceSnapshot`, `ScoreSnapshot` in `@repo/types`; `getPriceHistory`, `getScoreHistory` in `@repo/api-client`. |
+
+**HLD sections**: §4.4 Market context, §4.6 Cache, §4.7 Oban, §6.1 FMP bulk, §7 Data model (Ticker, PriceSnapshot, ScoreSnapshot).
+
+**Acceptance criteria**
+
+- S&P 500 tickers seeded in `tickers` table (~500 rows).
+- Daily price and score snapshots stored; Oban jobs run on schedule.
+- History API returns stored data; no external API calls for historical lookups.
+- Mix tasks for manual seeding and backfill work end-to-end.
+
+---
+
+### 12.7 Milestone 7 — Multi-Agent LLM Analysis
 
 **Goal**: TradingAgents-style multi-agent LLM framework: analyst agents (technical, institutional), researcher debate (bull/bear), synthesis, and optional consideration signal—using existing data (Alpha Vantage, Unusual Whales, analysis contexts). Integrated with API, web, and mobile; research-only disclaimer.
 
-**Dependencies**: M1–M5.
+**Dependencies**: M1–M6.
 
 **Deliverables**
 
@@ -771,11 +805,11 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 
 ---
 
-### 12.7 Milestone 7 — Polish & Scale
+### 12.8 Milestone 8 — Polish & Scale
 
 **Goal**: App store submission, optional Redis, performance tuning, and advanced features (per PRD Phase 4).
 
-**Dependencies**: M1–M6.
+**Dependencies**: M1–M7.
 
 **Deliverables**
 
@@ -796,7 +830,7 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 
 ---
 
-### 12.8 Milestone Summary Table
+### 12.9 Milestone Summary Table
 
 | Milestone | Backend (Phoenix) | Web | Mobile | Deploy / Infra |
 |-----------|-------------------|-----|--------|----------------|
@@ -805,8 +839,9 @@ Each milestone is a coherent, testable slice. HLD section references point to wh
 | **M3** | FMP, Sentiment, full Institutional, recommendation | Fundamental, Emotional, Institutional tabs | All 4 tabs | Same |
 | **M4** | PaperTrading (portfolios, trades, performance) | Portfolio dashboard, trade modal, history | Portfolio tab, trade, history | Same |
 | **M5** | Watchlist, history, Shares, Oban, Push | Watchlist, share, profile | Watchlist, share, push | Same |
-| **M6** | Multi-agent LLM (analysts, debate, synthesis), agent-analysis API | Agent analysis on stock page | Agent analysis on stock screen | Same |
-| **M7** | Redis optional, Oban tune | Perf, SEO, analytics | Store submit, OTA, Sentry | Monitoring, stores |
+| **M6** | Market context, Oban workers, tickers/snapshots, history API | Consume history endpoints | Same api-client | Same |
+| **M7** | Multi-agent LLM (analysts, debate, synthesis), agent-analysis API | Agent analysis on stock page | Agent analysis on stock screen | Same |
+| **M8** | Redis optional, Oban tune | Perf, SEO, analytics | Store submit, OTA, Sentry | Monitoring, stores |
 
 ---
 

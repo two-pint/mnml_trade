@@ -8,6 +8,7 @@ node_modules/
 dist/
 .next/
 out/
+*.tsbuildinfo
 
 # Expo / React Native
 .expo/
