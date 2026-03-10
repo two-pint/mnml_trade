@@ -4,11 +4,21 @@ import type {
   UpdatePortfolioRequest,
   ExecuteTradeRequest,
   TradeResult,
+  EnrichedHolding,
+  TransactionDetail,
+  TransactionListParams,
+  PortfolioPerformance,
+  PaginationMeta,
 } from "@repo/types";
 import type { ApiClient } from "./client";
 
 interface DataResponse<T> {
   data: T;
+}
+
+interface PaginatedResponse<T> {
+  data: T;
+  meta: PaginationMeta;
 }
 
 export function createPaperTradingApi(client: ApiClient) {
@@ -37,6 +47,40 @@ export function createPaperTradingApi(client: ApiClient) {
       return client.post<DataResponse<TradeResult>>(
         `/api/paper-trading/portfolios/${portfolioId}/trade`,
         payload,
+      );
+    },
+
+    listHoldings(portfolioId: string): Promise<DataResponse<EnrichedHolding[]>> {
+      return client.get<DataResponse<EnrichedHolding[]>>(
+        `/api/paper-trading/portfolios/${portfolioId}/holdings`,
+      );
+    },
+
+    listTransactions(
+      portfolioId: string,
+      params?: TransactionListParams,
+    ): Promise<PaginatedResponse<TransactionDetail[]>> {
+      const searchParams = new URLSearchParams();
+      if (params?.page) searchParams.set("page", String(params.page));
+      if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+      if (params?.ticker) searchParams.set("ticker", params.ticker);
+      if (params?.type) searchParams.set("type", params.type);
+      if (params?.from) searchParams.set("from", params.from);
+      if (params?.to) searchParams.set("to", params.to);
+      const qs = searchParams.toString();
+      const url = `/api/paper-trading/portfolios/${portfolioId}/transactions${qs ? `?${qs}` : ""}`;
+      return client.get<PaginatedResponse<TransactionDetail[]>>(url);
+    },
+
+    getTransaction(portfolioId: string, transactionId: string): Promise<DataResponse<TransactionDetail>> {
+      return client.get<DataResponse<TransactionDetail>>(
+        `/api/paper-trading/portfolios/${portfolioId}/transactions/${transactionId}`,
+      );
+    },
+
+    getPerformance(portfolioId: string): Promise<DataResponse<PortfolioPerformance>> {
+      return client.get<DataResponse<PortfolioPerformance>>(
+        `/api/paper-trading/portfolios/${portfolioId}/performance`,
       );
     },
   };

@@ -65,4 +65,44 @@ defmodule StockAnalysisWeb.PortfolioController do
       |> render(:trade, result: result)
     end
   end
+
+  def holdings(conn, %{"portfolio_id" => portfolio_id}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    with {:ok, enriched_holdings} <- PaperTrading.list_holdings(user.id, portfolio_id) do
+      conn
+      |> put_status(:ok)
+      |> render(:holdings, holdings: enriched_holdings)
+    end
+  end
+
+  def transactions(conn, %{"portfolio_id" => portfolio_id} = params) do
+    user = Guardian.Plug.current_resource(conn)
+
+    with {:ok, result} <- PaperTrading.list_transactions(user.id, portfolio_id, params) do
+      conn
+      |> put_status(:ok)
+      |> render(:transactions, result: result)
+    end
+  end
+
+  def transaction_detail(conn, %{"portfolio_id" => portfolio_id, "transaction_id" => tx_id}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    with {:ok, tx} <- PaperTrading.get_transaction(user.id, portfolio_id, tx_id) do
+      conn
+      |> put_status(:ok)
+      |> render(:transaction_detail, transaction: tx)
+    end
+  end
+
+  def performance(conn, %{"portfolio_id" => portfolio_id}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    with {:ok, metrics} <- PaperTrading.get_performance(user.id, portfolio_id) do
+      conn
+      |> put_status(:ok)
+      |> render(:performance, metrics: metrics)
+    end
+  end
 end

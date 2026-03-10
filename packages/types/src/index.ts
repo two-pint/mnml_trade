@@ -58,4 +58,9 @@ export type {
   ExecuteTradeRequest,
   PaperTransaction,
   TradeResult,
+  EnrichedHolding,
+  TransactionDetail,
+  TransactionListParams,
+  TradeMetric,
+  PortfolioPerformance,
 } from "./paper-trading";

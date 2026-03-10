@@ -438,4 +438,225 @@ defmodule StockAnalysis.PaperTradingTest do
                )
     end
   end
+
+  describe "list_holdings/3" do
+    defp price_fetcher_for_holdings(prices) do
+      fn ticker ->
+        case Map.get(prices, ticker) do
+          nil -> {:error, :not_found}
+          p -> {:ok, %{price: p}}
+        end
+      end
+    end
+
+    test "returns enriched holdings with gain/loss", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Holdings Test"})
+
+      {:ok, _} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "AAPL", "side" => "buy", "quantity" => 10},
+          price_fetcher: price_fetcher("100")
+        )
+
+      {:ok, _} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "MSFT", "side" => "buy", "quantity" => 5},
+          price_fetcher: price_fetcher("200")
+        )
+
+      {:ok, holdings} =
+        PaperTrading.list_holdings(user.id, portfolio.id,
+          price_fetcher: price_fetcher_for_holdings(%{"AAPL" => "120", "MSFT" => "190"})
+        )
+
+      assert length(holdings) == 2
+      aapl = Enum.find(holdings, fn h -> h.holding.ticker == "AAPL" end)
+      assert Decimal.equal?(aapl.current_price, Decimal.new("120"))
+      assert Decimal.equal?(aapl.current_value, Decimal.new("1200"))
+      assert Decimal.equal?(aapl.gain_loss, Decimal.new("200"))
+
+      msft = Enum.find(holdings, fn h -> h.holding.ticker == "MSFT" end)
+      assert Decimal.equal?(msft.current_price, Decimal.new("190"))
+      assert Decimal.equal?(msft.current_value, Decimal.new("950"))
+      assert Decimal.lt?(msft.gain_loss, Decimal.new("0"))
+    end
+
+    test "returns not_found for another user", %{user: user} do
+      {:ok, other} =
+        Accounts.register_user(%{
+          "email" => "other_hold@example.com",
+          "password" => "password123",
+          "username" => "other_hold"
+        })
+
+      {:ok, portfolio} = PaperTrading.create_portfolio(other.id, %{"name" => "Other's"})
+
+      assert {:error, :not_found} = PaperTrading.list_holdings(user.id, portfolio.id)
+    end
+  end
+
+  describe "list_transactions/3" do
+    test "returns paginated transactions", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Tx Test"})
+
+      for i <- 1..5 do
+        {:ok, _} =
+          PaperTrading.execute_trade(user.id, portfolio.id,
+            %{"ticker" => "AAPL", "side" => "buy", "quantity" => i},
+            price_fetcher: price_fetcher("100")
+          )
+      end
+
+      {:ok, result} = PaperTrading.list_transactions(user.id, portfolio.id, %{"per_page" => "2", "page" => "1"})
+      assert length(result.transactions) == 2
+      assert result.total_count == 5
+      assert result.total_pages == 3
+      assert result.page == 1
+
+      {:ok, page2} = PaperTrading.list_transactions(user.id, portfolio.id, %{"per_page" => "2", "page" => "2"})
+      assert length(page2.transactions) == 2
+    end
+
+    test "filters by ticker", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Filter Test"})
+
+      {:ok, _} = PaperTrading.execute_trade(user.id, portfolio.id,
+        %{"ticker" => "AAPL", "side" => "buy", "quantity" => 1},
+        price_fetcher: price_fetcher("100"))
+
+      {:ok, _} = PaperTrading.execute_trade(user.id, portfolio.id,
+        %{"ticker" => "MSFT", "side" => "buy", "quantity" => 1},
+        price_fetcher: price_fetcher("200"))
+
+      {:ok, result} = PaperTrading.list_transactions(user.id, portfolio.id, %{"ticker" => "AAPL"})
+      assert length(result.transactions) == 1
+      assert hd(result.transactions).ticker == "AAPL"
+    end
+
+    test "filters by type", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Type Filter"})
+
+      {:ok, _} = PaperTrading.execute_trade(user.id, portfolio.id,
+        %{"ticker" => "AAPL", "side" => "buy", "quantity" => 10},
+        price_fetcher: price_fetcher("100"))
+
+      {:ok, _} = PaperTrading.execute_trade(user.id, portfolio.id,
+        %{"ticker" => "AAPL", "side" => "sell", "quantity" => 5},
+        price_fetcher: price_fetcher("110"))
+
+      {:ok, buys} = PaperTrading.list_transactions(user.id, portfolio.id, %{"type" => "buy"})
+      assert length(buys.transactions) == 1
+      assert hd(buys.transactions).transaction_type == "buy"
+
+      {:ok, sells} = PaperTrading.list_transactions(user.id, portfolio.id, %{"type" => "sell"})
+      assert length(sells.transactions) == 1
+      assert hd(sells.transactions).transaction_type == "sell"
+    end
+  end
+
+  describe "get_transaction/3" do
+    test "returns a single transaction", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Single Tx"})
+
+      {:ok, %{transaction: tx}} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "AAPL", "side" => "buy", "quantity" => 5},
+          price_fetcher: price_fetcher("150"))
+
+      assert {:ok, fetched} = PaperTrading.get_transaction(user.id, portfolio.id, tx.id)
+      assert fetched.id == tx.id
+      assert fetched.ticker == "AAPL"
+    end
+
+    test "returns not_found for non-existent transaction", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "No Tx"})
+
+      assert {:error, :not_found} =
+               PaperTrading.get_transaction(user.id, portfolio.id, Ecto.UUID.generate())
+    end
+
+    test "returns not_found for another user's portfolio", %{user: user} do
+      {:ok, other} =
+        Accounts.register_user(%{
+          "email" => "other_tx@example.com",
+          "password" => "password123",
+          "username" => "other_tx"
+        })
+
+      {:ok, portfolio} = PaperTrading.create_portfolio(other.id, %{"name" => "Other's"})
+
+      assert {:error, :not_found} =
+               PaperTrading.get_transaction(user.id, portfolio.id, Ecto.UUID.generate())
+    end
+  end
+
+  describe "get_performance/3" do
+    test "returns zero metrics for empty portfolio", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Empty Perf"})
+
+      {:ok, perf} = PaperTrading.get_performance(user.id, portfolio.id)
+
+      assert Decimal.equal?(perf.total_value, Decimal.new("100000"))
+      assert Decimal.equal?(perf.total_return, Decimal.new("0"))
+      assert Decimal.equal?(perf.win_rate, Decimal.new("0"))
+      assert perf.total_trades == 0
+      assert perf.best_trade == nil
+      assert perf.worst_trade == nil
+      assert perf.most_traded_ticker == nil
+    end
+
+    test "computes unrealized gains", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Unrealized"})
+
+      {:ok, _} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "AAPL", "side" => "buy", "quantity" => 10},
+          price_fetcher: price_fetcher("170"))
+
+      {:ok, perf} =
+        PaperTrading.get_performance(user.id, portfolio.id,
+          price_fetcher: price_fetcher_for_holdings(%{"AAPL" => "180"})
+        )
+
+      # holdings_value = 10 * 180 = 1800; cash = 100000 - 1700 = 98300
+      assert Decimal.equal?(perf.holdings_value, Decimal.new("1800"))
+      assert Decimal.equal?(perf.total_value, Decimal.new("100100"))
+      assert Decimal.gt?(perf.total_return, Decimal.new("0"))
+      # unrealized = (180 - 170) * 10 = 100
+      assert Decimal.equal?(perf.unrealized_gains, Decimal.new("100"))
+    end
+
+    test "computes realized gains and win rate", %{user: user} do
+      {:ok, portfolio} = PaperTrading.create_portfolio(user.id, %{"name" => "Realized"})
+
+      {:ok, _} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "AAPL", "side" => "buy", "quantity" => 10},
+          price_fetcher: price_fetcher("170"))
+
+      {:ok, _} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "AAPL", "side" => "sell", "quantity" => 5},
+          price_fetcher: price_fetcher("180"))
+
+      {:ok, _} =
+        PaperTrading.execute_trade(user.id, portfolio.id,
+          %{"ticker" => "AAPL", "side" => "sell", "quantity" => 5},
+          price_fetcher: price_fetcher("165"))
+
+      {:ok, perf} =
+        PaperTrading.get_performance(user.id, portfolio.id,
+          price_fetcher: price_fetcher_for_holdings(%{"AAPL" => "170"})
+        )
+
+      assert perf.total_sells == 2
+      # sell at 180: profit; sell at 165: loss
+      assert perf.profitable_sells == 1
+      assert Decimal.equal?(perf.win_rate, Decimal.new("50"))
+      assert perf.best_trade != nil
+      assert perf.worst_trade != nil
+      assert perf.most_traded_ticker == "AAPL"
+      assert perf.total_trades == 3
+    end
+  end
 end

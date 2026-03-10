@@ -141,14 +141,14 @@ The core paper trading action: users buy or sell shares at the current cached pr
 The portfolio dashboard needs a list of current holdings (with current prices for unrealized P&L) and a paginated transaction history. These are read-only endpoints that query existing data and enrich holdings with current market prices from the cache.
 
 ### Required tasks
-- [ ] Implement `list_holdings(user_id, portfolio_id)` in PaperTrading context: return holdings with current price (from Stocks cache), current value, and gain/loss ($ and %) per holding.
-- [ ] Implement `list_transactions(user_id, portfolio_id, opts)`: paginated (default 20/page), filterable by ticker, type (buy/sell), date range. Return total count for pagination.
-- [ ] Implement `get_transaction(user_id, portfolio_id, transaction_id)`: single transaction detail.
-- [ ] Expose endpoints:
+- [x] Implement `list_holdings(user_id, portfolio_id)` in PaperTrading context: return holdings with current price (from Stocks cache), current value, and gain/loss ($ and %) per holding.
+- [x] Implement `list_transactions(user_id, portfolio_id, opts)`: paginated (default 20/page), filterable by ticker, type (buy/sell), date range. Return total count for pagination.
+- [x] Implement `get_transaction(user_id, portfolio_id, transaction_id)`: single transaction detail.
+- [x] Expose endpoints:
   - `GET /api/paper-trading/portfolios/:id/holdings`
   - `GET /api/paper-trading/portfolios/:id/transactions?page=1&per_page=20&ticker=&type=&from=&to=`
   - `GET /api/paper-trading/portfolios/:id/transactions/:tx_id`
-- [ ] Add types and api-client methods for holdings list and transaction list/detail.
+- [x] Add types and api-client methods for holdings list and transaction list/detail.
 
 ### Acceptance criteria
 - Holdings endpoint returns each holding with current price, value, gain/loss.
@@ -178,7 +178,7 @@ The portfolio dashboard needs a list of current holdings (with current prices fo
 Users want to know how their portfolio is doing: total return, best/worst trade, win rate. The performance endpoint computes these metrics from holdings and transactions and returns them in a format ready for the dashboard cards and charts.
 
 ### Required tasks
-- [ ] Implement `get_performance(user_id, portfolio_id)` in PaperTrading context:
+- [x] Implement `get_performance(user_id, portfolio_id)` in PaperTrading context:
   - Total portfolio value: `cash_balance + sum(holding_quantity * current_price)`.
   - Total return: `(current_value - starting_balance) / starting_balance * 100`.
   - Realized gains: sum of `(sell_price - avg_cost) * quantity` for sell transactions.
@@ -188,8 +188,8 @@ Users want to know how their portfolio is doing: total return, best/worst trade,
   - Win rate: `profitable_sells / total_sells * 100`.
   - Total trades count.
   - Most traded ticker.
-- [ ] Expose endpoint: `GET /api/paper-trading/portfolios/:id/performance`.
-- [ ] Add `PortfolioPerformance` type; update api-client.
+- [x] Expose endpoint: `GET /api/paper-trading/portfolios/:id/performance`.
+- [x] Add `PortfolioPerformance` type; update api-client.
 
 ### Acceptance criteria
 - Performance endpoint returns all metrics.
@@ -355,8 +355,8 @@ Mobile users need the same paper trading capabilities as web: portfolio dashboar
 - [x] M4-001: Database schemas and migrations
 - [x] M4-002: Portfolio CRUD
 - [x] M4-003: Trade execution
-- [ ] M4-004: Holdings and transaction history endpoints
-- [ ] M4-005: Performance metrics endpoint
+- [x] M4-004: Holdings and transaction history endpoints
+- [x] M4-005: Performance metrics endpoint
 - [ ] M4-006: Portfolio dashboard (web)
 - [ ] M4-007: Trade modal (web)
 - [ ] M4-008: Transaction history page (web)

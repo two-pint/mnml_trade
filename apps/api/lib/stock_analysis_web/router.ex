@@ -47,5 +47,9 @@ defmodule StockAnalysisWeb.Router do
 
     resources "/paper-trading/portfolios", PortfolioController, only: [:index, :create, :show, :update, :delete]
     post "/paper-trading/portfolios/:portfolio_id/trade", PortfolioController, :trade
+    get "/paper-trading/portfolios/:portfolio_id/holdings", PortfolioController, :holdings
+    get "/paper-trading/portfolios/:portfolio_id/transactions", PortfolioController, :transactions
+    get "/paper-trading/portfolios/:portfolio_id/transactions/:transaction_id", PortfolioController, :transaction_detail
+    get "/paper-trading/portfolios/:portfolio_id/performance", PortfolioController, :performance
   end
 end

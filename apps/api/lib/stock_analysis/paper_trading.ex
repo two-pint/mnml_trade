@@ -259,4 +259,339 @@ defmodule StockAnalysis.PaperTrading do
       )
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # M4-004: Holdings and transaction history
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Returns holdings for a portfolio, each enriched with current_price, current_value,
+  gain_loss, and gain_loss_percent. Accepts `:price_fetcher` in opts for testing.
+  """
+  def list_holdings(user_id, portfolio_id, opts \\ []) do
+    with {:ok, portfolio} <- get_portfolio(user_id, portfolio_id) do
+      enriched =
+        Enum.map(portfolio.holdings, fn holding ->
+          enrich_holding(holding, opts)
+        end)
+
+      {:ok, enriched}
+    end
+  end
+
+  defp enrich_holding(holding, opts) do
+    {current_price, price_available} =
+      case fetch_price(holding.ticker, opts) do
+        {:ok, p} -> {p, true}
+        _ -> {Decimal.new("0"), false}
+      end
+
+    current_value = Decimal.mult(holding.quantity, current_price)
+    cost_basis = holding.total_cost
+
+    {gain_loss, gain_loss_percent} =
+      if price_available do
+        gl = Decimal.sub(current_value, cost_basis)
+
+        gl_pct =
+          if Decimal.gt?(cost_basis, Decimal.new("0")) do
+            Decimal.mult(Decimal.div(gl, cost_basis), Decimal.new("100"))
+          else
+            Decimal.new("0")
+          end
+
+        {gl, gl_pct}
+      else
+        {Decimal.new("0"), Decimal.new("0")}
+      end
+
+    %{
+      holding: holding,
+      current_price: current_price,
+      current_value: current_value,
+      gain_loss: gain_loss,
+      gain_loss_percent: gain_loss_percent
+    }
+  end
+
+  @doc """
+  Lists transactions for a portfolio with pagination and optional filters.
+
+  Options:
+    - `:page` — page number (default 1)
+    - `:per_page` — items per page (default 20, max 100)
+    - `:ticker` — filter by ticker
+    - `:type` — filter by "buy" or "sell"
+    - `:from` — filter executed_at >= date (ISO 8601 string)
+    - `:to` — filter executed_at <= date (ISO 8601 string)
+  """
+  def list_transactions(user_id, portfolio_id, opts \\ %{}) do
+    with {:ok, _portfolio} <- get_portfolio(user_id, portfolio_id) do
+      page = max(parse_int(opts["page"] || opts[:page], 1), 1)
+      per_page = min(max(parse_int(opts["per_page"] || opts[:per_page], 20), 1), 100)
+      offset = (page - 1) * per_page
+
+      base_query =
+        from(t in Transaction,
+          where: t.portfolio_id == ^portfolio_id,
+          order_by: [desc: t.executed_at, desc: t.inserted_at]
+        )
+
+      filtered_query =
+        base_query
+        |> maybe_filter_ticker(opts)
+        |> maybe_filter_type(opts)
+        |> maybe_filter_from(opts)
+        |> maybe_filter_to(opts)
+
+      total_count = Repo.aggregate(filtered_query, :count)
+
+      transactions =
+        filtered_query
+        |> limit(^per_page)
+        |> offset(^offset)
+        |> Repo.all()
+
+      {:ok,
+       %{
+         transactions: transactions,
+         page: page,
+         per_page: per_page,
+         total_count: total_count,
+         total_pages: ceil(total_count / per_page)
+       }}
+    end
+  end
+
+  defp parse_int(nil, default), do: default
+  defp parse_int(val, _default) when is_integer(val), do: val
+
+  defp parse_int(val, default) when is_binary(val) do
+    case Integer.parse(val) do
+      {n, _} -> n
+      :error -> default
+    end
+  end
+
+  defp parse_int(_, default), do: default
+
+  defp maybe_filter_ticker(query, opts) do
+    case opts["ticker"] || opts[:ticker] do
+      nil -> query
+      "" -> query
+      ticker -> where(query, [t], t.ticker == ^String.upcase(ticker))
+    end
+  end
+
+  defp maybe_filter_type(query, opts) do
+    case opts["type"] || opts[:type] do
+      nil -> query
+      "" -> query
+      type when type in ["buy", "sell"] -> where(query, [t], t.transaction_type == ^type)
+      _ -> query
+    end
+  end
+
+  defp maybe_filter_from(query, opts) do
+    case opts["from"] || opts[:from] do
+      nil ->
+        query
+
+      from_str when is_binary(from_str) ->
+        case DateTime.from_iso8601(from_str) do
+          {:ok, dt, _} -> where(query, [t], t.executed_at >= ^dt)
+          _ -> case Date.from_iso8601(from_str) do
+            {:ok, d} -> where(query, [t], t.executed_at >= ^DateTime.new!(d, ~T[00:00:00]))
+            _ -> query
+          end
+        end
+
+      _ ->
+        query
+    end
+  end
+
+  defp maybe_filter_to(query, opts) do
+    case opts["to"] || opts[:to] do
+      nil ->
+        query
+
+      to_str when is_binary(to_str) ->
+        case DateTime.from_iso8601(to_str) do
+          {:ok, dt, _} -> where(query, [t], t.executed_at <= ^dt)
+          _ -> case Date.from_iso8601(to_str) do
+            {:ok, d} -> where(query, [t], t.executed_at <= ^DateTime.new!(d, ~T[23:59:59]))
+            _ -> query
+          end
+        end
+
+      _ ->
+        query
+    end
+  end
+
+  @doc """
+  Returns a single transaction, scoped by user ownership of the portfolio.
+  """
+  def get_transaction(user_id, portfolio_id, transaction_id) do
+    with {:ok, _portfolio} <- get_portfolio(user_id, portfolio_id) do
+      case Repo.one(
+             from(t in Transaction,
+               where: t.id == ^transaction_id and t.portfolio_id == ^portfolio_id
+             )
+           ) do
+        nil -> {:error, :not_found}
+        tx -> {:ok, tx}
+      end
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # M4-005: Performance metrics
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Computes portfolio performance metrics. Accepts `:price_fetcher` in opts for testing.
+  """
+  def get_performance(user_id, portfolio_id, opts \\ []) do
+    with {:ok, portfolio} <- get_portfolio(user_id, portfolio_id) do
+      transactions =
+        from(t in Transaction,
+          where: t.portfolio_id == ^portfolio_id,
+          order_by: [desc: t.executed_at]
+        )
+        |> Repo.all()
+
+      holdings_value =
+        Enum.reduce(portfolio.holdings, Decimal.new("0"), fn h, acc ->
+          case fetch_price(h.ticker, opts) do
+            {:ok, price} -> Decimal.add(acc, Decimal.mult(h.quantity, price))
+            _ -> Decimal.add(acc, h.total_cost)
+          end
+        end)
+
+      total_value = Decimal.add(portfolio.cash_balance, holdings_value)
+
+      total_return =
+        if Decimal.gt?(portfolio.starting_balance, Decimal.new("0")) do
+          Decimal.mult(
+            Decimal.div(
+              Decimal.sub(total_value, portfolio.starting_balance),
+              portfolio.starting_balance
+            ),
+            Decimal.new("100")
+          )
+        else
+          Decimal.new("0")
+        end
+
+      unrealized_gains =
+        Enum.reduce(portfolio.holdings, Decimal.new("0"), fn h, acc ->
+          case fetch_price(h.ticker, opts) do
+            {:ok, price} ->
+              gain = Decimal.mult(Decimal.sub(price, h.average_cost), h.quantity)
+              Decimal.add(acc, gain)
+
+            _ ->
+              acc
+          end
+        end)
+
+      sells = Enum.filter(transactions, fn t -> t.transaction_type == "sell" end)
+
+      avg_cost_by_ticker = compute_avg_costs(transactions)
+
+      sell_gains =
+        Enum.map(sells, fn t ->
+          avg_cost = Map.get(avg_cost_by_ticker, t.ticker, t.price_per_share)
+          gain_per_share = Decimal.sub(t.price_per_share, avg_cost)
+          total_gain = Decimal.mult(gain_per_share, t.quantity)
+          pct = if Decimal.gt?(avg_cost, Decimal.new("0")) do
+            Decimal.mult(Decimal.div(gain_per_share, avg_cost), Decimal.new("100"))
+          else
+            Decimal.new("0")
+          end
+          %{transaction: t, gain: total_gain, pct: pct}
+        end)
+
+      realized_gains =
+        Enum.reduce(sell_gains, Decimal.new("0"), fn sg, acc -> Decimal.add(acc, sg.gain) end)
+
+      profitable_sells = Enum.count(sell_gains, fn sg -> Decimal.gt?(sg.gain, Decimal.new("0")) end)
+      total_sells = length(sells)
+
+      win_rate =
+        if total_sells > 0 do
+          Decimal.mult(
+            Decimal.div(Decimal.new(profitable_sells), Decimal.new(total_sells)),
+            Decimal.new("100")
+          )
+        else
+          Decimal.new("0")
+        end
+
+      best_trade = Enum.max_by(sell_gains, fn sg -> sg.pct end, fn -> nil end)
+      worst_trade = Enum.min_by(sell_gains, fn sg -> sg.pct end, fn -> nil end)
+
+      total_trades = length(transactions)
+
+      most_traded_ticker =
+        if total_trades > 0 do
+          transactions
+          |> Enum.group_by(fn t -> t.ticker end)
+          |> Enum.max_by(fn {_ticker, txs} -> length(txs) end)
+          |> elem(0)
+        else
+          nil
+        end
+
+      {:ok,
+       %{
+         total_value: total_value,
+         cash_balance: portfolio.cash_balance,
+         holdings_value: holdings_value,
+         total_return: total_return,
+         realized_gains: realized_gains,
+         unrealized_gains: unrealized_gains,
+         best_trade: format_trade_metric(best_trade),
+         worst_trade: format_trade_metric(worst_trade),
+         win_rate: win_rate,
+         total_trades: total_trades,
+         total_sells: total_sells,
+         profitable_sells: profitable_sells,
+         most_traded_ticker: most_traded_ticker
+       }}
+    end
+  end
+
+  defp compute_avg_costs(transactions) do
+    zero = Decimal.new("0")
+
+    transactions
+    |> Enum.filter(fn t -> t.transaction_type == "buy" end)
+    |> Enum.reduce(%{}, fn t, acc ->
+      {old_qty, old_total} = Map.get(acc, t.ticker, {zero, zero})
+      new_qty = Decimal.add(old_qty, t.quantity)
+      new_total = Decimal.add(old_total, t.total_amount)
+      Map.put(acc, t.ticker, {new_qty, new_total})
+    end)
+    |> Map.new(fn {ticker, {qty, total}} ->
+      avg = if Decimal.gt?(qty, zero), do: Decimal.div(total, qty), else: zero
+      {ticker, avg}
+    end)
+  end
+
+  defp format_trade_metric(nil), do: nil
+
+  defp format_trade_metric(%{transaction: tx, gain: gain, pct: pct}) do
+    %{
+      id: tx.id,
+      ticker: tx.ticker,
+      quantity: tx.quantity,
+      price_per_share: tx.price_per_share,
+      gain: gain,
+      gain_percent: pct,
+      executed_at: tx.executed_at
+    }
+  end
 end

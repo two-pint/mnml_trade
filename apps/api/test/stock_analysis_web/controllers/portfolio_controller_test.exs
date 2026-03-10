@@ -398,4 +398,208 @@ defmodule StockAnalysisWeb.PortfolioControllerTest do
       assert json_response(conn, 401)
     end
   end
+
+  describe "GET /api/paper-trading/portfolios/:portfolio_id/holdings" do
+    test "returns enriched holdings", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "Holdings"})
+
+      seed_price_in_cache("AAPL", "175")
+
+      build_conn()
+      |> auth_conn(token)
+      |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+        "ticker" => "AAPL", "side" => "buy", "quantity" => 10
+      })
+
+      seed_price_in_cache("AAPL", "180")
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/holdings")
+
+      assert %{"data" => [holding]} = json_response(conn, 200)
+      assert holding["ticker"] == "AAPL"
+      assert holding["current_price"] == "180"
+      assert holding["current_value"] != nil
+      assert holding["gain_loss"] != nil
+      assert holding["gain_loss_percent"] != nil
+    end
+
+    test "returns 404 for another user's portfolio", %{conn: conn, token: token} do
+      {:ok, other} =
+        Accounts.register_user(%{
+          "email" => "other_hold@example.com",
+          "password" => "password123",
+          "username" => "other_hold"
+        })
+
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(other.id, %{"name" => "Private"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/holdings")
+
+      assert json_response(conn, 404)
+    end
+  end
+
+  describe "GET /api/paper-trading/portfolios/:portfolio_id/transactions" do
+    test "returns paginated transactions", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "TxList"})
+
+      seed_price_in_cache("AAPL", "100")
+
+      for _ <- 1..3 do
+        build_conn()
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL", "side" => "buy", "quantity" => 1
+        })
+      end
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/transactions?per_page=2&page=1")
+
+      response = json_response(conn, 200)
+      assert length(response["data"]) == 2
+      assert response["meta"]["total_count"] == 3
+      assert response["meta"]["total_pages"] == 2
+    end
+
+    test "filters by ticker", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "TxFilter"})
+
+      seed_price_in_cache("AAPL", "100")
+      seed_price_in_cache("MSFT", "200")
+
+      build_conn()
+      |> auth_conn(token)
+      |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+        "ticker" => "AAPL", "side" => "buy", "quantity" => 1
+      })
+
+      build_conn()
+      |> auth_conn(token)
+      |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+        "ticker" => "MSFT", "side" => "buy", "quantity" => 1
+      })
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/transactions?ticker=AAPL")
+
+      response = json_response(conn, 200)
+      assert length(response["data"]) == 1
+      assert hd(response["data"])["ticker"] == "AAPL"
+    end
+  end
+
+  describe "GET /api/paper-trading/portfolios/:portfolio_id/transactions/:transaction_id" do
+    test "returns single transaction detail", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "TxDetail"})
+
+      seed_price_in_cache("AAPL", "150")
+
+      trade_conn =
+        build_conn()
+        |> auth_conn(token)
+        |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+          "ticker" => "AAPL", "side" => "buy", "quantity" => 5
+        })
+
+      %{"data" => %{"transaction" => %{"id" => tx_id}}} = json_response(trade_conn, 201)
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/transactions/#{tx_id}")
+
+      assert %{"data" => %{"id" => ^tx_id, "ticker" => "AAPL"}} = json_response(conn, 200)
+    end
+
+    test "returns 404 for non-existent transaction", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "NoTx"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/transactions/#{Ecto.UUID.generate()}")
+
+      assert json_response(conn, 404)
+    end
+  end
+
+  describe "GET /api/paper-trading/portfolios/:portfolio_id/performance" do
+    test "returns zero metrics for empty portfolio", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "EmptyPerf"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/performance")
+
+      response = json_response(conn, 200)
+      assert response["data"]["total_value"] == "100000"
+      assert response["data"]["total_return"] == "0"
+      assert response["data"]["win_rate"] == "0"
+      assert response["data"]["total_trades"] == 0
+      assert response["data"]["best_trade"] == nil
+      assert response["data"]["worst_trade"] == nil
+    end
+
+    test "returns metrics after trades", %{conn: conn, user: user, token: token} do
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(user.id, %{"name" => "PerfTest"})
+
+      seed_price_in_cache("AAPL", "170")
+
+      build_conn()
+      |> auth_conn(token)
+      |> post(~p"/api/paper-trading/portfolios/#{portfolio.id}/trade", %{
+        "ticker" => "AAPL", "side" => "buy", "quantity" => 10
+      })
+
+      seed_price_in_cache("AAPL", "180")
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/performance")
+
+      response = json_response(conn, 200)
+      assert response["data"]["total_trades"] == 1
+      assert response["data"]["most_traded_ticker"] == "AAPL"
+    end
+
+    test "returns 404 for another user's portfolio", %{conn: conn, token: token} do
+      {:ok, other} =
+        Accounts.register_user(%{
+          "email" => "other_perf@example.com",
+          "password" => "password123",
+          "username" => "other_perf"
+        })
+
+      {:ok, portfolio} =
+        StockAnalysis.PaperTrading.create_portfolio(other.id, %{"name" => "Private"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get(~p"/api/paper-trading/portfolios/#{portfolio.id}/performance")
+
+      assert json_response(conn, 404)
+    end
+  end
 end
