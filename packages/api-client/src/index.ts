@@ -7,3 +7,5 @@ export { createStocksApi } from "./stocks";
 export type { StocksApi } from "./stocks";
 export { createPaperTradingApi } from "./paper-trading";
 export type { PaperTradingApi } from "./paper-trading";
+export { createEngagementApi } from "./engagement";
+export type { EngagementApi } from "./engagement";

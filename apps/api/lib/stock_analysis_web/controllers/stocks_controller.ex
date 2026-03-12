@@ -135,6 +135,9 @@ defmodule StockAnalysisWeb.StocksController do
   def show(conn, %{"ticker" => ticker}) do
     case Stocks.get_overview(ticker) do
       {:ok, overview} ->
+        user = Guardian.Plug.current_resource(conn)
+        if user, do: Task.start(fn -> StockAnalysis.Engagement.record_view(user.id, ticker) end)
+
         enriched = enrich_with_recommendation(overview, ticker)
         conn
         |> put_status(:ok)

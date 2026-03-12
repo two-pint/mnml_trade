@@ -64,3 +64,4 @@ export type {
   TradeMetric,
   PortfolioPerformance,
 } from "./paper-trading";
+export type { WatchlistItem, HistoryEntry } from "./engagement";

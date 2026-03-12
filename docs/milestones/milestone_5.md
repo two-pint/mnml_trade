@@ -16,16 +16,16 @@
 Users want to save stocks they follow so they can quickly return to them. The Watchlist context provides add, remove, and list operations scoped to the authenticated user. The database table enforces a unique constraint per user + ticker to prevent duplicates.
 
 ### Required tasks
-- [ ] Create Ecto schema and migration for `watchlists`: `user_id` (references users), `ticker` (string), `added_at` (utc_datetime), timestamps. Unique index on `(user_id, ticker)`. Index on `user_id`.
-- [ ] Create `StockAnalysis.Watchlist` context module.
-- [ ] Implement `add(user_id, ticker)`: insert or return existing; validate ticker is non-empty.
-- [ ] Implement `remove(user_id, ticker)`: delete row; return `{:ok, :removed}` or `{:error, :not_found}`.
-- [ ] Implement `list(user_id)`: return all watchlist entries for user, ordered by `added_at DESC`.
-- [ ] Expose endpoints:
+- [x] Create Ecto schema and migration for `watchlists`: `user_id` (references users), `ticker` (string), `added_at` (utc_datetime), timestamps. Unique index on `(user_id, ticker)`. Index on `user_id`.
+- [x] Create `StockAnalysis.Watchlist` context module.
+- [x] Implement `add(user_id, ticker)`: insert or return existing; validate ticker is non-empty.
+- [x] Implement `remove(user_id, ticker)`: delete row; return `{:ok, :removed}` or `{:error, :not_found}`.
+- [x] Implement `list(user_id)`: return all watchlist entries for user, ordered by `added_at DESC`.
+- [x] Expose endpoints:
   - `GET /api/user/watchlist` — list
   - `POST /api/user/watchlist` — add (body: `{ticker}`)
   - `DELETE /api/user/watchlist/:ticker` — remove
-- [ ] Add `WatchlistItem` type and api-client methods.
+- [x] Add `WatchlistItem` type and api-client methods.
 
 ### Acceptance criteria
 - User can add a ticker; duplicate add is idempotent (no error, returns existing).
@@ -55,12 +55,12 @@ Users want to save stocks they follow so they can quickly return to them. The Wa
 Users benefit from seeing which stocks they recently analyzed so they can quickly revisit them. The history is recorded automatically when a stock overview is viewed and capped at the last 20 entries per user. This also feeds future analytics (most viewed stocks, engagement metrics).
 
 ### Required tasks
-- [ ] Create Ecto schema and migration for `analysis_history`: `user_id` (references users), `ticker` (string), `viewed_at` (utc_datetime), timestamps. Index on `(user_id, viewed_at DESC)`.
-- [ ] Implement `record_view(user_id, ticker)` in Watchlist context (or a dedicated History sub-module): insert new entry; prune entries beyond 20 per user (delete oldest).
-- [ ] Implement `list_history(user_id, limit \\ 20)`: return recent entries ordered by `viewed_at DESC`.
-- [ ] Hook into the stock overview controller: after successful `GET /api/stocks/:ticker`, call `record_view` asynchronously (e.g. `Task.start` or Oban job) so it doesn't add latency.
-- [ ] Expose endpoint: `GET /api/user/history` — list recent views.
-- [ ] Add type and api-client method.
+- [x] Create Ecto schema and migration for `analysis_history`: `user_id` (references users), `ticker` (string), `viewed_at` (utc_datetime), timestamps. Index on `(user_id, viewed_at DESC)`.
+- [x] Implement `record_view(user_id, ticker)` in Watchlist context (or a dedicated History sub-module): insert new entry; prune entries beyond 20 per user (delete oldest).
+- [x] Implement `list_history(user_id, limit \\ 20)`: return recent entries ordered by `viewed_at DESC`.
+- [x] Hook into the stock overview controller: after successful `GET /api/stocks/:ticker`, call `record_view` asynchronously (e.g. `Task.start` or Oban job) so it doesn't add latency.
+- [x] Expose endpoint: `GET /api/user/history` — list recent views.
+- [x] Add type and api-client method.
 
 ### Acceptance criteria
 - Viewing a stock overview automatically records history.

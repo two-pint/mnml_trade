@@ -29,6 +29,10 @@ defmodule StockAnalysisWeb.Router do
     pipe_through [:api, :authenticated]
 
     get "/user/me", UserController, :me
+    get "/user/watchlist", EngagementController, :list_watchlist
+    post "/user/watchlist", EngagementController, :add_to_watchlist
+    delete "/user/watchlist/:ticker", EngagementController, :remove_from_watchlist
+    get "/user/history", EngagementController, :list_history
 
     get "/stocks/search", StocksController, :search
     get "/stocks/trending", StocksController, :trending

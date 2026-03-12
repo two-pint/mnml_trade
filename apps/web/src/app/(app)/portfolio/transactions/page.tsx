@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type {
   PaperPortfolio,
@@ -174,9 +174,8 @@ export default function TransactionsPage() {
               </thead>
               <tbody>
                 {transactions.map((tx) => (
-                  <>
+                  <Fragment key={tx.id}>
                     <tr
-                      key={tx.id}
                       onClick={() => setExpandedId(expandedId === tx.id ? null : tx.id)}
                       className="cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50"
                     >
@@ -232,7 +231,7 @@ export default function TransactionsPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
