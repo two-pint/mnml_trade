@@ -42,6 +42,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <StockSearch />
           </div>
           <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/portfolio"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+            >
+              Portfolio
+            </Link>
             <span className="hidden text-sm text-gray-500 sm:inline">{user.email}</span>
             <button
               type="button"

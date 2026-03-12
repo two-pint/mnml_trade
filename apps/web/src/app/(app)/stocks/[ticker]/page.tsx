@@ -19,6 +19,7 @@ import { stocksApi } from "@/lib/api";
 import FundamentalTab from "@/components/fundamental-tab";
 import EmotionalTab from "@/components/emotional-tab";
 import InstitutionalTab from "@/components/institutional-tab";
+import TradeModal from "@/components/trade-modal";
 
 type Timeframe = "1D" | "1M" | "6M" | "1Y";
 
@@ -107,6 +108,7 @@ export default function StockPage() {
   const [dailyLoading, setDailyLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("1M");
+  const [tradeOpen, setTradeOpen] = useState(false);
 
   const setTab = useCallback(
     (id: string) => {
@@ -183,7 +185,16 @@ export default function StockPage() {
           <div className="h-24 animate-pulse rounded bg-gray-100" />
         ) : overview ? (
           <>
-            <h1 className="text-2xl font-bold text-gray-900">{overview.ticker}</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">{overview.ticker}</h1>
+              <button
+                type="button"
+                onClick={() => setTradeOpen(true)}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+              >
+                Trade
+              </button>
+            </div>
             <div className="mt-4 flex flex-wrap items-baseline gap-6">
               <span className="text-3xl font-semibold text-gray-900">
                 ${overview.price != null ? overview.price.toFixed(2) : "—"}
@@ -500,6 +511,13 @@ export default function StockPage() {
       {tab === "emotional" && <EmotionalTab ticker={ticker} tabSetter={setTab} />}
 
       {tab === "institutional" && <InstitutionalTab ticker={ticker} />}
+
+      <TradeModal
+        ticker={ticker}
+        currentPrice={overview?.price ?? null}
+        open={tradeOpen}
+        onClose={() => setTradeOpen(false)}
+      />
     </div>
   );
 }

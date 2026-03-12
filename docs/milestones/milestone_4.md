@@ -217,15 +217,15 @@ Users want to know how their portfolio is doing: total return, best/worst trade,
 The portfolio page is where users track their paper trading activity. It shows the portfolio value, cash, quick stats, a holdings table, and a performance chart. This is the web implementation using data from the API endpoints built in M4-002 through M4-005.
 
 ### Required tasks
-- [ ] Create `/portfolio/page.tsx` (or `/portfolio/[id]/page.tsx` if multiple portfolios).
-- [ ] Fetch portfolio, holdings, and performance via React Query.
-- [ ] **Header**: portfolio name, total value, total return ($ and %, colored).
-- [ ] **Quick stats cards**: Total Return, Best Performer, Worst Performer, Total Trades, Win Rate.
-- [ ] **Holdings table**: ticker, name, quantity, avg cost, current price, value, gain/loss ($ and %), % of portfolio. Click row to navigate to stock analysis.
-- [ ] **Performance chart**: portfolio value over time (1W, 1M, 3M, 1Y timeframe toggles). Use Recharts or Lightweight Charts.
-- [ ] **Cash available**: displayed prominently.
-- [ ] Add "Portfolio" link to top navbar.
-- [ ] Loading skeletons and empty state ("No holdings yet — start by analyzing a stock").
+- [x] Create `/portfolio/page.tsx` (or `/portfolio/[id]/page.tsx` if multiple portfolios).
+- [x] Fetch portfolio, holdings, and performance via React Query.
+- [x] **Header**: portfolio name, total value, total return ($ and %, colored).
+- [x] **Quick stats cards**: Total Return, Best Performer, Worst Performer, Total Trades, Win Rate.
+- [x] **Holdings table**: ticker, name, quantity, avg cost, current price, value, gain/loss ($ and %), % of portfolio. Click row to navigate to stock analysis.
+- [x] **Performance chart**: portfolio value over time (1W, 1M, 3M, 1Y timeframe toggles). Use Recharts or Lightweight Charts.
+- [x] **Cash available**: displayed prominently.
+- [x] Add "Portfolio" link to top navbar.
+- [x] Loading skeletons and empty state ("No holdings yet — start by analyzing a stock").
 
 ### Acceptance criteria
 - Portfolio page shows all sections with live data.
@@ -254,14 +254,14 @@ The portfolio page is where users track their paper trading activity. It shows t
 Users must be able to buy or sell directly from a stock analysis page. A trade modal overlays the current page with buy/sell tabs, quantity input, price display, cost preview, and confirmation. This is the main action flow connecting analysis to paper trading.
 
 ### Required tasks
-- [ ] Create a trade modal/drawer component (e.g. Shadcn Dialog or custom).
-- [ ] Add "Trade" button on every stock detail page; clicking opens the modal with the ticker pre-filled.
-- [ ] **Modal contents**: Buy/Sell tab toggle; ticker (read-only, pre-filled); current price (from stock data, auto-refreshes or shows cached); quantity input (number, min 1); total cost preview (`quantity * price`); available cash (buy) or shares owned (sell); portfolio selector (if multiple portfolios — Phase 2, for now default portfolio).
-- [ ] **Validation**: insufficient cash (buy), insufficient shares (sell), min/max quantity. Show inline errors.
-- [ ] **Preview and confirm**: show summary before executing; "Execute Trade" button; loading state on submit.
-- [ ] On success: show confirmation message (ticker, side, quantity, price, total); option to "View Portfolio" or "Continue Analyzing".
-- [ ] Call `api.executeTrade(portfolioId, {ticker, side, quantity})` from api-client.
-- [ ] Invalidate React Query cache for portfolio/holdings/performance on success.
+- [x] Create a trade modal/drawer component (e.g. Shadcn Dialog or custom).
+- [x] Add "Trade" button on every stock detail page; clicking opens the modal with the ticker pre-filled.
+- [x] **Modal contents**: Buy/Sell tab toggle; ticker (read-only, pre-filled); current price (from stock data, auto-refreshes or shows cached); quantity input (number, min 1); total cost preview (`quantity * price`); available cash (buy) or shares owned (sell); portfolio selector (if multiple portfolios — Phase 2, for now default portfolio).
+- [x] **Validation**: insufficient cash (buy), insufficient shares (sell), min/max quantity. Show inline errors.
+- [x] **Preview and confirm**: show summary before executing; "Execute Trade" button; loading state on submit.
+- [x] On success: show confirmation message (ticker, side, quantity, price, total); option to "View Portfolio" or "Continue Analyzing".
+- [x] Call `api.executeTrade(portfolioId, {ticker, side, quantity})` from api-client.
+- [x] Invalidate React Query cache for portfolio/holdings/performance on success.
 
 ### Acceptance criteria
 - Trade modal opens from stock page with ticker pre-filled.
@@ -357,8 +357,8 @@ Mobile users need the same paper trading capabilities as web: portfolio dashboar
 - [x] M4-003: Trade execution
 - [x] M4-004: Holdings and transaction history endpoints
 - [x] M4-005: Performance metrics endpoint
-- [ ] M4-006: Portfolio dashboard (web)
-- [ ] M4-007: Trade modal (web)
+- [x] M4-006: Portfolio dashboard (web)
+- [x] M4-007: Trade modal (web)
 - [ ] M4-008: Transaction history page (web)
 - [ ] M4-009: Paper trading (mobile)
 
