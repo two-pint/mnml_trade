@@ -206,6 +206,150 @@ defmodule StockAnalysis.Integrations.FMPTest do
     end
   end
 
+  describe "get_sp500_constituents/0" do
+    setup do
+      StockAnalysis.Cache.delete("fmp:sp500_constituents")
+      :ok
+    end
+
+    test "returns normalized constituent list on 200", %{bypass: bypass} do
+      Bypass.expect_once(bypass, fn conn ->
+        assert conn.request_path =~ "/api/v3/sp500_constituent"
+        Plug.Conn.send_resp(conn, 200, Jason.encode!([
+          %{
+            "symbol" => "AAPL",
+            "name" => "Apple Inc.",
+            "sector" => "Information Technology",
+            "subSector" => "Technology Hardware",
+            "headQuarter" => "Cupertino, CA",
+            "dateFirstAdded" => "1982-11-30",
+            "cik" => "0000320193",
+            "founded" => "1976-04-01"
+          },
+          %{
+            "symbol" => "MSFT",
+            "name" => "Microsoft Corp.",
+            "sector" => "Information Technology",
+            "subSector" => "Systems Software",
+            "headQuarter" => "Redmond, WA",
+            "dateFirstAdded" => "1994-06-01",
+            "cik" => "0000789019",
+            "founded" => "1975-04-04"
+          }
+        ]))
+      end)
+
+      assert {:ok, constituents} = FMP.get_sp500_constituents()
+      assert length(constituents) == 2
+      [aapl | _] = constituents
+      assert aapl.symbol == "AAPL"
+      assert aapl.name == "Apple Inc."
+      assert aapl.sector == "Information Technology"
+    end
+
+    test "returns cached result on second call (no second HTTP request)", %{bypass: bypass} do
+      StockAnalysis.Cache.delete("fmp:sp500_constituents")
+      call_count = :counters.new(1, [])
+
+      Bypass.stub(bypass, "GET", "/api/v3/sp500_constituent", fn conn ->
+        :counters.add(call_count, 1, 1)
+        Plug.Conn.send_resp(conn, 200, Jason.encode!([%{
+          "symbol" => "AAPL", "name" => "Apple", "sector" => "Tech"
+        }]))
+      end)
+
+      {:ok, _} = FMP.get_sp500_constituents()
+      {:ok, _} = FMP.get_sp500_constituents()
+
+      assert :counters.get(call_count, 1) == 1
+    end
+
+    test "returns {:error, :not_found} for empty list", %{bypass: bypass} do
+      Bypass.expect_once(bypass, fn conn ->
+        Plug.Conn.send_resp(conn, 200, "[]")
+      end)
+
+      assert {:error, :not_found} = FMP.get_sp500_constituents()
+    end
+
+    test "returns {:error, :rate_limit} on 429", %{bypass: bypass} do
+      Bypass.expect_once(bypass, fn conn ->
+        Plug.Conn.send_resp(conn, 429, "")
+      end)
+
+      assert {:error, :rate_limit} = FMP.get_sp500_constituents()
+    end
+  end
+
+  describe "get_bulk_quote/0" do
+    setup do
+      StockAnalysis.Cache.delete("fmp:bulk_quote")
+      :ok
+    end
+
+    test "returns normalized bulk quote list on 200", %{bypass: bypass} do
+      Bypass.expect_once(bypass, fn conn ->
+        assert conn.request_path =~ "/api/v3/stock/full/real-time-price"
+        Plug.Conn.send_resp(conn, 200, Jason.encode!([
+          %{
+            "ticker" => "AAPL",
+            "lastSalePrice" => 195.50,
+            "volume" => 55_000_000,
+            "priceChange" => 2.30,
+            "priceChangePercent" => 1.19
+          },
+          %{
+            "ticker" => "MSFT",
+            "lastSalePrice" => 420.00,
+            "volume" => 22_000_000,
+            "priceChange" => -1.50,
+            "priceChangePercent" => -0.36
+          }
+        ]))
+      end)
+
+      assert {:ok, quotes} = FMP.get_bulk_quote()
+      assert length(quotes) == 2
+      [aapl | _] = quotes
+      assert aapl.symbol == "AAPL"
+      assert aapl.price == 195.50
+      assert aapl.volume == 55_000_000
+    end
+
+    test "returns cached result on second call", %{bypass: bypass} do
+      StockAnalysis.Cache.delete("fmp:bulk_quote")
+      call_count = :counters.new(1, [])
+
+      Bypass.stub(bypass, "GET", "/api/v3/stock/full/real-time-price", fn conn ->
+        :counters.add(call_count, 1, 1)
+        Plug.Conn.send_resp(conn, 200, Jason.encode!([
+          %{"ticker" => "AAPL", "lastSalePrice" => 195.0, "volume" => 50_000_000}
+        ]))
+      end)
+
+      {:ok, _} = FMP.get_bulk_quote()
+      {:ok, _} = FMP.get_bulk_quote()
+
+      assert :counters.get(call_count, 1) == 1
+    end
+
+    test "returns empty list on empty response", %{bypass: bypass} do
+      Bypass.expect_once(bypass, fn conn ->
+        Plug.Conn.send_resp(conn, 200, "[]")
+      end)
+
+      assert {:ok, []} = FMP.get_bulk_quote()
+    end
+
+    test "returns {:error, :rate_limit} on 429", %{bypass: bypass} do
+      Bypass.expect_once(bypass, fn conn ->
+        Plug.Conn.send_resp(conn, 429, "")
+      end)
+
+      assert {:error, :rate_limit} = FMP.get_bulk_quote()
+    end
+  end
+
   describe "API key" do
     test "returns {:error, :api_key_missing} when key not set" do
       Application.delete_env(:stock_analysis, :fmp_api_key)

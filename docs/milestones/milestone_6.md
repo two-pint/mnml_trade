@@ -16,13 +16,13 @@
 Background jobs are needed to fetch and store price/score data on a schedule without blocking user requests. Oban is a robust, Postgres-backed job queue for Elixir that provides scheduling, retries, uniqueness constraints, and cron-like recurring jobs. Adding it now establishes the infrastructure that M6-005 workers will use.
 
 ### Required tasks
-- [ ] Add `oban` dependency to `mix.exs` (latest stable version). Oban is a Postgres-backed job processing library for Elixir — [docs](https://hexdocs.pm/oban).
-- [ ] Run `mix deps.get` to fetch the dependency.
-- [ ] Generate the Oban migrations: `mix ecto.gen.migration add_oban_jobs_table`, then call `Oban.Migration.up()` inside the migration.
-- [ ] Configure Oban in `config/config.exs`: set repo to `StockAnalysis.Repo`, define queues (`:sync` with concurrency 5, `:default` with concurrency 10).
-- [ ] Add `{Oban, Application.fetch_env!(:stock_analysis, Oban)}` to the supervision tree in `application.ex`.
-- [ ] Configure test env in `config/test.exs`: set `testing: :manual` so jobs don't run automatically during tests.
-- [ ] Verify `mix test` still passes and Oban tables exist after `mix ecto.migrate`.
+- [x] Add `oban` dependency to `mix.exs` (latest stable version). Oban is a Postgres-backed job processing library for Elixir — [docs](https://hexdocs.pm/oban).
+- [x] Run `mix deps.get` to fetch the dependency.
+- [x] Generate the Oban migrations: `mix ecto.gen.migration add_oban_jobs_table`, then call `Oban.Migration.up()` inside the migration.
+- [x] Configure Oban in `config/config.exs`: set repo to `StockAnalysis.Repo`, define queues (`:sync` with concurrency 5, `:default` with concurrency 10).
+- [x] Add `{Oban, Application.fetch_env!(:stock_analysis, Oban)}` to the supervision tree in `application.ex`.
+- [x] Configure test env in `config/test.exs`: set `testing: :manual` so jobs don't run automatically during tests.
+- [x] Verify `mix test` still passes and Oban tables exist after `mix ecto.migrate`.
 
 ### Acceptance criteria
 - Oban is installed and configured with at least one queue.
@@ -50,10 +50,10 @@ Background jobs are needed to fetch and store price/score data on a schedule wit
 Three new tables store the historical data: `tickers` holds the master list of tracked symbols with metadata (name, sector, market cap); `price_snapshots` stores one row per ticker per day with OHLCV data; `score_snapshots` stores one row per ticker per day with all computed analysis scores. These tables let the app serve historical charts and trend analysis from Postgres instead of repeatedly hitting external APIs.
 
 ### Required tasks
-- [ ] Create migration for `tickers` table: `symbol` (string, unique index), `name` (string), `sector` (string, nullable), `market_cap` (bigint, nullable), `is_active` (boolean, default true), timestamps.
-- [ ] Create migration for `price_snapshots` table: `ticker_id` (references tickers), `date` (date), `open` (decimal), `high` (decimal), `low` (decimal), `close` (decimal), `volume` (bigint), timestamps. Unique index on `(ticker_id, date)`.
-- [ ] Create migration for `score_snapshots` table: `ticker_id` (references tickers), `date` (date), `technical_score` (float, nullable), `fundamental_score` (float, nullable), `sentiment_score` (float, nullable), `smart_money_score` (float, nullable), `recommendation_score` (float, nullable), `recommendation_label` (string, nullable), `confidence` (float, nullable), timestamps. Unique index on `(ticker_id, date)`.
-- [ ] Create Ecto schemas: `StockAnalysis.Market.Ticker`, `StockAnalysis.Market.PriceSnapshot`, `StockAnalysis.Market.ScoreSnapshot` with appropriate changesets and validations.
+- [x] Create migration for `tickers` table: `symbol` (string, unique index), `name` (string), `sector` (string, nullable), `market_cap` (bigint, nullable), `is_active` (boolean, default true), timestamps.
+- [x] Create migration for `price_snapshots` table: `ticker_id` (references tickers), `date` (date), `open` (decimal), `high` (decimal), `low` (decimal), `close` (decimal), `volume` (bigint), timestamps. Unique index on `(ticker_id, date)`.
+- [x] Create migration for `score_snapshots` table: `ticker_id` (references tickers), `date` (date), `technical_score` (float, nullable), `fundamental_score` (float, nullable), `sentiment_score` (float, nullable), `smart_money_score` (float, nullable), `recommendation_score` (float, nullable), `recommendation_label` (string, nullable), `confidence` (float, nullable), timestamps. Unique index on `(ticker_id, date)`.
+- [x] Create Ecto schemas: `StockAnalysis.Market.Ticker`, `StockAnalysis.Market.PriceSnapshot`, `StockAnalysis.Market.ScoreSnapshot` with appropriate changesets and validations.
 - [ ] Run `mix ecto.migrate` and verify tables exist.
 
 ### Acceptance criteria
@@ -82,15 +82,15 @@ Three new tables store the historical data: `tickers` holds the master list of t
 The Market context (`StockAnalysis.Market`) provides the public API for reading and writing ticker and snapshot data. Controllers and workers use this module instead of calling Repo directly. It encapsulates queries like "get 30-day price history for AAPL" and insert/upsert operations that the background workers call.
 
 ### Required tasks
-- [ ] Create `StockAnalysis.Market` context module.
-- [ ] Implement `upsert_ticker(attrs)`: insert or update ticker by symbol; return `{:ok, ticker}`.
-- [ ] Implement `get_ticker(symbol)`: find ticker by symbol; return `{:ok, ticker}` or `{:error, :not_found}`.
-- [ ] Implement `list_active_tickers()`: return all tickers where `is_active == true`.
-- [ ] Implement `insert_price_snapshots(ticker_id, list_of_attrs)`: bulk insert price snapshots; use `on_conflict: :nothing` to skip duplicates.
-- [ ] Implement `insert_score_snapshot(ticker_id, date, scores_map)`: insert or update score snapshot for given date.
-- [ ] Implement `get_price_history(symbol, days \\ 30)`: return list of price_snapshots for ticker, ordered by date descending, limited to N days.
-- [ ] Implement `get_score_history(symbol, days \\ 30)`: return list of score_snapshots for ticker, ordered by date descending, limited to N days.
-- [ ] Write ExUnit tests for all context functions using the test database.
+- [x] Create `StockAnalysis.Market` context module.
+- [x] Implement `upsert_ticker(attrs)`: insert or update ticker by symbol; return `{:ok, ticker}`.
+- [x] Implement `get_ticker(symbol)`: find ticker by symbol; return `{:ok, ticker}` or `{:error, :not_found}`.
+- [x] Implement `list_active_tickers()`: return all tickers where `is_active == true`.
+- [x] Implement `insert_price_snapshots(ticker_id, list_of_attrs)`: bulk insert price snapshots; use `on_conflict: :nothing` to skip duplicates.
+- [x] Implement `insert_score_snapshot(ticker_id, date, scores_map)`: insert or update score snapshot for given date.
+- [x] Implement `get_price_history(symbol, days \\ 30)`: return list of price_snapshots for ticker, ordered by date descending, limited to N days.
+- [x] Implement `get_score_history(symbol, days \\ 30)`: return list of score_snapshots for ticker, ordered by date descending, limited to N days.
+- [x] Write ExUnit tests for all context functions using the test database.
 
 ### Acceptance criteria
 - All CRUD and query functions work correctly.
@@ -119,11 +119,11 @@ The Market context (`StockAnalysis.Market`) provides the public API for reading 
 Financial Modeling Prep (FMP) offers bulk endpoints that return data for many tickers in a single API call, which is far more efficient than calling per-ticker endpoints when seeding or refreshing the entire universe. The bulk quote endpoint returns current price data for all tickers at once; the S&P 500 constituents endpoint provides the list of symbols to track.
 
 ### Required tasks
-- [ ] Add `get_sp500_constituents/0` to `StockAnalysis.Integrations.FMP`: calls `GET /api/v3/sp500_constituent` and returns list of `%{symbol, name, sector, ...}`.
-- [ ] Add `get_bulk_quote/0` to `StockAnalysis.Integrations.FMP`: calls `GET /api/v3/stock/full/real-time-price` (or equivalent bulk endpoint) and returns list of `%{symbol, price, volume, ...}`.
-- [ ] Normalize responses to match the shapes needed by the Market context (ticker upsert and price snapshot insert).
-- [ ] Add appropriate caching (constituents: 7-day TTL; bulk quote: 15-minute TTL).
-- [ ] Add Bypass-based tests for both endpoints.
+- [x] Add `get_sp500_constituents/0` to `StockAnalysis.Integrations.FMP`: calls `GET /api/v3/sp500_constituent` and returns list of `%{symbol, name, sector, ...}`.
+- [x] Add `get_bulk_quote/0` to `StockAnalysis.Integrations.FMP`: calls `GET /api/v3/stock/full/real-time-price` (or equivalent bulk endpoint) and returns list of `%{symbol, price, volume, ...}`.
+- [x] Normalize responses to match the shapes needed by the Market context (ticker upsert and price snapshot insert).
+- [x] Add appropriate caching (constituents: 7-day TTL; bulk quote: 15-minute TTL).
+- [x] Add Bypass-based tests for both endpoints.
 
 ### Acceptance criteria
 - `get_sp500_constituents/0` returns ~500 symbols with name and sector.
@@ -151,22 +151,22 @@ Financial Modeling Prep (FMP) offers bulk endpoints that return data for many ti
 Background workers automate data collection on a schedule. `SeedTickersJob` refreshes the ticker universe (weekly). `PriceSnapshotJob` captures daily OHLCV data for all active tickers. `ScoreSnapshotJob` computes and stores all analysis scores for each ticker daily. Together, they build the historical dataset without any manual intervention.
 
 ### Required tasks
-- [ ] Create `StockAnalysis.Workers.SeedTickersJob` (Oban worker, `:sync` queue):
+- [x] Create `StockAnalysis.Workers.SeedTickersJob` (Oban worker, `:sync` queue):
   - Fetches S&P 500 constituents via FMP.
   - Upserts each into the `tickers` table via `Market.upsert_ticker/1`.
   - Scheduled weekly (e.g. every Sunday at 00:00 UTC) via Oban cron.
-- [ ] Create `StockAnalysis.Workers.PriceSnapshotJob` (Oban worker, `:sync` queue):
+- [x] Create `StockAnalysis.Workers.PriceSnapshotJob` (Oban worker, `:sync` queue):
   - For each active ticker, fetch current price data (via FMP bulk quote or Alpha Vantage daily).
   - Insert into `price_snapshots` via `Market.insert_price_snapshots/2`.
   - Scheduled daily at market close + 1 hour (e.g. 21:00 UTC for US markets).
   - Rate-limit aware: batch tickers and pause between batches if needed.
-- [ ] Create `StockAnalysis.Workers.ScoreSnapshotJob` (Oban worker, `:sync` queue):
+- [x] Create `StockAnalysis.Workers.ScoreSnapshotJob` (Oban worker, `:sync` queue):
   - For each active ticker, compute scores using `Recommendation.compute/1` (or `compute_from_cache/1` if data is already cached).
   - Insert into `score_snapshots` via `Market.insert_score_snapshot/3`.
   - Scheduled daily after `PriceSnapshotJob` completes (e.g. 22:00 UTC).
-- [ ] Configure Oban crontab in `config/config.exs` with the schedules above.
-- [ ] Add unique job constraints to prevent duplicate concurrent runs.
-- [ ] Write ExUnit tests for each worker using `Oban.Testing`.
+- [x] Configure Oban crontab in `config/config.exs` with the schedules above.
+- [x] Add unique job constraints to prevent duplicate concurrent runs.
+- [x] Write ExUnit tests for each worker using `Oban.Testing`.
 
 ### Acceptance criteria
 - `SeedTickersJob` populates ~500 tickers from FMP.
@@ -197,17 +197,17 @@ Background workers automate data collection on a schedule. `SeedTickersJob` refr
 The web and mobile apps need HTTP endpoints to fetch historical price and score data so they can render trend charts and historical analysis views. Shared TypeScript types and api-client methods ensure both frontends consume the data consistently.
 
 ### Required tasks
-- [ ] Add Phoenix routes and controller actions:
+- [x] Add Phoenix routes and controller actions:
   - `GET /api/stocks/:ticker/price-history?days=30` — returns array of `{date, open, high, low, close, volume}`.
   - `GET /api/stocks/:ticker/score-history?days=30` — returns array of `{date, technical_score, fundamental_score, sentiment_score, smart_money_score, recommendation_score, recommendation_label, confidence}`.
-- [ ] Controller fetches data via `StockAnalysis.Market` context; returns 404 if ticker not found.
-- [ ] Add TypeScript types in `@repo/types`:
+- [x] Controller fetches data via `StockAnalysis.Market` context; returns 404 if ticker not found.
+- [x] Add TypeScript types in `@repo/types`:
   - `PriceSnapshot`: `{ date: string; open: number; high: number; low: number; close: number; volume: number }`.
-  - `ScoreSnapshot`: `{ date: string; technicalScore: number | null; fundamentalScore: number | null; sentimentScore: number | null; smartMoneyScore: number | null; recommendationScore: number | null; recommendationLabel: string | null; confidence: number | null }`.
-- [ ] Add api-client methods:
+  - `ScoreSnapshot`: `{ date: string; technical_score: number | null; fundamental_score: number | null; sentiment_score: number | null; smart_money_score: number | null; recommendation_score: number | null; recommendation_label: string | null; confidence: number | null }`.
+- [x] Add api-client methods:
   - `getPriceHistory(ticker: string, days?: number): Promise<PriceSnapshot[]>`.
   - `getScoreHistory(ticker: string, days?: number): Promise<ScoreSnapshot[]>`.
-- [ ] Export new types from `@repo/types/src/index.ts`.
+- [x] Export new types from `@repo/types/src/index.ts`.
 
 ### Acceptance criteria
 - Both endpoints return correct JSON arrays ordered by date descending.
@@ -236,10 +236,10 @@ The web and mobile apps need HTTP endpoints to fetch historical price and score 
 Once the infrastructure is in place, the database needs to be populated with an initial set of tickers and at least a few days of historical price data. This ticket provides a mix task that runs the seeding process manually (outside of Oban schedules) so the app has data from day one. It also serves as a verification that the full pipeline works end-to-end.
 
 ### Required tasks
-- [ ] Create `mix mnml.seed_tickers` task: calls `SeedTickersJob.perform/1` logic to fetch and upsert S&P 500 constituents.
-- [ ] Create `mix mnml.backfill_prices` task: for each active ticker, fetch recent daily prices (e.g. last 30 days from FMP historical endpoint or Alpha Vantage TIME_SERIES_DAILY) and insert into `price_snapshots`.
-- [ ] Add rate-limiting logic to backfill task: batch tickers (e.g. 5 at a time), pause between batches to respect API limits.
-- [ ] Document both tasks in README or a `docs/` file: what they do, when to run them, expected runtime.
+- [x] Create `mix mnml.seed_tickers` task: calls `SeedTickersJob.perform/1` logic to fetch and upsert S&P 500 constituents.
+- [x] Create `mix mnml.backfill_prices` task: for each active ticker, fetch recent daily prices (e.g. last 30 days from FMP historical endpoint or Alpha Vantage TIME_SERIES_DAILY) and insert into `price_snapshots`.
+- [x] Add rate-limiting logic to backfill task: batch tickers (e.g. 5 at a time), pause between batches to respect API limits.
+- [x] Document both tasks in README or a `docs/` file: what they do, when to run them, expected runtime.
 - [ ] Verify end-to-end: after running both tasks, `GET /api/stocks/AAPL/price-history` returns data.
 
 ### Acceptance criteria
@@ -261,12 +261,12 @@ Once the infrastructure is in place, the database needs to be populated with an 
 
 ## Milestone 6 completion checklist
 
-- [ ] M6-001: Oban dependency and configuration
-- [ ] M6-002: Ecto migrations and schemas
-- [ ] M6-003: Market context module
-- [ ] M6-004: FMP bulk endpoints
-- [ ] M6-005: Oban workers (seed, price, score)
-- [ ] M6-006: History API endpoints and TypeScript types
-- [ ] M6-007: Seed and backfill initial data
+- [x] M6-001: Oban dependency and configuration
+- [x] M6-002: Ecto migrations and schemas
+- [x] M6-003: Market context module
+- [x] M6-004: FMP bulk endpoints
+- [x] M6-005: Oban workers (seed, price, score)
+- [x] M6-006: History API endpoints and TypeScript types
+- [x] M6-007: Seed and backfill initial data
 
 **Done when**: Oban is running in the supervision tree; tickers, price_snapshots, and score_snapshots tables exist and are populated; background workers refresh data on schedule; history API endpoints serve stored data to web and mobile; S&P 500 tickers are seeded with at least 30 days of price history.

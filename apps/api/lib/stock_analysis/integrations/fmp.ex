@@ -14,6 +14,86 @@ defmodule StockAnalysis.Integrations.FMP do
     Application.get_env(:stock_analysis, :fmp_base_url, @default_base_url)
   end
 
+  @sp500_cache_ttl 7 * 24 * 3600
+  @bulk_quote_cache_ttl 15 * 60
+
+  @doc """
+  Fetches S&P 500 constituent list from FMP.
+
+  Returns `{:ok, [%{symbol: _, name: _, sector: _, ...}]}` or `{:error, reason}`.
+  Cached for 7 days since the index composition changes infrequently.
+  """
+  def get_sp500_constituents do
+    cache_key = "fmp:sp500_constituents"
+
+    case StockAnalysis.Cache.get(cache_key) do
+      nil ->
+        result =
+          case get("/sp500_constituent") do
+            {:ok, list} when is_list(list) and length(list) > 0 ->
+              {:ok, Enum.map(list, &normalize_constituent/1)}
+
+            {:ok, []} ->
+              {:error, :not_found}
+
+            {:ok, _} ->
+              {:error, :invalid_response}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+
+        case result do
+          {:ok, data} ->
+            StockAnalysis.Cache.put(cache_key, data, @sp500_cache_ttl)
+            {:ok, data}
+
+          error ->
+            error
+        end
+
+      cached ->
+        {:ok, cached}
+    end
+  end
+
+  @doc """
+  Fetches a bulk real-time quote snapshot for all tracked tickers.
+
+  Returns `{:ok, [%{symbol: _, price: _, volume: _, ...}]}` or `{:error, reason}`.
+  Cached for 15 minutes.
+  """
+  def get_bulk_quote do
+    cache_key = "fmp:bulk_quote"
+
+    case StockAnalysis.Cache.get(cache_key) do
+      nil ->
+        result =
+          case get("/stock/full/real-time-price") do
+            {:ok, list} when is_list(list) ->
+              {:ok, Enum.map(list, &normalize_bulk_quote/1)}
+
+            {:ok, _} ->
+              {:error, :invalid_response}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+
+        case result do
+          {:ok, data} ->
+            StockAnalysis.Cache.put(cache_key, data, @bulk_quote_cache_ttl)
+            {:ok, data}
+
+          error ->
+            error
+        end
+
+      cached ->
+        {:ok, cached}
+    end
+  end
+
   @doc """
   Fetches the company profile for a ticker.
 
@@ -285,6 +365,29 @@ defmodule StockAnalysis.Integrations.FMP do
       total_current_liabilities: num_or_nil(raw["totalCurrentLiabilities"]),
       goodwill: num_or_nil(raw["goodwill"]),
       intangible_assets: num_or_nil(raw["intangibleAssets"])
+    }
+  end
+
+  defp normalize_constituent(raw) do
+    %{
+      symbol: raw["symbol"],
+      name: raw["name"],
+      sector: raw["sector"],
+      sub_sector: raw["subSector"],
+      headquarters: raw["headQuarter"],
+      date_added: raw["dateFirstAdded"],
+      cik: raw["cik"],
+      founded: raw["founded"]
+    }
+  end
+
+  defp normalize_bulk_quote(raw) do
+    %{
+      symbol: raw["ticker"] || raw["symbol"],
+      price: num_or_nil(raw["lastSalePrice"] || raw["price"]),
+      volume: num_or_nil(raw["volume"]),
+      change: num_or_nil(raw["priceChange"] || raw["change"]),
+      change_percent: num_or_nil(raw["priceChangePercent"] || raw["changesPercentage"])
     }
   end
 
