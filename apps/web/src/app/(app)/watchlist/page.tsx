@@ -73,7 +73,7 @@ export default function WatchlistPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Watchlist</h1>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -85,7 +85,7 @@ export default function WatchlistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Watchlist</h1>
 
       {items.length === 0 ? (

@@ -144,7 +144,7 @@ export default function PortfolioPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="h-8 w-48 animate-pulse rounded bg-gray-100" />
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -158,7 +158,7 @@ export default function PortfolioPage() {
 
   if (error && !selectedPortfolio) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <p className="text-bearish">{error}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-primary-600 hover:underline">
           Back to dashboard
@@ -169,7 +169,7 @@ export default function PortfolioPage() {
 
   if (portfolios.length === 0) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold text-gray-900">Paper Trading Portfolio</h1>
         <div className="mt-12 flex flex-col items-center text-center">
           <div className="rounded-full bg-primary-50 p-6">
@@ -213,7 +213,7 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <Link
         href="/dashboard"
         className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900"

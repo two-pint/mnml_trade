@@ -1,7 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useAuth } from "@/lib/auth-context";
 import { stocksApi, paperTradingApi, engagementApi } from "@/lib/api";
 import type {
@@ -12,6 +20,7 @@ import type {
   WatchlistItem,
   HistoryEntry,
   StockOverview,
+  TransactionDetail,
 } from "@repo/types";
 
 function fmt(value: string | null | undefined): string {
@@ -58,6 +67,7 @@ export default function DashboardPage() {
   const [portfolio, setPortfolio] = useState<PaperPortfolio | null>(null);
   const [holdings, setHoldings] = useState<EnrichedHolding[]>([]);
   const [performance, setPerformance] = useState<PortfolioPerformance | null>(null);
+  const [transactions, setTransactions] = useState<TransactionDetail[]>([]);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
 
   const [watchlist, setWatchlist] = useState<WatchlistRow[]>([]);
@@ -80,12 +90,14 @@ export default function DashboardPage() {
         if (list.length > 0) {
           const p = list[0]!;
           setPortfolio(p);
-          const [h, perf] = await Promise.all([
+          const [h, perf, txRes] = await Promise.all([
             paperTradingApi.listHoldings(p.id),
             paperTradingApi.getPerformance(p.id),
+            paperTradingApi.listTransactions(p.id, { per_page: 200 }).catch(() => ({ data: [], meta: { page: 1, per_page: 200, total_pages: 0, total_count: 0 } })),
           ]);
           setHoldings(h.data.slice(0, 5));
           setPerformance(perf.data);
+          setTransactions(txRes.data ?? []);
         }
       })
       .catch(() => {})
@@ -129,8 +141,65 @@ export default function DashboardPage() {
   const startingBalance = portfolio ? parseFloat(portfolio.starting_balance) : 100000;
   const totalReturnDollar = performance ? (totalValue - startingBalance).toFixed(2) : null;
 
+  const performanceChartData = useMemo(() => {
+    if (!portfolio || !performance) return [];
+    const start = parseFloat(portfolio.starting_balance);
+    const endValue = parseFloat(performance.total_value);
+    const sorted = [...transactions].sort(
+      (a, b) => new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime(),
+    );
+
+    const points: { date: string; value: number; display: string }[] = [];
+    const startDate = portfolio.inserted_at ?? new Date().toISOString();
+    points.push({
+      date: startDate,
+      value: start,
+      display: new Date(startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+    });
+
+    let cash = start;
+    const holdings: Record<string, { qty: number; totalCost: number }> = {};
+
+    for (const tx of sorted) {
+      const amount = parseFloat(tx.total_amount);
+      const qty = parseFloat(tx.quantity);
+      const isBuy = tx.transaction_type?.toLowerCase() === "buy";
+
+      if (isBuy) {
+        cash -= amount;
+        const cur = holdings[tx.ticker] ?? { qty: 0, totalCost: 0 };
+        holdings[tx.ticker] = { qty: cur.qty + qty, totalCost: cur.totalCost + amount };
+      } else {
+        cash += amount;
+        const cur = holdings[tx.ticker];
+        if (cur) {
+          const costPerShare = cur.totalCost / cur.qty;
+          cur.qty -= qty;
+          cur.totalCost = cur.qty * costPerShare;
+          if (cur.qty <= 0) delete holdings[tx.ticker];
+        }
+      }
+
+      const value = cash + Object.values(holdings).reduce((s, h) => s + h.totalCost, 0);
+      points.push({
+        date: tx.executed_at,
+        value: Math.round(value * 100) / 100,
+        display: new Date(tx.executed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+      });
+    }
+
+    const today = new Date().toISOString();
+    points.push({
+      date: today,
+      value: endValue,
+      display: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+    });
+
+    return points;
+  }, [portfolio, performance, transactions]);
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Welcome */}
       <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
         Welcome{user?.username ? `, ${user.username}` : ""}
@@ -258,6 +327,58 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      {/* Portfolio performance over time */}
+      {!portfolioLoading && portfolio && performance && performanceChartData.length >= 2 && (
+        <section className="mt-8">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Portfolio performance</h2>
+              <Link href="/portfolio" className="text-sm font-medium text-primary-600 hover:underline">
+                View details →
+              </Link>
+            </div>
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={performanceChartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="portfolioFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-primary-500)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="var(--color-primary-500)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="display"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={40}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [`$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Value"]}
+                    labelFormatter={(_, payload) => payload?.[0]?.payload?.display ?? ""}
+                    contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="var(--color-primary-600)"
+                    strokeWidth={2}
+                    fill="url(#portfolioFill)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Recently Viewed */}
       {history.length > 0 && (

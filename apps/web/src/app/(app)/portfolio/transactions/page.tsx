@@ -84,7 +84,7 @@ export default function TransactionsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="h-8 w-48 animate-pulse rounded bg-gray-100" />
         <div className="mt-6 h-64 animate-pulse rounded-xl bg-gray-100" />
       </div>
@@ -93,7 +93,7 @@ export default function TransactionsPage() {
 
   if (error && !selectedId) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <p className="text-bearish">{error}</p>
         <Link href="/portfolio" className="mt-4 inline-block text-primary-600 hover:underline">
           Back to portfolio
@@ -103,7 +103,7 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <Link
         href="/portfolio"
         className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900"

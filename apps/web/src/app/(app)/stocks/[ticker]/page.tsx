@@ -190,7 +190,7 @@ export default function StockPage() {
 
   if (error && !overviewLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <p className="text-bearish">{error}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-primary-600 hover:underline">
           Back to dashboard
@@ -200,7 +200,7 @@ export default function StockPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <Link
         href="/dashboard"
         className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900"
