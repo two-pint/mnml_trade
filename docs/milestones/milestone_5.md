@@ -78,87 +78,10 @@ Users benefit from seeing which stocks they recently analyzed so they can quickl
 
 ---
 
-## M5-003: Shareable links — backend
+## M5-003: Watchlist and history UI (web)
 
 ### Ticket
 **ID**: M5-003  
-**Title**: Shareable links — backend (Shares context)
-
-### Description (why this ticket is needed)
-Users want to share a stock analysis or portfolio snapshot with friends via a unique URL. The Shares context generates a short, unguessable link ID, stores the payload (or a reference to it), and serves it publicly without authentication. This drives word-of-mouth growth.
-
-### Required tasks
-- [ ] Create Ecto schema and migration for `shares`: `id` (string, primary key — short random ID e.g. nanoid 10 chars), `payload_type` (string: "analysis" or "portfolio"), `payload` (map/jsonb — snapshot of data at share time or reference), `user_id` (references users, nullable), `expires_at` (utc_datetime, nullable), timestamps.
-- [ ] Create `StockAnalysis.Shares` context module.
-- [ ] Implement `create_share(user_id, %{type, payload_ref})`:
-  - For analysis: snapshot current recommendation, scores, and ticker.
-  - For portfolio: snapshot holdings, performance metrics, portfolio value (no transaction history for privacy).
-  - Generate short ID; insert row.
-- [ ] Implement `get_share(share_id)`: return payload; 404 if not found or expired.
-- [ ] Expose endpoints:
-  - `POST /api/shares/create` (auth required) — body: `{type: "analysis"|"portfolio", ref: ticker|portfolio_id}`
-  - `GET /api/shares/:id` (public, no auth) — returns share payload
-- [ ] For paper trading, add `POST /api/paper-trading/portfolios/:id/share` as convenience that calls Shares context.
-- [ ] Add types and api-client methods.
-
-### Acceptance criteria
-- Creating a share returns a short ID.
-- GET share by ID returns the payload without authentication.
-- Portfolio share includes holdings and performance but not transaction history.
-- Invalid/expired share ID returns 404.
-- Share ID is unguessable (random, not sequential).
-
-### Test plan
-| Step | Action | Expected result |
-|------|--------|-----------------|
-| 1 | POST /api/shares/create `{type: "analysis", ref: "AAPL"}` | 201, `{id: "abc123xyz"}` |
-| 2 | GET /api/shares/abc123xyz (no auth) | 200, analysis snapshot payload |
-| 3 | POST portfolio share | 201, share ID |
-| 4 | GET portfolio share (no auth) | 200, holdings and performance (no transactions) |
-| 5 | GET /api/shares/nonexistent | 404 |
-
----
-
-## M5-004: Shareable links — web UI
-
-### Ticket
-**ID**: M5-004  
-**Title**: Shareable links — web UI (share button and public view)
-
-### Description (why this ticket is needed)
-Users need a "Share" button on stock pages and portfolio pages that generates a link they can copy. When someone opens that link, they see a public read-only view of the analysis or portfolio snapshot — this is the viral loop for user acquisition.
-
-### Required tasks
-- [ ] Add "Share" button on stock detail page (near recommendation badge).
-- [ ] Add "Share" button on portfolio dashboard.
-- [ ] On click: call `api.createShare(...)`, receive short ID, construct URL (e.g. `https://app.com/share/abc123xyz`), copy to clipboard with toast confirmation ("Link copied!").
-- [ ] Create public share page: `/share/[id]/page.tsx` — fetches `api.getShare(id)` (no auth).
-  - Analysis share: display recommendation, scores, ticker, price at share time.
-  - Portfolio share: display holdings table, total value, return %, top performers.
-  - "Sign up to create your own" CTA.
-- [ ] Handle 404 (invalid share link): friendly "Link not found" page.
-
-### Acceptance criteria
-- Share button generates link and copies to clipboard.
-- Public share page loads without login and shows correct data.
-- CTA links to register page.
-- 404 for invalid links.
-
-### Test plan
-| Step | Action | Expected result |
-|------|--------|-----------------|
-| 1 | On /stocks/AAPL, click Share | Link copied toast; link in clipboard |
-| 2 | Open link in incognito (no auth) | Public analysis view loads |
-| 3 | On portfolio page, click Share | Link copied |
-| 4 | Open portfolio share link incognito | Holdings and performance visible; no transactions |
-| 5 | Open invalid share link | "Link not found" page |
-
----
-
-## M5-005: Watchlist and history UI (web)
-
-### Ticket
-**ID**: M5-005  
 **Title**: Watchlist and history UI — web (Next.js)
 
 ### Description (why this ticket is needed)
@@ -188,26 +111,24 @@ Users need a dedicated watchlist page and easy access to recently viewed stocks.
 
 ---
 
-## M5-006: Watchlist, history, and share — mobile (Expo)
+## M5-004: Watchlist and history — mobile (Expo)
 
 ### Ticket
-**ID**: M5-006  
-**Title**: Watchlist, history, and share — mobile (Expo)
+**ID**: M5-004  
+**Title**: Watchlist and history — mobile (Expo)
 
 ### Description (why this ticket is needed)
-Mobile users need the same watchlist management, history, and share capabilities as web, adapted for native UI patterns (bottom tab, swipe-to-delete, native share sheet).
+Mobile users need the same watchlist management and history capabilities as web, adapted for native UI patterns (bottom tab, swipe-to-delete).
 
 ### Required tasks
 - [ ] **Watchlist tab**: activate in tab navigator. Fetch watchlist; display FlatList of tickers with price, change, and swipe-to-remove gesture. Tap row → navigate to stock detail.
 - [ ] On stock detail screen, add "Add to Watchlist" / "Remove" button (icon).
 - [ ] **History**: show recent stocks on Home tab (e.g. horizontal scroll of recent tickers above trending section).
-- [ ] **Share**: on stock detail and portfolio screens, add Share button. On press: create share link via API, then open native share sheet (React Native Share API) with the URL.
 - [ ] Pull-to-refresh on watchlist.
 
 ### Acceptance criteria
 - Watchlist tab shows saved tickers; add/remove works from stock detail.
 - History shows recent tickers on Home.
-- Share opens native share sheet with generated link.
 - Watchlist refreshes on pull.
 
 ### Test plan
@@ -216,15 +137,14 @@ Mobile users need the same watchlist management, history, and share capabilities
 | 1 | Tap "Add to Watchlist" on stock detail | Icon toggles; watchlist tab shows ticker |
 | 2 | Swipe-to-remove on watchlist | Ticker removed |
 | 3 | Check Home tab | Recent tickers visible |
-| 4 | Tap Share on stock detail | Native share sheet opens with link |
-| 5 | Pull-to-refresh watchlist | Data reloads |
+| 4 | Pull-to-refresh watchlist | Data reloads |
 
 ---
 
-## M5-007: Oban background data refresh jobs
+## M5-005: Oban background data refresh jobs
 
 ### Ticket
-**ID**: M5-007  
+**ID**: M5-005  
 **Title**: Oban background data refresh jobs
 
 ### Description (why this ticket is needed)
@@ -254,10 +174,10 @@ Cache entries expire on TTL; without background refresh, the first user to reque
 
 ---
 
-## M5-008: Push notifications (mobile)
+## M5-006: Push notifications (mobile)
 
 ### Ticket
-**ID**: M5-008  
+**ID**: M5-006  
 **Title**: Push notifications — Expo Push
 
 ### Description (why this ticket is needed)
@@ -288,10 +208,10 @@ Push notifications re-engage mobile users by alerting them to events they care a
 
 ---
 
-## M5-009: User profile page (web)
+## M5-007: User profile page (web)
 
 ### Ticket
-**ID**: M5-009  
+**ID**: M5-007  
 **Title**: User profile page — web (Next.js)
 
 ### Description (why this ticket is needed)
@@ -320,10 +240,10 @@ Users need a place to view and manage their account: username, email, notificati
 
 ---
 
-## M5-010: Deployment pipeline (Fly.io, Vercel, EAS)
+## M5-008: Deployment pipeline (Fly.io, Vercel, EAS)
 
 ### Ticket
-**ID**: M5-010  
+**ID**: M5-008  
 **Title**: Deployment pipeline (Fly.io, Vercel, EAS)
 
 ### Description (why this ticket is needed)
@@ -356,15 +276,13 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 
 ## Milestone 5 completion checklist
 
-- [ ] M5-001: Watchlist schema and context
-- [ ] M5-002: Analysis history
-- [ ] M5-003: Shareable links — backend
-- [ ] M5-004: Shareable links — web UI
-- [ ] M5-005: Watchlist and history UI (web)
-- [ ] M5-006: Watchlist, history, share (mobile)
-- [ ] M5-007: Oban background refresh jobs
-- [ ] M5-008: Push notifications (mobile)
-- [ ] M5-009: User profile page (web)
-- [ ] M5-010: Deployment pipeline (Fly.io, Vercel, EAS)
+- [x] M5-001: Watchlist schema and context
+- [x] M5-002: Analysis history
+- [ ] M5-003: Watchlist and history UI (web)
+- [ ] M5-004: Watchlist and history (mobile)
+- [ ] M5-005: Oban background refresh jobs
+- [ ] M5-006: Push notifications (mobile)
+- [ ] M5-007: User profile page (web)
+- [ ] M5-008: Deployment pipeline (Fly.io, Vercel, EAS)
 
-**Done when**: Users can manage a watchlist, see analysis history, share stock analyses and portfolio snapshots via public links, receive push notifications on mobile, and background jobs keep cache fresh for priority tickers; deployment pipeline (Fly, Vercel, EAS) is in place when ready.
+**Done when**: Users can manage a watchlist, see analysis history, receive push notifications on mobile, and background jobs keep cache fresh for priority tickers; deployment pipeline (Fly, Vercel, EAS) is in place when ready.
