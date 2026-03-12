@@ -53,13 +53,16 @@ config :stock_analysis, :cors,
 # Oban job processing
 config :stock_analysis, Oban,
   repo: StockAnalysis.Repo,
-  queues: [data_refresh: 3],
+  queues: [data_refresh: 3, sync: 5, default: 10],
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [
        {"*/30 8-16 * * 1-5", StockAnalysis.Workers.ScheduleRefresh, args: %{period: "market"}},
        {"0 */2 * * *", StockAnalysis.Workers.ScheduleRefresh, args: %{period: "off_hours"}},
-       {"*/15 8-16 * * 1-5", StockAnalysis.Workers.CheckAlerts}
+       {"*/15 8-16 * * 1-5", StockAnalysis.Workers.CheckAlerts},
+       {"0 0 * * 0", StockAnalysis.Workers.SeedTickersJob},
+       {"0 21 * * 1-5", StockAnalysis.Workers.PriceSnapshotJob},
+       {"0 22 * * 1-5", StockAnalysis.Workers.ScoreSnapshotJob}
      ]}
   ]
 

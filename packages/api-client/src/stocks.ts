@@ -13,6 +13,8 @@ import type {
   SmartMoneyScore,
   DailySeries,
   TrendingStock,
+  PriceSnapshot,
+  ScoreSnapshot,
 } from "@repo/types";
 import type { ApiClient } from "./client";
 
@@ -79,6 +81,18 @@ export function createStocksApi(client: ApiClient) {
     getSmartMoneyScore(ticker: string): Promise<SmartMoneyScore> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<SmartMoneyScore>(`/api/institutional/${encoded}/smart-money-score`);
+    },
+
+    getPriceHistory(ticker: string, days?: number): Promise<PriceSnapshot[]> {
+      const encoded = encodeURIComponent(ticker.trim());
+      const params = days != null ? `?days=${days}` : "";
+      return client.get<PriceSnapshot[]>(`/api/stocks/${encoded}/price-history${params}`);
+    },
+
+    getScoreHistory(ticker: string, days?: number): Promise<ScoreSnapshot[]> {
+      const encoded = encodeURIComponent(ticker.trim());
+      const params = days != null ? `?days=${days}` : "";
+      return client.get<ScoreSnapshot[]>(`/api/stocks/${encoded}/score-history${params}`);
     },
   };
 }

@@ -65,6 +65,7 @@ export type {
   PortfolioPerformance,
 } from "./paper-trading";
 export type { WatchlistItem, HistoryEntry } from "./engagement";
+export type { PriceSnapshot, ScoreSnapshot } from "./history";
 export type {
   PushTokenRequest,
   PushTokenResponse,

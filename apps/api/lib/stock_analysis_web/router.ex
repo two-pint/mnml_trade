@@ -39,6 +39,9 @@ defmodule StockAnalysisWeb.Router do
     delete "/user/watchlist/:ticker", EngagementController, :remove_from_watchlist
     get "/user/history", EngagementController, :list_history
 
+    get "/stocks/:ticker/price-history", HistoryController, :price_history
+    get "/stocks/:ticker/score-history", HistoryController, :score_history
+
     get "/stocks/search", StocksController, :search
     get "/stocks/trending", StocksController, :trending
     get "/stocks/:ticker/technical", StocksController, :technical
