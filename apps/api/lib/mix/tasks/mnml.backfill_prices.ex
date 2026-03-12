@@ -76,19 +76,19 @@ defmodule Mix.Tasks.Mnml.BackfillPrices do
     Mix.shell().info("Done. #{ok_count} tickers processed, #{err_count} errors. #{total} total price rows in database.")
   end
 
-  defp backfill_ticker(ticker, _days) do
+  defp backfill_ticker(ticker, days) do
     case AlphaVantage.get_daily(ticker.symbol) do
       {:ok, daily_data} ->
-        snapshots = Enum.map(daily_data, fn bar ->
-          %{
-            date: parse_date(bar.date),
-            open: bar.open,
-            high: bar.high,
-            low: bar.low,
-            close: bar.close,
-            volume: bar.volume
-          }
-        end)
+        cutoff = Date.add(Date.utc_today(), -days)
+
+        snapshots =
+          daily_data
+          |> Enum.map(fn bar ->
+            date = parse_date(bar.date)
+            {date, %{date: date, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume}}
+          end)
+          |> Enum.filter(fn {date, _} -> Date.compare(date, cutoff) != :lt end)
+          |> Enum.map(&elem(&1, 1))
 
         Market.insert_price_snapshots(ticker.id, snapshots)
         Logger.info("[backfill_prices] #{ticker.symbol}: #{length(snapshots)} rows")

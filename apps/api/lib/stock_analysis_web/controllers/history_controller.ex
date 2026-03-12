@@ -46,6 +46,8 @@ defmodule StockAnalysisWeb.HistoryController do
     end
   end
 
+  defp parse_days(_), do: 30
+
   defp format_price_snapshot(s) do
     %{
       date: Date.to_iso8601(s.date),
