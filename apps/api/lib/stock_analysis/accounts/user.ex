@@ -9,6 +9,11 @@ defmodule StockAnalysis.Accounts.User do
     field :password_hash, :string
     field :username, :string
     field :email_verified, :boolean, default: false
+    field :notification_preferences, :map, default: %{
+      "push_enabled" => true,
+      "price_alerts" => true,
+      "whale_alerts" => true
+    }
 
     field :password, :string, virtual: true, redact: true
 
@@ -59,6 +64,12 @@ defmodule StockAnalysis.Accounts.User do
         |> put_change(:password_hash, Bcrypt.hash_pwd_salt(password))
         |> delete_change(:password)
     end
+  end
+
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:username])
+    |> validate_username()
   end
 
   def password_changeset(user, attrs) do

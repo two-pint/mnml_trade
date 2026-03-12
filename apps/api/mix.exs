@@ -53,6 +53,7 @@ defmodule StockAnalysis.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:corsica, "~> 2.0"},
       {:req, "~> 0.5"},
+      {:oban, "~> 2.18"},
       {:bypass, "~> 2.0", only: :test}
     ]
   end

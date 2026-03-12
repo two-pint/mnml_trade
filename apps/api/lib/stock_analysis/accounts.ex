@@ -27,6 +27,12 @@ defmodule StockAnalysis.Accounts do
     end
   end
 
+  def update_profile(user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
   def issue_token(user) do
     Guardian.encode_and_sign(user, %{}, token_type: "access")
   end

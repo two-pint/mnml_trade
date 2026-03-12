@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { ApiClient, createAuthApi, createStocksApi, createPaperTradingApi, createEngagementApi } from "@repo/api-client";
+import { ApiClient, createAuthApi, createStocksApi, createPaperTradingApi, createEngagementApi, createUserApi } from "@repo/api-client";
 
 const TOKEN_KEY = "auth_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -53,3 +53,4 @@ export const authApi = createAuthApi(apiClient);
 export const stocksApi = createStocksApi(apiClient);
 export const paperTradingApi = createPaperTradingApi(apiClient);
 export const engagementApi = createEngagementApi(apiClient);
+export const userApi = createUserApi(apiClient);

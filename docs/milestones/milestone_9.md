@@ -288,6 +288,60 @@ The backend APIs from M9-001 through M9-007 need frontend surfaces. This placeho
 
 ---
 
+## M9-009: Deployment pipeline (Fly.io, Vercel, EAS)
+
+### Ticket
+**ID**: M9-009  
+**Title**: Deployment pipeline (Fly.io, Vercel, EAS)
+
+### Description (why this ticket is needed)
+To validate the full stack and allow testing from real devices and shared URLs, the API and web app must deploy to production-like environments, and the mobile app must be buildable and testable via EAS. This ticket is placed at the end of Milestone 9 so that deployment includes all features (options, paper trading, push, Oban, etc.) and the complete set of API keys and config is documented in one place.
+
+### API keys and secrets (Phoenix / Fly.io)
+
+Set these as Fly secrets or in `fly.toml` env; never commit.
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `DATABASE_URL` | Yes | Postgres connection URL (e.g. from `fly postgres attach`) |
+| `SECRET_KEY_BASE` | Yes | Phoenix signing/encryption; generate with `mix phx.gen.secret` |
+| `GUARDIAN_SECRET_KEY` | Yes | JWT signing; generate with `mix guardian.gen.secret` |
+| `PHX_HOST` | Yes (prod) | Public hostname (e.g. `your-app.fly.dev`) |
+| `CORS_ORIGINS` | Recommended | Comma-separated allowed origins (Vercel URL, preview URLs, Expo redirect URIs) |
+| `ALPHA_VANTAGE_API_KEY` | No | Stock quotes, search, daily series (M2) |
+| `UNUSUAL_WHALES_API_KEY` | No | Institutional/options flow (M2, M9) |
+| `FMP_API_KEY` | No | Fundamentals (M3) |
+| `FINNHUB_API_KEY` | No | Options chain (M9), sentiment |
+| `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` | No | LLM for multi-agent analysis (M7) — add when M7 is implemented |
+| `REDIS_URL` | No | Redis for caching/queues (M8) — add if M8 introduces Redis |
+| `POOL_SIZE` | No | Ecto pool size (default 10) |
+| `PORT` | No | Set by Fly; default 4000 |
+
+### Required tasks
+- [ ] **Phoenix on Fly.io**: Create Fly app (or use existing); attach or create Postgres. Set all required secrets and any optional API keys from the table above. Configure `mix release` and `fly deploy`; run migrations as part of deploy or via release command. Document deploy steps.
+- [ ] **Next.js on Vercel**: Connect repo (or manual deploy); set build output to `apps/web` (or root with turbo filter). Set env: `NEXT_PUBLIC_API_URL` to Phoenix URL (e.g. `https://<app>.fly.dev`). Ensure CORS on Phoenix allows Vercel origin and preview URLs.
+- [ ] **EAS for mobile**: Create EAS project; configure `app.json`/`eas.json` (e.g. development build profile). Set `EXPO_PUBLIC_API_URL` in EAS env or app config to production API URL for dev builds. If push notifications (M5) are used, ensure EAS project ID is set for Expo push. Document how to run `eas build --profile development` and install on device/simulator.
+- [ ] Update API CORS config with production web URL and any Expo/redirect URIs if needed.
+- [ ] Add a brief "Deployment" section to README or docs: how to deploy API, web, and how to build mobile for testing; include the API keys/secrets table or link to it.
+
+### Acceptance criteria
+- Phoenix deploys to Fly.io; health endpoint returns 200 in production; DB migrations applied.
+- Next.js deploys to Vercel; production URL loads; login/register work against production API (CORS allows origin).
+- EAS build (development profile) produces an installable binary; app can point to production API and complete login flow.
+- No secrets (API keys, DB URLs) are committed; all sensitive config via Fly/Vercel/EAS secrets or env.
+
+### Test plan
+| Step | Action | Expected result |
+|------|--------|-----------------|
+| 1 | Deploy Phoenix; open `https://<app>.fly.dev/api/health` | 200, JSON status |
+| 2 | Deploy Next.js; open production URL | App loads; login form visible |
+| 3 | Log in on production web app | Success; token stored; protected page visible |
+| 4 | Run EAS build for development; install on device | App launches; can set API URL to production and log in |
+| 5 | Verify CORS: from production web origin, POST to API login | 200 and CORS headers present |
+| 6 | Confirm no secrets in repo (e.g. grep or audit) | No SECRET_KEY_BASE, DATABASE_URL, etc. in committed files |
+
+---
+
 ## Milestone 9 completion checklist
 
 - [ ] M9-001: Finnhub options chain integration
@@ -298,5 +352,6 @@ The backend APIs from M9-001 through M9-007 need frontend surfaces. This placeho
 - [ ] M9-006: Unusual options activity endpoint
 - [ ] M9-007: Options paper trading
 - [ ] M9-008: Web and mobile UI
+- [ ] M9-009: Deployment pipeline (Fly.io, Vercel, EAS)
 
-**Done when**: Users can view options chains, compute Greeks for any contract, calculate break-even prices and visualize P&L for multi-leg strategies, monitor unusual options activity, and paper trade options — on both web and mobile.
+**Done when**: Users can view options chains, compute Greeks for any contract, calculate break-even prices and visualize P&L for multi-leg strategies, monitor unusual options activity, and paper trade options — on both web and mobile; and the full stack is deployable to Fly.io, Vercel, and EAS with all required and optional env documented.

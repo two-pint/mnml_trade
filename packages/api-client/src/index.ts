@@ -9,3 +9,5 @@ export { createPaperTradingApi } from "./paper-trading";
 export type { PaperTradingApi } from "./paper-trading";
 export { createEngagementApi } from "./engagement";
 export type { EngagementApi } from "./engagement";
+export { createUserApi } from "./user";
+export type { UserApi } from "./user";

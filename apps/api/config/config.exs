@@ -50,6 +50,19 @@ config :stock_analysis, :cors,
   allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allow_credentials: true
 
+# Oban job processing
+config :stock_analysis, Oban,
+  repo: StockAnalysis.Repo,
+  queues: [data_refresh: 3],
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"*/30 8-16 * * 1-5", StockAnalysis.Workers.ScheduleRefresh, args: %{period: "market"}},
+       {"0 */2 * * *", StockAnalysis.Workers.ScheduleRefresh, args: %{period: "off_hours"}},
+       {"*/15 8-16 * * 1-5", StockAnalysis.Workers.CheckAlerts}
+     ]}
+  ]
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

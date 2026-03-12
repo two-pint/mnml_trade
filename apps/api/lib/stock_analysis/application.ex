@@ -13,9 +13,7 @@ defmodule StockAnalysis.Application do
       StockAnalysis.Cache,
       {DNSCluster, query: Application.get_env(:stock_analysis, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: StockAnalysis.PubSub},
-      # Start a worker by calling: StockAnalysis.Worker.start_link(arg)
-      # {StockAnalysis.Worker, arg},
-      # Start to serve requests, typically the last entry
+      {Oban, Application.fetch_env!(:stock_analysis, Oban)},
       StockAnalysisWeb.Endpoint
     ]
 

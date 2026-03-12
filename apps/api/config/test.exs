@@ -23,6 +23,9 @@ config :stock_analysis, StockAnalysisWeb.Endpoint,
 # Disable Req retries so stubbed 500/429 responses don't cause 7s backoff loops
 config :stock_analysis, :req_retry, false
 
+# Disable Oban in test
+config :stock_analysis, Oban, testing: :manual
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

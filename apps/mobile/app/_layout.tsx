@@ -3,13 +3,15 @@ import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { registerForPushNotifications, addNotificationResponseListener } from "@/lib/notifications";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const notifListenerRef = useRef<ReturnType<typeof addNotificationResponseListener> | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -22,6 +24,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       router.replace("/(app)");
     }
   }, [user, loading, segments, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    registerForPushNotifications();
+
+    notifListenerRef.current = addNotificationResponseListener((response) => {
+      const data = response.notification.request.content.data;
+      if (data?.ticker) {
+        router.push(`/stocks/${encodeURIComponent(data.ticker as string)}` as never);
+      }
+    });
+
+    return () => {
+      notifListenerRef.current?.remove();
+    };
+  }, [user, router]);
 
   if (loading) {
     return (

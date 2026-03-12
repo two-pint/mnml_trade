@@ -29,6 +29,11 @@ defmodule StockAnalysisWeb.Router do
     pipe_through [:api, :authenticated]
 
     get "/user/me", UserController, :me
+    put "/user/profile", UserController, :update_profile
+    post "/user/push-token", NotificationsController, :register_token
+    delete "/user/push-token", NotificationsController, :remove_token
+    get "/user/notification-preferences", NotificationsController, :get_preferences
+    put "/user/notification-preferences", NotificationsController, :update_preferences
     get "/user/watchlist", EngagementController, :list_watchlist
     post "/user/watchlist", EngagementController, :add_to_watchlist
     delete "/user/watchlist/:ticker", EngagementController, :remove_from_watchlist
