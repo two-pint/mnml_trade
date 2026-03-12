@@ -43,6 +43,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <Link
+              href="/watchlist"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+            >
+              Watchlist
+            </Link>
+            <Link
               href="/portfolio"
               className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
             >

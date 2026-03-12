@@ -14,8 +14,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { DailyOhlcv, StockOverview, TechnicalAnalysis } from "@repo/types";
-import { stocksApi } from "@/lib/api";
+import type { DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import { stocksApi, engagementApi } from "@/lib/api";
 import FundamentalTab from "@/components/fundamental-tab";
 import EmotionalTab from "@/components/emotional-tab";
 import InstitutionalTab from "@/components/institutional-tab";
@@ -109,6 +109,8 @@ export default function StockPage() {
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("1M");
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [inWatchlist, setInWatchlist] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
 
   const setTab = useCallback(
     (id: string) => {
@@ -150,6 +152,33 @@ export default function StockPage() {
       .finally(() => setDailyLoading(false));
   }, [ticker, tab]);
 
+  useEffect(() => {
+    if (!ticker) return;
+    engagementApi
+      .listWatchlist()
+      .then(({ data }) => {
+        setInWatchlist(data.some((w: WatchlistItem) => w.ticker === ticker.toUpperCase()));
+      })
+      .catch(() => {});
+  }, [ticker]);
+
+  const toggleWatchlist = async () => {
+    setWatchlistLoading(true);
+    try {
+      if (inWatchlist) {
+        await engagementApi.removeFromWatchlist(ticker);
+        setInWatchlist(false);
+      } else {
+        await engagementApi.addToWatchlist(ticker);
+        setInWatchlist(true);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setWatchlistLoading(false);
+    }
+  };
+
   const chartData = useMemo(
     () => filterByTimeframe(daily, timeframe),
     [daily, timeframe],
@@ -187,13 +216,28 @@ export default function StockPage() {
           <>
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-gray-900">{overview.ticker}</h1>
-              <button
-                type="button"
-                onClick={() => setTradeOpen(true)}
-                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
-              >
-                Trade
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleWatchlist}
+                  disabled={watchlistLoading}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                    inWatchlist
+                      ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  }`}
+                  title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
+                >
+                  {inWatchlist ? "★" : "☆"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTradeOpen(true)}
+                  className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+                >
+                  Trade
+                </button>
+              </div>
             </div>
             <div className="mt-4 flex flex-wrap items-baseline gap-6">
               <span className="text-3xl font-semibold text-gray-900">

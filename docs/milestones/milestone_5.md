@@ -88,11 +88,11 @@ Users benefit from seeing which stocks they recently analyzed so they can quickl
 Users need a dedicated watchlist page and easy access to recently viewed stocks. The watchlist page shows saved tickers with current price and quick actions. Add/remove buttons on stock pages let users manage their watchlist inline.
 
 ### Required tasks
-- [ ] Create `/watchlist/page.tsx`: fetch `api.getWatchlist()` via React Query; display list of tickers with name, current price (from stock overview), change (colored), and "Remove" button.
-- [ ] Add "Watchlist" link to top navbar.
-- [ ] On stock detail page, add "Add to Watchlist" / "Remove from Watchlist" toggle button (heart icon or star). Optimistic update via React Query mutation.
-- [ ] Add "Recent" section (sidebar, dropdown, or on watchlist page): fetch `api.getHistory()`; show last 5–10 tickers as links.
-- [ ] Empty state for watchlist ("Add stocks to your watchlist from any analysis page").
+- [x] Create `/watchlist/page.tsx`: fetch `api.getWatchlist()` via React Query; display list of tickers with name, current price (from stock overview), change (colored), and "Remove" button.
+- [x] Add "Watchlist" link to top navbar.
+- [x] On stock detail page, add "Add to Watchlist" / "Remove from Watchlist" toggle button (heart icon or star). Optimistic update via React Query mutation.
+- [x] Add "Recent" section (sidebar, dropdown, or on watchlist page): fetch `api.getHistory()`; show last 5–10 tickers as links.
+- [x] Empty state for watchlist ("Add stocks to your watchlist from any analysis page").
 
 ### Acceptance criteria
 - Watchlist page shows saved tickers with prices.
@@ -121,10 +121,10 @@ Users need a dedicated watchlist page and easy access to recently viewed stocks.
 Mobile users need the same watchlist management and history capabilities as web, adapted for native UI patterns (bottom tab, swipe-to-delete).
 
 ### Required tasks
-- [ ] **Watchlist tab**: activate in tab navigator. Fetch watchlist; display FlatList of tickers with price, change, and swipe-to-remove gesture. Tap row → navigate to stock detail.
-- [ ] On stock detail screen, add "Add to Watchlist" / "Remove" button (icon).
-- [ ] **History**: show recent stocks on Home tab (e.g. horizontal scroll of recent tickers above trending section).
-- [ ] Pull-to-refresh on watchlist.
+- [x] **Watchlist tab**: activate in tab navigator. Fetch watchlist; display FlatList of tickers with price, change, and swipe-to-remove gesture. Tap row → navigate to stock detail.
+- [x] On stock detail screen, add "Add to Watchlist" / "Remove" button (icon).
+- [x] **History**: show recent stocks on Home tab (e.g. horizontal scroll of recent tickers above trending section).
+- [x] Pull-to-refresh on watchlist.
 
 ### Acceptance criteria
 - Watchlist tab shows saved tickers; add/remove works from stock detail.
@@ -278,8 +278,8 @@ To validate the full stack and allow testing from real devices and shared URLs, 
 
 - [x] M5-001: Watchlist schema and context
 - [x] M5-002: Analysis history
-- [ ] M5-003: Watchlist and history UI (web)
-- [ ] M5-004: Watchlist and history (mobile)
+- [x] M5-003: Watchlist and history UI (web)
+- [x] M5-004: Watchlist and history (mobile)
 - [ ] M5-005: Oban background refresh jobs
 - [ ] M5-006: Push notifications (mobile)
 - [ ] M5-007: User profile page (web)

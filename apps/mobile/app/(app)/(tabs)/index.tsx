@@ -6,6 +6,7 @@ import {
   Text,
   TextInput,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,8 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MnmlLogo } from "@/components/MnmlLogo";
 import { useAuth } from "@/lib/auth-context";
-import { stocksApi } from "@/lib/api";
-import type { SearchResult, TrendingStock } from "@repo/types";
+import { stocksApi, engagementApi } from "@/lib/api";
+import type { SearchResult, TrendingStock, HistoryEntry } from "@repo/types";
 
 const DEBOUNCE_MS = 300;
 
@@ -28,6 +29,7 @@ export default function HomeTab() {
   const [trending, setTrending] = useState<TrendingStock[]>([]);
   const [searching, setSearching] = useState(false);
   const [trendingLoading, setTrendingLoading] = useState(true);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadTrending = useCallback(() => {
@@ -39,9 +41,17 @@ export default function HomeTab() {
       .finally(() => setTrendingLoading(false));
   }, []);
 
+  const loadHistory = useCallback(() => {
+    engagementApi
+      .listHistory()
+      .then(({ data }) => setHistory(data.slice(0, 10)))
+      .catch(() => setHistory([]));
+  }, []);
+
   useEffect(() => {
     loadTrending();
-  }, [loadTrending]);
+    loadHistory();
+  }, [loadTrending, loadHistory]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -133,6 +143,25 @@ export default function HomeTab() {
             className="mt-3 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-base text-gray-900"
           />
         </View>
+
+        {!showSearch && history.length > 0 && (
+          <View className="border-b border-gray-100 px-4 py-3">
+            <Text className="mb-2 text-sm font-medium text-gray-500">Recently viewed</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-2">
+                {history.map((h) => (
+                  <TouchableOpacity
+                    key={h.id}
+                    onPress={() => handleSelectTicker(h.ticker)}
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2"
+                  >
+                    <Text className="text-sm font-medium text-gray-700">{h.ticker}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )}
 
         {showSearch && searching && (
           <View className="items-center py-8">

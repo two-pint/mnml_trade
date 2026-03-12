@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { DailyOhlcv, StockOverview, TechnicalAnalysis } from "@repo/types";
-import { stocksApi } from "@/lib/api";
+import type { DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import { stocksApi, engagementApi } from "@/lib/api";
 import FundamentalTab from "@/components/FundamentalTab";
 import EmotionalTab from "@/components/EmotionalTab";
 import InstitutionalTab from "@/components/InstitutionalTab";
@@ -69,6 +69,8 @@ export default function StockDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [inWatchlist, setInWatchlist] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
 
   const load = useCallback(() => {
     if (!ticker) return;
@@ -101,6 +103,33 @@ export default function StockDetailScreen() {
     setRefreshing(true);
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!ticker) return;
+    engagementApi
+      .listWatchlist()
+      .then(({ data }) => {
+        setInWatchlist(data.some((w: WatchlistItem) => w.ticker === ticker.toUpperCase()));
+      })
+      .catch(() => {});
+  }, [ticker]);
+
+  const toggleWatchlist = async () => {
+    setWatchlistLoading(true);
+    try {
+      if (inWatchlist) {
+        await engagementApi.removeFromWatchlist(ticker);
+        setInWatchlist(false);
+      } else {
+        await engagementApi.addToWatchlist(ticker);
+        setInWatchlist(true);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setWatchlistLoading(false);
+    }
+  };
 
   const chartData = useMemo(
     () => filterByTimeframe(daily, timeframe),
@@ -168,12 +197,28 @@ export default function StockDetailScreen() {
             <>
               <View className="flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-gray-900">{overview.ticker}</Text>
-                <TouchableOpacity
-                  onPress={() => router.push(`/trade?ticker=${encodeURIComponent(overview.ticker)}` as never)}
-                  className="rounded-lg bg-primary-600 px-4 py-2"
-                >
-                  <Text className="font-semibold text-white">Trade</Text>
-                </TouchableOpacity>
+                <View className="flex-row items-center gap-2">
+                  <TouchableOpacity
+                    onPress={toggleWatchlist}
+                    disabled={watchlistLoading}
+                    className={`rounded-lg border px-3 py-2 ${
+                      inWatchlist
+                        ? "border-amber-300 bg-amber-50"
+                        : "border-gray-300"
+                    }`}
+                    style={{ opacity: watchlistLoading ? 0.5 : 1 }}
+                  >
+                    <Text className={`text-base ${inWatchlist ? "text-amber-600" : "text-gray-400"}`}>
+                      {inWatchlist ? "★" : "☆"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => router.push(`/trade?ticker=${encodeURIComponent(overview.ticker)}` as never)}
+                    className="rounded-lg bg-primary-600 px-4 py-2"
+                  >
+                    <Text className="font-semibold text-white">Trade</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <View className="mt-2 flex-row items-baseline gap-3">
                 <Text className="text-xl font-semibold text-gray-900">

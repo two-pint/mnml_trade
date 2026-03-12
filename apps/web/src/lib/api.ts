@@ -1,4 +1,4 @@
-import { ApiClient, createAuthApi, createStocksApi, createPaperTradingApi } from "@repo/api-client";
+import { ApiClient, createAuthApi, createStocksApi, createPaperTradingApi, createEngagementApi } from "@repo/api-client";
 
 let token: string | null = null;
 
@@ -55,3 +55,4 @@ export const apiClient = new ApiClient({
 export const authApi = createAuthApi(apiClient);
 export const stocksApi = createStocksApi(apiClient);
 export const paperTradingApi = createPaperTradingApi(apiClient);
+export const engagementApi = createEngagementApi(apiClient);
