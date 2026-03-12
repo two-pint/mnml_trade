@@ -166,7 +166,15 @@ export default function StockDetailScreen() {
             <ActivityIndicator size="small" color="#4c6ef5" />
           ) : overview ? (
             <>
-              <Text className="text-2xl font-bold text-gray-900">{overview.ticker}</Text>
+              <View className="flex-row items-center justify-between">
+                <Text className="text-2xl font-bold text-gray-900">{overview.ticker}</Text>
+                <TouchableOpacity
+                  onPress={() => router.push(`/trade?ticker=${encodeURIComponent(overview.ticker)}` as never)}
+                  className="rounded-lg bg-primary-600 px-4 py-2"
+                >
+                  <Text className="font-semibold text-white">Trade</Text>
+                </TouchableOpacity>
+              </View>
               <View className="mt-2 flex-row items-baseline gap-3">
                 <Text className="text-xl font-semibold text-gray-900">
                   ${overview.price != null ? overview.price.toFixed(2) : "—"}

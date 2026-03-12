@@ -291,13 +291,13 @@ Users must be able to buy or sell directly from a stock analysis page. A trade m
 Users need a full view of past trades to understand their trading patterns and review decisions. A paginated, filterable transaction history table provides this. It also serves as an audit log for the paper portfolio.
 
 ### Required tasks
-- [ ] Create transaction history section on the portfolio page (or separate `/portfolio/transactions` page).
-- [ ] Fetch transactions with pagination via React Query.
-- [ ] **Table columns**: date/time, ticker, type (Buy/Sell, color-coded), quantity, price per share, total amount.
-- [ ] **Filters**: by ticker (text input), by type (buy/sell dropdown), by date range (date pickers).
-- [ ] **Pagination**: page numbers or infinite scroll; 20 per page.
-- [ ] Click a transaction row for detail view (optional modal or inline expand) showing full info and optional notes.
-- [ ] Empty state if no transactions.
+- [x] Create transaction history section on the portfolio page (or separate `/portfolio/transactions` page).
+- [x] Fetch transactions with pagination via React Query.
+- [x] **Table columns**: date/time, ticker, type (Buy/Sell, color-coded), quantity, price per share, total amount.
+- [x] **Filters**: by ticker (text input), by type (buy/sell dropdown), by date range (date pickers).
+- [x] **Pagination**: page numbers or infinite scroll; 20 per page.
+- [x] Click a transaction row for detail view (optional modal or inline expand) showing full info and optional notes.
+- [x] Empty state if no transactions.
 
 ### Acceptance criteria
 - Transaction history displays all trades, paginated.
@@ -326,12 +326,12 @@ Users need a full view of past trades to understand their trading patterns and r
 Mobile users need the same paper trading capabilities as web: portfolio dashboard, trade execution, holdings, transaction history, and performance. The mobile implementation uses native components (bottom sheets, FlatLists, native charts) for a smooth experience.
 
 ### Required tasks
-- [ ] **Portfolio tab**: activate in tab navigator. Show portfolio value, cash, quick stats cards, holdings FlatList (ticker, quantity, gain/loss, current price). Tap holding → navigate to stock detail.
-- [ ] **Trade flow**: "Trade" button on stock detail screen opens a bottom sheet (or new screen). Buy/Sell toggle, quantity input, price, total preview, validation, confirm button. On success, show confirmation and option to view portfolio.
-- [ ] **Transaction history**: scrollable list on portfolio tab (or sub-screen). Pull-to-refresh. Tap for detail.
-- [ ] **Performance**: total return, win rate, best/worst trade cards above holdings list. Optional chart (Victory Native).
-- [ ] Use same api-client methods and types as web.
-- [ ] Loading and error states; haptic feedback on trade confirm (optional).
+- [x] **Portfolio tab**: activate in tab navigator. Show portfolio value, cash, quick stats cards, holdings FlatList (ticker, quantity, gain/loss, current price). Tap holding → navigate to stock detail.
+- [x] **Trade flow**: "Trade" button on stock detail screen opens a bottom sheet (or new screen). Buy/Sell toggle, quantity input, price, total preview, validation, confirm button. On success, show confirmation and option to view portfolio.
+- [x] **Transaction history**: scrollable list on portfolio tab (or sub-screen). Pull-to-refresh. Tap for detail.
+- [x] **Performance**: total return, win rate, best/worst trade cards above holdings list. Optional chart (Victory Native).
+- [x] Use same api-client methods and types as web.
+- [x] Loading and error states; haptic feedback on trade confirm (optional).
 
 ### Acceptance criteria
 - Portfolio tab shows value, holdings, stats.
@@ -359,7 +359,7 @@ Mobile users need the same paper trading capabilities as web: portfolio dashboar
 - [x] M4-005: Performance metrics endpoint
 - [x] M4-006: Portfolio dashboard (web)
 - [x] M4-007: Trade modal (web)
-- [ ] M4-008: Transaction history page (web)
-- [ ] M4-009: Paper trading (mobile)
+- [x] M4-008: Transaction history page (web)
+- [x] M4-009: Paper trading (mobile)
 
 **Done when**: Users can create a portfolio, buy/sell stocks at current price, view holdings with unrealized P&L, browse transaction history, and see performance metrics — on both web and mobile.

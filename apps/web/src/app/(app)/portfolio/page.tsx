@@ -386,7 +386,15 @@ export default function PortfolioPage() {
       {/* Summary Stats */}
       {performance && (
         <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-semibold text-gray-700">Trading Summary</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-700">Trading Summary</h2>
+            <Link
+              href="/portfolio/transactions"
+              className="text-sm font-medium text-primary-600 hover:underline"
+            >
+              View all transactions →
+            </Link>
+          </div>
           <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
             <div>
               <dt className="text-gray-500">Total Trades</dt>
