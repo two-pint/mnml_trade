@@ -12,7 +12,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import type { AgentAnalysis, DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import { ApiClientError } from "@repo/api-client";
 import { stocksApi, engagementApi } from "@/lib/api";
 import FundamentalTab from "@/components/FundamentalTab";
 import EmotionalTab from "@/components/EmotionalTab";
@@ -71,6 +72,9 @@ export default function StockDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [agentAnalysis, setAgentAnalysis] = useState<AgentAnalysis | null>(null);
+  const [agentAnalysisLoading, setAgentAnalysisLoading] = useState(false);
+  const [agentAnalysisError, setAgentAnalysisError] = useState<"unavailable" | "forbidden" | null>(null);
 
   const load = useCallback(() => {
     if (!ticker) return;
@@ -98,6 +102,23 @@ export default function StockDetailScreen() {
       load();
     }
   }, [ticker, load]);
+
+  useEffect(() => {
+    if (!ticker) return;
+    setAgentAnalysisError(null);
+    setAgentAnalysisLoading(true);
+    stocksApi
+      .getAgentAnalysis(ticker)
+      .then(setAgentAnalysis)
+      .catch((e: unknown) => {
+        if (e instanceof ApiClientError && e.status === 403) {
+          setAgentAnalysisError("forbidden");
+        } else {
+          setAgentAnalysisError("unavailable");
+        }
+      })
+      .finally(() => setAgentAnalysisLoading(false));
+  }, [ticker]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -315,6 +336,74 @@ export default function StockDetailScreen() {
                       })}
                     </View>
                   )}
+                </View>
+              )}
+            </>
+          ) : null}
+        </View>
+
+        {/* AI Analysis */}
+        <View className="border-t border-gray-100 px-4 py-4">
+          <Text className="text-sm font-semibold text-gray-700">AI Analysis</Text>
+          {agentAnalysisLoading ? (
+            <View className="mt-4">
+              <ActivityIndicator size="small" color="#4c6ef5" />
+            </View>
+          ) : agentAnalysisError === "forbidden" ? (
+            <View className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <Text className="text-sm text-amber-800">
+                Add your API key in Settings to enable AI analysis.
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/profile" as never)}
+                className="mt-2"
+              >
+                <Text className="text-sm font-medium text-primary-600">Go to Settings →</Text>
+              </TouchableOpacity>
+            </View>
+          ) : agentAnalysisError === "unavailable" ? (
+            <Text className="mt-4 text-sm text-gray-500">Analysis unavailable. Try again later.</Text>
+          ) : agentAnalysis ? (
+            <>
+              <Text className="mt-1 text-xs text-gray-500">For research only; not investment advice.</Text>
+              <Text className="mt-4 text-gray-900">{agentAnalysis.summary}</Text>
+              {agentAnalysis.consideration && (
+                <View
+                  className={`mt-4 self-start rounded-full px-3 py-1 ${
+                    agentAnalysis.consideration === "Strong buy" || agentAnalysis.consideration === "Worth a look"
+                      ? "bg-green-100"
+                      : agentAnalysis.consideration === "Strong sell" || agentAnalysis.consideration === "Avoid"
+                        ? "bg-red-100"
+                        : "bg-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      agentAnalysis.consideration === "Strong buy" || agentAnalysis.consideration === "Worth a look"
+                        ? "text-green-800"
+                        : agentAnalysis.consideration === "Strong sell" || agentAnalysis.consideration === "Avoid"
+                          ? "text-red-800"
+                          : "text-gray-700"
+                    }`}
+                  >
+                    {agentAnalysis.consideration}
+                  </Text>
+                </View>
+              )}
+              {(agentAnalysis.bull_points?.length ?? 0) > 0 && (
+                <View className="mt-4">
+                  <Text className="text-xs font-medium uppercase text-gray-500">Bull points</Text>
+                  {agentAnalysis.bull_points?.map((p, i) => (
+                    <Text key={i} className="mt-1 text-sm text-gray-700">• {p}</Text>
+                  ))}
+                </View>
+              )}
+              {(agentAnalysis.bear_points?.length ?? 0) > 0 && (
+                <View className="mt-3">
+                  <Text className="text-xs font-medium uppercase text-gray-500">Bear points</Text>
+                  {agentAnalysis.bear_points?.map((p, i) => (
+                    <Text key={i} className="mt-1 text-sm text-gray-700">• {p}</Text>
+                  ))}
                 </View>
               )}
             </>

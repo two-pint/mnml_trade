@@ -1,4 +1,5 @@
 import type {
+  AgentAnalysis,
   SearchResult,
   StockOverview,
   TechnicalAnalysis,
@@ -28,6 +29,11 @@ export function createStocksApi(client: ApiClient) {
     getStock(ticker: string): Promise<StockOverview> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<StockOverview>(`/api/stocks/${encoded}`);
+    },
+
+    getAgentAnalysis(ticker: string): Promise<AgentAnalysis> {
+      const encoded = encodeURIComponent(ticker.trim());
+      return client.get<AgentAnalysis>(`/api/stocks/${encoded}/agent-analysis`);
     },
 
     getStockTechnical(ticker: string): Promise<TechnicalAnalysis> {

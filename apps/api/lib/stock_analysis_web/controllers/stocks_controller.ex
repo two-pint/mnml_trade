@@ -1,6 +1,7 @@
 defmodule StockAnalysisWeb.StocksController do
   use StockAnalysisWeb, :controller
 
+  alias StockAnalysis.AgentAnalysis
   alias StockAnalysis.Analysis
   alias StockAnalysis.InstitutionalActivity
   alias StockAnalysis.Recommendation
@@ -129,6 +130,39 @@ defmodule StockAnalysisWeb.StocksController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "not_found", message: "Stock not found"})
+    end
+  end
+
+  def agent_analysis(conn, %{"ticker" => ticker}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    case AgentAnalysis.get_or_compute(ticker, user.id) do
+      {:ok, result} ->
+        conn
+        |> put_status(:ok)
+        |> json(result)
+
+      {:error, :llm_not_configured} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "llm_not_configured", message: "Add your API key in Settings to enable AI analysis."})
+
+      {:error, :rate_limit} ->
+        conn
+        |> put_status(429)
+        |> json(%{error: "rate_limit", message: "AI provider rate limit reached. Try again in a few minutes."})
+
+      {:error, :invalid_api_key} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "invalid_api_key", message: "Your API key is invalid or expired. Update it in Settings."})
+
+      {:error, reason} ->
+        require Logger
+        Logger.warning("Agent analysis failed for #{ticker}: #{inspect(reason)}")
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "analysis_unavailable", message: "AI analysis is temporarily unavailable. Try again later."})
     end
   end
 

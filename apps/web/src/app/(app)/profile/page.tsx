@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { userApi } from "@/lib/api";
-import type { NotificationPreferences } from "@repo/types";
+import type { NotificationPreferences, LLMSettings, LLMProvider } from "@repo/types";
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -19,6 +19,15 @@ export default function ProfilePage() {
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [prefsLoading, setPrefsLoading] = useState(true);
 
+  const [llmSettings, setLlmSettings] = useState<LLMSettings | null>(null);
+  const [llmLoading, setLlmLoading] = useState(true);
+  const [llmProvider, setLlmProvider] = useState<LLMProvider>("openai");
+  const [llmApiKey, setLlmApiKey] = useState("");
+  const [llmModel, setLlmModel] = useState("");
+  const [llmSaving, setLlmSaving] = useState(false);
+  const [llmSaveError, setLlmSaveError] = useState<string | null>(null);
+  const [llmSaveSuccess, setLlmSaveSuccess] = useState(false);
+
   const loadPrefs = useCallback(() => {
     userApi
       .getNotificationPreferences()
@@ -27,9 +36,25 @@ export default function ProfilePage() {
       .finally(() => setPrefsLoading(false));
   }, []);
 
+  const loadLlmSettings = useCallback(() => {
+    userApi
+      .getLLMSettings()
+      .then(({ data }) => {
+        setLlmSettings(data);
+        setLlmProvider(data.provider ?? "openai");
+        setLlmModel(data.model ?? "");
+      })
+      .catch(() => {})
+      .finally(() => setLlmLoading(false));
+  }, []);
+
   useEffect(() => {
     loadPrefs();
   }, [loadPrefs]);
+
+  useEffect(() => {
+    loadLlmSettings();
+  }, [loadLlmSettings]);
 
   const handleSaveUsername = async () => {
     setSaving(true);
@@ -43,6 +68,28 @@ export default function ProfilePage() {
       setSaveError("Failed to update username");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveLlmSettings = async () => {
+    setLlmSaving(true);
+    setLlmSaveError(null);
+    try {
+      const payload: { provider: LLMProvider; api_key?: string; model?: string } = {
+        provider: llmProvider,
+      };
+      if (llmApiKey.trim()) payload.api_key = llmApiKey.trim();
+      if (llmModel.trim()) payload.model = llmModel.trim();
+      const { data } = await userApi.updateLLMSettings(payload);
+      setLlmSettings(data);
+      setLlmApiKey("");
+      setLlmSaveSuccess(true);
+      setTimeout(() => setLlmSaveSuccess(false), 3000);
+    } catch (e: unknown) {
+      const msg = e && typeof e === "object" && "message" in e ? String((e as { message: unknown }).message) : "Failed to save AI settings";
+      setLlmSaveError(msg);
+    } finally {
+      setLlmSaving(false);
     }
   };
 
@@ -128,6 +175,72 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+      </section>
+
+      {/* AI analysis (BYOK) */}
+      <section className="mt-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-4">
+          <h2 className="text-sm font-semibold text-gray-700">AI analysis</h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Add your own API key to enable AI-powered stock analysis. Your key is stored securely and never shared.
+          </p>
+        </div>
+        {llmLoading ? (
+          <div className="px-6 py-8">
+            <div className="h-6 w-48 animate-pulse rounded bg-gray-100" />
+          </div>
+        ) : (
+          <div className="space-y-4 px-6 py-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Provider</label>
+              <select
+                value={llmProvider}
+                onChange={(e) => setLlmProvider(e.target.value as LLMProvider)}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="openai">OpenAI (GPT)</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">API key</label>
+              <input
+                type="password"
+                value={llmApiKey}
+                onChange={(e) => setLlmApiKey(e.target.value)}
+                placeholder={llmSettings?.api_key_configured ? "•••••••• (leave blank to keep current)" : "sk-..."}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              />
+              {llmSettings?.api_key_configured && (
+                <p className="mt-1 text-xs text-gray-500">API key configured</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Model (optional)</label>
+              <input
+                type="text"
+                value={llmModel}
+                onChange={(e) => setLlmModel(e.target.value)}
+                placeholder={llmProvider === "openai" ? "e.g. gpt-4o" : "e.g. claude-3-5-sonnet"}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+            {llmSaveError && (
+              <p className="text-sm text-bearish">{llmSaveError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleSaveLlmSettings}
+              disabled={llmSaving || (!llmApiKey.trim() && !llmSettings?.api_key_configured)}
+              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+            >
+              {llmSaving ? "Saving..." : "Save AI settings"}
+            </button>
+            {llmSaveSuccess && (
+              <span className="ml-2 text-sm text-bullish">Saved</span>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Notification Preferences */}

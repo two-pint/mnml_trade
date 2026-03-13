@@ -18,7 +18,8 @@ defmodule StockAnalysis.Cache do
     congressional: 86_400,
     insider: 86_400,
     holdings: 604_800,
-    market_tide: 3600
+    market_tide: 3600,
+    agent_analysis: 14_400
   }
 
   ## Public start_link for supervision

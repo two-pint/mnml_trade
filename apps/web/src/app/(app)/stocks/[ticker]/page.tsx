@@ -14,7 +14,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import type { AgentAnalysis, DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import { ApiClientError } from "@repo/api-client";
 import { stocksApi, engagementApi } from "@/lib/api";
 import FundamentalTab from "@/components/fundamental-tab";
 import EmotionalTab from "@/components/emotional-tab";
@@ -111,6 +112,9 @@ export default function StockPage() {
   const [tradeOpen, setTradeOpen] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [agentAnalysis, setAgentAnalysis] = useState<AgentAnalysis | null>(null);
+  const [agentAnalysisLoading, setAgentAnalysisLoading] = useState(false);
+  const [agentAnalysisError, setAgentAnalysisError] = useState<"unavailable" | "forbidden" | null>(null);
 
   const setTab = useCallback(
     (id: string) => {
@@ -160,6 +164,25 @@ export default function StockPage() {
         setInWatchlist(data.some((w: WatchlistItem) => w.ticker === ticker.toUpperCase()));
       })
       .catch(() => {});
+  }, [ticker]);
+
+  useEffect(() => {
+    if (!ticker) return;
+    setAgentAnalysisError(null);
+    setAgentAnalysisLoading(true);
+    stocksApi
+      .getAgentAnalysis(ticker)
+      .then((data) => {
+        setAgentAnalysis(data);
+      })
+      .catch((e: unknown) => {
+        if (e instanceof ApiClientError && e.status === 403) {
+          setAgentAnalysisError("forbidden");
+        } else {
+          setAgentAnalysisError("unavailable");
+        }
+      })
+      .finally(() => setAgentAnalysisLoading(false));
   }, [ticker]);
 
   const toggleWatchlist = async () => {
@@ -354,6 +377,73 @@ export default function StockPage() {
             <p className="mt-2 text-xs text-gray-400">
               Market cap & 52w range coming soon
             </p>
+          </>
+        ) : null}
+      </section>
+
+      {/* AI Analysis */}
+      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-700">AI Analysis</h2>
+        {agentAnalysisLoading ? (
+          <div className="mt-4 h-24 animate-pulse rounded bg-gray-100" />
+        ) : agentAnalysisError === "forbidden" ? (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-amber-800">
+              Add your API key in Settings to enable AI analysis.
+            </p>
+            <Link
+              href="/profile"
+              className="mt-2 inline-block text-sm font-medium text-primary-600 hover:underline"
+            >
+              Go to Settings →
+            </Link>
+          </div>
+        ) : agentAnalysisError === "unavailable" ? (
+          <p className="mt-4 text-sm text-gray-500">Analysis unavailable. Try again later.</p>
+        ) : agentAnalysis ? (
+          <>
+            <p className="mt-2 text-xs text-gray-500">
+              For research only; not investment advice.
+            </p>
+            <p className="mt-4 text-gray-900">{agentAnalysis.summary}</p>
+            {agentAnalysis.consideration && (
+              <span
+                className={`mt-4 inline-block rounded-full px-4 py-1.5 text-sm font-medium ${
+                  agentAnalysis.consideration === "Strong buy" || agentAnalysis.consideration === "Worth a look"
+                    ? "bg-bullish-light text-bullish-dark"
+                    : agentAnalysis.consideration === "Strong sell" || agentAnalysis.consideration === "Avoid"
+                      ? "bg-bearish-light text-bearish-dark"
+                      : "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {agentAnalysis.consideration}
+              </span>
+            )}
+            {(agentAnalysis.bull_points?.length ?? 0) > 0 && (
+              <div className="mt-4">
+                <h3 className="text-xs font-medium uppercase text-gray-500">Bull points</h3>
+                <ul className="mt-1 list-inside list-disc text-sm text-gray-700">
+                  {agentAnalysis.bull_points?.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {(agentAnalysis.bear_points?.length ?? 0) > 0 && (
+              <div className="mt-3">
+                <h3 className="text-xs font-medium uppercase text-gray-500">Bear points</h3>
+                <ul className="mt-1 list-inside list-disc text-sm text-gray-700">
+                  {agentAnalysis.bear_points?.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {agentAnalysis.cached_at && (
+              <p className="mt-3 text-xs text-gray-400">
+                Cached at {new Date(agentAnalysis.cached_at).toLocaleString()}
+              </p>
+            )}
           </>
         ) : null}
       </section>
