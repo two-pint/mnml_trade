@@ -287,6 +287,15 @@ export interface SentimentPost {
   sentiment_confidence: number;
 }
 
+export interface MarketNewsArticle {
+  headline: string | null;
+  summary: string | null;
+  source: string | null;
+  datetime: number | null;
+  url: string | null;
+  sentiment_from_source: string | null;
+}
+
 export interface SentimentNewsArticle {
   headline: string | null;
   summary: string | null;

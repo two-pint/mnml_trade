@@ -15,6 +15,7 @@ import type {
   DailySeries,
   IntradaySeries,
   TrendingStock,
+  MarketNewsArticle,
   PriceSnapshot,
   ScoreSnapshot,
 } from "@repo/types";
@@ -112,6 +113,10 @@ export function createStocksApi(client: ApiClient) {
       const encoded = encodeURIComponent(ticker.trim());
       const params = days != null ? `?days=${days}` : "";
       return client.get<ScoreSnapshot[]>(`/api/stocks/${encoded}/score-history${params}`);
+    },
+
+    getMarketNews(): Promise<MarketNewsArticle[]> {
+      return client.get<MarketNewsArticle[]>("/api/news/market");
     },
   };
 }

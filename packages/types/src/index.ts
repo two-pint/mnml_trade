@@ -35,6 +35,7 @@ export type {
   DailySeries,
   IntradayOhlcv,
   IntradaySeries,
+  MarketNewsArticle,
   TrendingStock,
   FundamentalAnalysis,
   CompanyProfile,

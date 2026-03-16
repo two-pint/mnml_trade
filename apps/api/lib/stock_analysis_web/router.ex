@@ -55,6 +55,8 @@ defmodule StockAnalysisWeb.Router do
     get "/stocks/:ticker/agent-analysis", StocksController, :agent_analysis
     get "/stocks/:ticker", StocksController, :show
 
+    get "/news/market", NewsController, :market
+
     get "/institutional/:ticker/congressional", InstitutionalController, :congressional
     get "/institutional/:ticker/insider-trades", InstitutionalController, :insider_trades
     get "/institutional/:ticker/holdings", InstitutionalController, :holdings
