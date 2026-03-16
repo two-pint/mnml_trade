@@ -22,9 +22,9 @@ defmodule Mix.Tasks.Mnml.BackfillPrices do
 
   ## Expected runtime
 
-  Approximately `ceil(ticker_count / 5) * 12` seconds due to Alpha Vantage's
+  Approximately `ceil(ticker_count / 5) * 12` seconds due to Massive.com's
   5 requests/minute free-tier rate limit (e.g. ~500 tickers ≈ 20 minutes).
-  For a paid Alpha Vantage plan, you can increase `@batch_size` in
+  For a paid Massive.com plan, you can increase `@batch_size` in
   `PriceSnapshotJob` to finish faster.
 
   ## Idempotency
@@ -38,9 +38,9 @@ defmodule Mix.Tasks.Mnml.BackfillPrices do
 
   alias StockAnalysis.Market
   alias StockAnalysis.Repo
-  alias StockAnalysis.Integrations.AlphaVantage
+  alias StockAnalysis.Integrations.Massive
 
-  # Alpha Vantage free tier: 5 requests/minute
+  # Massive.com free tier: 5 requests/minute
   @batch_size 5
   @batch_pause_ms 12_000
 
@@ -77,7 +77,7 @@ defmodule Mix.Tasks.Mnml.BackfillPrices do
   end
 
   defp backfill_ticker(ticker, days) do
-    case AlphaVantage.get_daily(ticker.symbol) do
+    case Massive.get_daily(ticker.symbol) do
       {:ok, daily_data} ->
         cutoff = Date.add(Date.utc_today(), -days)
 

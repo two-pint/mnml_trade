@@ -1,6 +1,7 @@
 defmodule StockAnalysisWeb.StocksController do
   use StockAnalysisWeb, :controller
 
+  alias StockAnalysis.AgentAnalysis
   alias StockAnalysis.Analysis
   alias StockAnalysis.InstitutionalActivity
   alias StockAnalysis.Recommendation
@@ -85,6 +86,47 @@ defmodule StockAnalysisWeb.StocksController do
     end
   end
 
+  def intraday(conn, %{"ticker" => ticker} = params) do
+    interval = parse_interval(params["interval"])
+    days = parse_days(params["days"], 1, 5)
+
+    case Stocks.get_intraday(ticker, interval: interval, days: days) do
+      {:ok, series} ->
+        conn
+        |> put_status(:ok)
+        |> json(series)
+
+      {:error, :rate_limit} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "service_unavailable", message: "Intraday data temporarily unavailable — API rate limit reached."})
+
+      {:error, :api_key_missing} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "service_unavailable", message: "Stock data unavailable — MASSIVE_API_KEY not configured. Set it in .env or config."})
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "not_found", message: "Stock not found"})
+    end
+  end
+
+  defp parse_interval(nil), do: :minute
+  defp parse_interval("5min"), do: :"5minute"
+  defp parse_interval("1h"), do: :hour
+  defp parse_interval(_), do: :minute
+
+  defp parse_days(nil, default, _max), do: default
+  defp parse_days(days, default, max) when is_binary(days) do
+    case Integer.parse(days) do
+      {n, _} when n > 0 -> min(n, max)
+      _ -> default
+    end
+  end
+  defp parse_days(_, default, _max), do: default
+
   def technical(conn, %{"ticker" => ticker}) do
     case Analysis.get_technical(ticker) do
       {:ok, technical} ->
@@ -129,6 +171,39 @@ defmodule StockAnalysisWeb.StocksController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "not_found", message: "Stock not found"})
+    end
+  end
+
+  def agent_analysis(conn, %{"ticker" => ticker}) do
+    user = Guardian.Plug.current_resource(conn)
+
+    case AgentAnalysis.get_or_compute(ticker, user.id) do
+      {:ok, result} ->
+        conn
+        |> put_status(:ok)
+        |> json(result)
+
+      {:error, :llm_not_configured} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "llm_not_configured", message: "Add your API key in Settings to enable AI analysis."})
+
+      {:error, :rate_limit} ->
+        conn
+        |> put_status(429)
+        |> json(%{error: "rate_limit", message: "AI provider rate limit reached. Try again in a few minutes."})
+
+      {:error, :invalid_api_key} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "invalid_api_key", message: "Your API key is invalid or expired. Update it in Settings."})
+
+      {:error, reason} ->
+        require Logger
+        Logger.warning("Agent analysis failed for #{ticker}: #{inspect(reason)}")
+        conn
+        |> put_status(:service_unavailable)
+        |> json(%{error: "analysis_unavailable", message: "AI analysis is temporarily unavailable. Try again later."})
     end
   end
 

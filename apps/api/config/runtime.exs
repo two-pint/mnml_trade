@@ -1,8 +1,12 @@
 import Config
 
-# Alpha Vantage API key (optional in dev/test; set ALPHA_VANTAGE_API_KEY or config)
-if System.get_env("ALPHA_VANTAGE_API_KEY") do
-  config :stock_analysis, :alpha_vantage_api_key, System.get_env("ALPHA_VANTAGE_API_KEY")
+# Massive.com / Polygon.io (optional in dev/test; set MASSIVE_API_KEY or config)
+# Existing Polygon.io API keys are valid. If you get 404s, try MASSIVE_BASE_URL=https://api.polygon.io
+if System.get_env("MASSIVE_API_KEY") do
+  config :stock_analysis, :massive_api_key, System.get_env("MASSIVE_API_KEY")
+end
+if System.get_env("MASSIVE_BASE_URL") do
+  config :stock_analysis, :massive_base_url, System.get_env("MASSIVE_BASE_URL")
 end
 
 # Unusual Whales API key (optional in dev/test; set UNUSUAL_WHALES_API_KEY or config)
@@ -86,6 +90,19 @@ if config_env() == :prod do
 
   config :stock_analysis, StockAnalysis.Guardian,
     secret_key: guardian_secret
+
+  # Optional: 32-byte key (or base64) for encrypting user LLM API keys at rest.
+  # If unset, key is derived from secret_key_base in Encryption module.
+  enc_key = System.get_env("LLM_SETTINGS_ENCRYPTION_KEY")
+  if is_binary(enc_key) and enc_key != "" do
+    llm_enc_key =
+      case Base.decode64(enc_key, padding: false) do
+        {:ok, decoded} when byte_size(decoded) >= 32 -> binary_part(decoded, 0, 32)
+        {:ok, decoded} -> :crypto.hash(:sha256, decoded) |> binary_part(0, 32)
+        :error -> :crypto.hash(:sha256, enc_key) |> binary_part(0, 32)
+      end
+    config :stock_analysis, :llm_settings_encryption_key, llm_enc_key
+  end
 
   cors_origins =
     case System.get_env("CORS_ORIGINS") do

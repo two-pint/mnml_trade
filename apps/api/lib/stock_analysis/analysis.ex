@@ -2,21 +2,23 @@ defmodule StockAnalysis.Analysis do
   @moduledoc """
   Context for technical and fundamental analysis.
 
-  Technical: fetches RSI, MACD, SMAs (20/50/200), Bollinger Bands, ATR, ADX,
-  Stochastic from Alpha Vantage, caches (1h TTL), computes 0-100 score.
+  Technical: fetches daily OHLCV from Massive.com, computes RSI, MACD, SMAs
+  (20/50/200), Bollinger Bands, and Stochastic locally via TechnicalIndicators,
+  caches (1h TTL), computes 0-100 score.
 
   Fundamental: fetches profile, ratios, and financial statements from FMP,
   caches (24h TTL), computes 0-100 score with value assessment.
   """
   alias StockAnalysis.Cache
-  alias StockAnalysis.Integrations.AlphaVantage
+  alias StockAnalysis.Integrations.Massive
   alias StockAnalysis.Integrations.FMP
+  alias StockAnalysis.TechnicalIndicators
 
   @doc """
   Fetches full technical analysis for a ticker.
 
-  Uses cache first (1h TTL); on miss fetches quote and all indicators from
-  Alpha Vantage, computes score, caches and returns.
+  Uses cache first (1h TTL); on miss fetches quote from Massive.com and
+  computes all indicators locally from daily OHLCV data, caches and returns.
 
   Returns `{:ok, technical}` map with `:indicators`, `:score`, `:signal`,
   `:trend_direction`, `:support_resistance`, or `{:error, :not_found}`.
@@ -59,7 +61,7 @@ defmodule StockAnalysis.Analysis do
   ## Private: fetch and build technical map
 
   defp fetch_and_cache_technical(ticker, cache_key, ttl) do
-    with {:ok, quote} <- AlphaVantage.get_quote(ticker),
+    with {:ok, quote} <- Massive.get_quote(ticker),
          {:ok, indicators} <- fetch_all_indicators(ticker) do
       price = quote.price || 0
       score_result = compute_technical_score(indicators, price)
@@ -84,41 +86,64 @@ defmodule StockAnalysis.Analysis do
   end
 
   defp fetch_all_indicators(ticker) do
-    results = %{
-      rsi: fetch_indicator(ticker, :rsi, %{time_period: 14}),
-      macd: fetch_indicator(ticker, :macd, %{fastperiod: 12, slowperiod: 26, signalperiod: 9}),
-      sma_20: fetch_indicator(ticker, :sma, %{time_period: 20}),
-      sma_50: fetch_indicator(ticker, :sma, %{time_period: 50}),
-      sma_200: fetch_indicator(ticker, :sma, %{time_period: 200}),
-      bbands: fetch_indicator(ticker, :bbands, %{time_period: 20}),
-      atr: fetch_indicator(ticker, :atr, %{time_period: 14}),
-      adx: fetch_indicator(ticker, :adx, %{time_period: 14}),
-      stoch: fetch_indicator(ticker, :stoch, %{})
-    }
+    case Massive.get_daily(ticker) do
+      {:ok, daily_data} ->
+        # Filter to bars with all required fields, keeping alignment across lists
+        bars = Enum.filter(daily_data, fn b -> b.close && b.high && b.low end)
+        closes = Enum.map(bars, & &1.close)
+        highs = Enum.map(bars, & &1.high)
+        lows = Enum.map(bars, & &1.low)
+        latest_date = bars |> List.first() |> then(fn b -> if b, do: b.date, else: nil end)
 
-    # Build indicators from successes; nil for failures. Score uses whatever is available.
-    indicators =
-      results
-      |> Enum.map(fn
-        {key, {:ok, series}} -> {key, latest_from_series(series)}
-        {key, {:error, _}} -> {key, nil}
-      end)
-      |> Map.new()
+        # Wrap a scalar value in the {date, value} shape expected by scoring functions
+        wrap = fn val -> if val, do: %{date: latest_date, value: val}, else: nil end
 
-    # Require at least quote (for price) and one indicator so we don't cache empty
-    if Enum.any?(indicators, fn {_k, v} -> v != nil end) do
-      {:ok, indicators}
-    else
-      {:error, :not_found}
+        rsi_val = TechnicalIndicators.rsi(closes)
+        macd_val = TechnicalIndicators.macd(closes)
+        sma_20_val = TechnicalIndicators.sma(closes, 20)
+        sma_50_val = TechnicalIndicators.sma(closes, 50)
+        sma_200_val = TechnicalIndicators.sma(closes, 200)
+        bbands_val = TechnicalIndicators.bbands(closes)
+        stoch_val = TechnicalIndicators.stoch(highs, lows, closes)
+
+        indicators = %{
+          rsi: wrap.(rsi_val),
+          macd:
+            if(macd_val,
+              do: %{date: latest_date, value: macd_val.histogram},
+              else: nil
+            ),
+          sma_20: wrap.(sma_20_val),
+          sma_50: wrap.(sma_50_val),
+          sma_200: wrap.(sma_200_val),
+          bbands:
+            if(bbands_val,
+              do: %{date: latest_date, value: [bbands_val.upper, bbands_val.middle, bbands_val.lower]},
+              else: nil
+            ),
+          atr: nil,
+          adx: nil,
+          stoch:
+            if(stoch_val,
+              do: %{date: latest_date, value: [stoch_val.k, stoch_val.d]},
+              else: nil
+            )
+        }
+
+        if Enum.any?(indicators, fn {_k, v} -> v != nil end) do
+          {:ok, indicators}
+        else
+          {:error, :not_found}
+        end
+
+      {:error, :rate_limit} ->
+        {:error, :rate_limit}
+
+      {:error, _} ->
+        {:error, :not_found}
     end
   end
 
-  defp fetch_indicator(ticker, name, params) do
-    AlphaVantage.get_technical_indicator(ticker, name, params)
-  end
-
-  defp latest_from_series([]), do: nil
-  defp latest_from_series([%{date: date, value: value} | _]), do: %{date: date, value: value}
 
   ## Private: scoring
 
