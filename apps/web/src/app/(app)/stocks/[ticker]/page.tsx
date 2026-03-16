@@ -14,7 +14,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { AgentAnalysis, DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import type {
+  AgentAnalysis,
+  DailyOhlcv,
+  IntradayOhlcv,
+  StockOverview,
+  TechnicalAnalysis,
+  WatchlistItem,
+} from "@repo/types";
 import { ApiClientError } from "@repo/api-client";
 import { stocksApi, engagementApi } from "@/lib/api";
 import FundamentalTab from "@/components/fundamental-tab";
@@ -31,15 +38,32 @@ const TABS = [
   { id: "institutional", label: "Institutional" },
 ] as const;
 
-function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): DailyOhlcv[] {
-  if (!series.length) return [];
+/** Chart point shape: date (or time) for x-axis, plus OHLCV. */
+type ChartPoint = { date: string; open: number | null; high: number | null; low: number | null; close: number | null; volume: number | null };
+
+function intradayToChartPoints(bars: IntradayOhlcv[]): ChartPoint[] {
+  const ordered = [...bars].reverse();
+  return ordered.map((b) => {
+    const time =
+      typeof b.datetime === "string" && b.datetime.length >= 16
+        ? b.datetime.slice(11, 16)
+        : b.datetime;
+    return {
+      date: time,
+      open: b.open,
+      high: b.high,
+      low: b.low,
+      close: b.close,
+      volume: b.volume,
+    };
+  });
+}
+
+function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): ChartPoint[] {
+  if (!series.length || tf === "1D") return [];
   const now = new Date();
   let cut: Date;
   switch (tf) {
-    case "1D":
-      cut = new Date(now);
-      cut.setDate(cut.getDate() - 1);
-      break;
     case "1M":
       cut = new Date(now);
       cut.setMonth(cut.getMonth() - 1);
@@ -53,10 +77,13 @@ function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): DailyOhlcv[] {
       cut.setFullYear(cut.getFullYear() - 1);
       break;
     default:
-      return series;
+      return series.map((d) => ({ ...d, date: d.date }));
   }
   const cutStr = cut.toISOString().slice(0, 10);
-  return series.filter((d) => d.date >= cutStr).slice(-100);
+  return series
+    .filter((d) => d.date >= cutStr)
+    .slice(-100)
+    .map((d) => ({ ...d, date: d.date }));
 }
 
 function IndicatorRow({
@@ -104,9 +131,11 @@ export default function StockPage() {
   const [overview, setOverview] = useState<StockOverview | null>(null);
   const [technical, setTechnical] = useState<TechnicalAnalysis | null>(null);
   const [daily, setDaily] = useState<DailyOhlcv[]>([]);
+  const [intraday, setIntraday] = useState<IntradayOhlcv[]>([]);
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [technicalLoading, setTechnicalLoading] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
+  const [intradayLoading, setIntradayLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("1M");
   const [tradeOpen, setTradeOpen] = useState(false);
@@ -137,6 +166,17 @@ export default function StockPage() {
   }, [ticker]);
 
   useEffect(() => {
+    if (!ticker || overviewLoading) return;
+    const interval = setInterval(() => {
+      stocksApi
+        .getStock(ticker)
+        .then(setOverview)
+        .catch(() => {});
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [ticker, overviewLoading]);
+
+  useEffect(() => {
     if (!ticker || tab !== "technical") return;
     setTechnicalLoading(true);
     stocksApi
@@ -154,6 +194,16 @@ export default function StockPage() {
       .then(setDaily)
       .catch(() => setDaily([]))
       .finally(() => setDailyLoading(false));
+  }, [ticker, tab]);
+
+  useEffect(() => {
+    if (!ticker || tab !== "technical") return;
+    setIntradayLoading(true);
+    stocksApi
+      .getStockIntraday(ticker, { interval: "1min", days: 1 })
+      .then(setIntraday)
+      .catch(() => setIntraday([]))
+      .finally(() => setIntradayLoading(false));
   }, [ticker, tab]);
 
   useEffect(() => {
@@ -202,10 +252,10 @@ export default function StockPage() {
     }
   };
 
-  const chartData = useMemo(
-    () => filterByTimeframe(daily, timeframe),
-    [daily, timeframe],
-  );
+  const chartData = useMemo((): ChartPoint[] => {
+    if (timeframe === "1D") return intradayToChartPoints(intraday);
+    return filterByTimeframe(daily, timeframe);
+  }, [daily, intraday, timeframe]);
 
   const changeNum = overview?.change ?? 0;
   const isPositive = changeNum >= 0;
@@ -488,7 +538,7 @@ export default function StockPage() {
                 </button>
               ))}
             </div>
-            {dailyLoading ? (
+            {(timeframe === "1D" ? intradayLoading : dailyLoading) ? (
               <div className="h-64 animate-pulse rounded bg-gray-100" />
             ) : chartData.length > 0 ? (
               <div className="h-64 w-full">

@@ -13,6 +13,7 @@ import type {
   MarketTide,
   SmartMoneyScore,
   DailySeries,
+  IntradaySeries,
   TrendingStock,
   PriceSnapshot,
   ScoreSnapshot,
@@ -59,6 +60,18 @@ export function createStocksApi(client: ApiClient) {
     getStockDaily(ticker: string): Promise<DailySeries> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<DailySeries>(`/api/stocks/${encoded}/daily`);
+    },
+
+    getStockIntraday(
+      ticker: string,
+      options?: { interval?: "1min" | "5min" | "1h"; days?: number },
+    ): Promise<IntradaySeries> {
+      const encoded = encodeURIComponent(ticker.trim());
+      const params = new URLSearchParams();
+      if (options?.interval) params.set("interval", options.interval);
+      if (options?.days != null) params.set("days", String(options.days));
+      const qs = params.toString();
+      return client.get<IntradaySeries>(`/api/stocks/${encoded}/intraday${qs ? `?${qs}` : ""}`);
     },
 
     getTrending(): Promise<TrendingStock[]> {

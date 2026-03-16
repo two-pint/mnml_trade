@@ -10,7 +10,8 @@ defmodule StockAnalysis.Cache do
 
   @table_name :stock_analysis_cache
   @default_ttls %{
-    price: 15,
+    price: 30,
+    intraday: 60,
     technical: 3600,
     institutional: 3600,
     fundamental: 86_400,

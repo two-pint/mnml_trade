@@ -50,6 +50,7 @@ defmodule StockAnalysisWeb.Router do
     get "/stocks/:ticker/fundamental", StocksController, :fundamental
     get "/stocks/:ticker/sentiment", StocksController, :sentiment
     get "/stocks/:ticker/daily", StocksController, :daily
+    get "/stocks/:ticker/intraday", StocksController, :intraday
     get "/stocks/:ticker/institutional", StocksController, :institutional
     get "/stocks/:ticker/agent-analysis", StocksController, :agent_analysis
     get "/stocks/:ticker", StocksController, :show

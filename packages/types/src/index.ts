@@ -33,6 +33,8 @@ export type {
   FullInstitutionalData,
   DailyOhlcv,
   DailySeries,
+  IntradayOhlcv,
+  IntradaySeries,
   TrendingStock,
   FundamentalAnalysis,
   CompanyProfile,

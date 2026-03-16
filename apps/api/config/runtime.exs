@@ -1,8 +1,12 @@
 import Config
 
-# Alpha Vantage API key (optional in dev/test; set ALPHA_VANTAGE_API_KEY or config)
-if System.get_env("ALPHA_VANTAGE_API_KEY") do
-  config :stock_analysis, :alpha_vantage_api_key, System.get_env("ALPHA_VANTAGE_API_KEY")
+# Massive.com / Polygon.io (optional in dev/test; set MASSIVE_API_KEY or config)
+# Existing Polygon.io API keys are valid. If you get 404s, try MASSIVE_BASE_URL=https://api.polygon.io
+if System.get_env("MASSIVE_API_KEY") do
+  config :stock_analysis, :massive_api_key, System.get_env("MASSIVE_API_KEY")
+end
+if System.get_env("MASSIVE_BASE_URL") do
+  config :stock_analysis, :massive_base_url, System.get_env("MASSIVE_BASE_URL")
 end
 
 # Unusual Whales API key (optional in dev/test; set UNUSUAL_WHALES_API_KEY or config)
