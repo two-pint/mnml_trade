@@ -9,6 +9,7 @@ import {
   Bar,
   BarChart,
   ComposedChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -179,10 +180,10 @@ export default function StockPage() {
     }
   };
 
-  const chartData = useMemo(
-    () => filterByTimeframe(daily, timeframe),
-    [daily, timeframe],
-  );
+  const chartData = useMemo(() => {
+    const filtered = filterByTimeframe(daily, timeframe);
+    return [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+  }, [daily, timeframe]);
 
   const changeNum = overview?.change ?? 0;
   const isPositive = changeNum >= 0;
@@ -411,8 +412,9 @@ export default function StockPage() {
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis yAxisId="price" orientation="right" tick={{ fontSize: 10 }} width={50} />
-                    <YAxis yAxisId="vol" orientation="left" tick={{ fontSize: 10 }} width={40} hide />
+                    <YAxis yAxisId="price" orientation="left" tick={{ fontSize: 10 }} width={50} />
+                    <YAxis yAxisId="vol" orientation="right" tick={{ fontSize: 10 }} width={40} hide />
+                    <Legend align="left" />
                     <Tooltip
                       formatter={(value: number) => (value != null ? value.toFixed(2) : "")}
                       labelFormatter={(label) => label}
@@ -421,11 +423,12 @@ export default function StockPage() {
                       yAxisId="price"
                       type="monotone"
                       dataKey="close"
+                      name="Price"
                       stroke="var(--color-primary-600)"
                       fill="url(#priceFill)"
                       strokeWidth={2}
                     />
-                    <Bar yAxisId="vol" dataKey="volume" fill="#94a3b8" radius={[2, 2, 0, 0]} />
+                    <Bar yAxisId="vol" dataKey="volume" name="Volume" fill="#94a3b8" radius={[2, 2, 0, 0]} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>

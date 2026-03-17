@@ -131,10 +131,10 @@ export default function StockDetailScreen() {
     }
   };
 
-  const chartData = useMemo(
-    () => filterByTimeframe(daily, timeframe),
-    [daily, timeframe],
-  );
+  const chartData = useMemo(() => {
+    const filtered = filterByTimeframe(daily, timeframe);
+    return [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+  }, [daily, timeframe]);
 
   if (!ticker) {
     return (

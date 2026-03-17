@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Area,
   AreaChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -195,7 +196,7 @@ export default function DashboardPage() {
       display: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
     });
 
-    return points;
+    return points.sort((a, b) => a.date.localeCompare(b.date));
   }, [portfolio, performance, transactions]);
 
   return (
@@ -361,6 +362,7 @@ export default function DashboardPage() {
                     axisLine={false}
                     width={40}
                   />
+                  <Legend align="left" />
                   <Tooltip
                     formatter={(value: number) => [`$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Value"]}
                     labelFormatter={(_, payload) => payload?.[0]?.payload?.display ?? ""}
@@ -369,6 +371,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="value"
+                    name="Value"
                     stroke="var(--color-primary-600)"
                     strokeWidth={2}
                     fill="url(#portfolioFill)"
