@@ -90,15 +90,6 @@ mix test
 
 The dev config auto-detects your system Postgres user. To override, set `PGUSER`, `PGPASSWORD`, and `PGHOST` environment variables.
 
-### AI analysis (BYOK)
-
-AI-powered stock analysis is **user-funded**: no app-level LLM API key is required in production. Users add their own OpenAI or Anthropic API key in Profile → AI analysis. The app uses that key only for their requests and never shares it.
-
-- **Required (production)**: `LLM_SETTINGS_ENCRYPTION_KEY` — used to encrypt user API keys at rest. Generate a 32-byte key (e.g. `openssl rand -base64 32`) and set it in production.
-- **Optional (dev only)**: `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` — if you enable a dev fallback in config, the app can use these when a user has not set their own key (for local testing only). In production, only per-user keys are used.
-
-In-app disclaimer: "AI-generated analysis for research only; not investment advice."
-
 ## Tooling
 
 - **Turborepo** — task orchestration, caching, and dependency-aware builds

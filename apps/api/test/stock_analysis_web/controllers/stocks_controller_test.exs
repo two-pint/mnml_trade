@@ -11,14 +11,13 @@ defmodule StockAnalysisWeb.StocksControllerTest do
 
   setup do
     bypass = Bypass.open()
-    Application.put_env(:stock_analysis, :massive_base_url, "http://localhost:#{bypass.port}")
-    Application.put_env(:stock_analysis, :massive_api_key, "test_key")
+    Application.put_env(:stock_analysis, :alpha_vantage_base_url, "http://localhost:#{bypass.port}/query")
+    Application.put_env(:stock_analysis, :alpha_vantage_api_key, "test_key")
     Application.put_env(:stock_analysis, :unusual_whales_base_url, "http://localhost:#{bypass.port}")
     Application.put_env(:stock_analysis, :unusual_whales_api_key, "test_key")
-
     on_exit(fn ->
-      Application.delete_env(:stock_analysis, :massive_base_url)
-      Application.delete_env(:stock_analysis, :massive_api_key)
+      Application.delete_env(:stock_analysis, :alpha_vantage_base_url)
+      Application.delete_env(:stock_analysis, :alpha_vantage_api_key)
       Application.delete_env(:stock_analysis, :unusual_whales_base_url)
       Application.delete_env(:stock_analysis, :unusual_whales_api_key)
     end)
@@ -28,30 +27,16 @@ defmodule StockAnalysisWeb.StocksControllerTest do
     %{bypass: bypass, token: token}
   end
 
-  # Generates 30 daily OHLCV bars (most recent = t0), suitable for RSI/SMA-20/BBands/Stoch.
-  defp daily_bars_json(ticker, base_close \\ 100.0) do
-    t0 = 1705363200000
-    results =
-      0..29
-      |> Enum.map(fn i ->
-        t = t0 - i * 86_400_000
-        c = base_close + rem(i, 5) * 0.5
-        ~s({"t": #{t}, "o": #{c - 1}, "h": #{c + 1}, "l": #{c - 2}, "c": #{c}, "v": #{1_000_000 - i * 1000}})
-      end)
-      |> Enum.join(",\n")
-
-    ~s({"results": [#{results}], "resultsCount": 30, "ticker": "#{ticker}"})
-  end
-
   describe "GET /api/stocks/search" do
     test "returns matching symbols with valid JWT", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.stub(bypass, "GET", "/v3/reference/tickers", fn conn ->
+      Bypass.expect(bypass, fn conn ->
         assert conn.method == "GET"
-        assert conn.query_string =~ "search=AAPL"
-
+        assert conn.request_path == "/query"
+        assert conn.query_string =~ "function=SYMBOL_SEARCH"
+        assert conn.query_string =~ "keywords=AAPL"
         Plug.Conn.send_resp(conn, 200, """
-        {"results": [
-          {"ticker": "AAPL", "name": "Apple Inc.", "type": "CS", "market": "stocks"}
+        {"bestMatches": [
+          {"1. symbol": "AAPL", "2. name": "Apple Inc", "3. type": "Equity", "4. region": "United States"}
         ]}
         """)
       end)
@@ -62,7 +47,7 @@ defmodule StockAnalysisWeb.StocksControllerTest do
         |> get("/api/stocks/search?q=AAPL")
 
       assert json_response(conn, 200) == [
-               %{"ticker" => "AAPL", "name" => "Apple Inc.", "type" => "CS", "region" => "stocks"}
+               %{"ticker" => "AAPL", "name" => "Apple Inc", "type" => "Equity", "region" => "United States"}
              ]
     end
 
@@ -71,9 +56,9 @@ defmodule StockAnalysisWeb.StocksControllerTest do
       assert %{"error" => _} = json_response(conn, 401)
     end
 
-    test "returns 503 when Massive.com rate limit hit", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.stub(bypass, "GET", "/v3/reference/tickers", fn conn ->
-        Plug.Conn.send_resp(conn, 429, "")
+    test "returns 503 when Alpha Vantage rate limit hit", %{conn: conn, bypass: bypass, token: token} do
+      Bypass.expect(bypass, fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"Note": "API call frequency is 5 calls per minute."}))
       end)
 
       conn =
@@ -85,8 +70,8 @@ defmodule StockAnalysisWeb.StocksControllerTest do
       assert %{"error" => "service_unavailable"} = json_response(conn, 503)
     end
 
-    test "returns 502 when Massive.com returns server error", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.stub(bypass, "GET", "/v3/reference/tickers", fn conn ->
+    test "returns 502 when Alpha Vantage returns server error", %{conn: conn, bypass: bypass, token: token} do
+      Bypass.expect(bypass, fn conn ->
         Plug.Conn.send_resp(conn, 500, "")
       end)
 
@@ -102,30 +87,27 @@ defmodule StockAnalysisWeb.StocksControllerTest do
 
   describe "GET /api/stocks/:ticker" do
     test "returns overview with valid JWT", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.expect(bypass, fn conn ->
-        path = conn.request_path
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
+        q = conn.query_string || ""
         body =
-          cond do
-            String.contains?(path, "/v2/aggs/ticker/OVW1") ->
-              daily_bars_json("OVW1", 150.25)
-
-            path == "/api/option-trades/flow-alerts" ->
-              ~s({"data": []})
-
-            String.contains?(path, "/api/darkpool/OVW1") ->
-              ~s({"volume": 0, "net_buy_sell": 0, "block_trades": []})
-
-            String.contains?(path, "/api/congressional-trading/OVW1") ->
-              ~s({"data": []})
-
-            String.contains?(path, "/api/insider-trading/OVW1") ->
-              ~s({"data": []})
-
-            true ->
-              ~s({})
+          if q =~ "function=GLOBAL_QUOTE" do
+            ~s({"Global Quote": {"01. symbol": "OVW1", "02. open": "148", "03. high": "151", "04. low": "147", "05. price": "150.25", "06. volume": "1000000", "07. latest trading day": "2024-01-15", "08. previous close": "148.5", "09. change": "1.75", "10. change percent": "1.18%"}})
+          else
+            ~s({})
           end
-
         Plug.Conn.send_resp(conn, 200, body)
+      end)
+      Bypass.stub(bypass, "GET", "/api/option-trades/flow-alerts", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/darkpool/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"volume": 0, "net_buy_sell": 0, "block_trades": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/congressional-trading/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/insider-trading/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
       end)
 
       conn =
@@ -135,13 +117,14 @@ defmodule StockAnalysisWeb.StocksControllerTest do
 
       data = json_response(conn, 200)
       assert data["ticker"] == "OVW1"
-      assert is_number(data["price"])
-      assert is_number(data["change"])
+      assert data["price"] == 150.25
+      assert data["change"] == 1.75
+      assert data["volume"] == 1_000_000
     end
 
     test "returns 404 for invalid ticker", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.expect(bypass, fn conn ->
-        Plug.Conn.send_resp(conn, 200, ~s({"results": [], "resultsCount": 0}))
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"Global Quote": {}}))
       end)
 
       conn =
@@ -159,59 +142,32 @@ defmodule StockAnalysisWeb.StocksControllerTest do
     end
   end
 
-  describe "GET /api/stocks/:ticker/intraday" do
-    test "returns intraday bars with valid JWT", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.expect(bypass, fn conn ->
-        assert conn.request_path =~ ~r|/v2/aggs/ticker/AAPL/range/1/minute/\d+/\d+|
-        Plug.Conn.send_resp(conn, 200, """
-        {"results": [
-          {"t": 1710000000000, "o": 172.0, "h": 172.5, "l": 171.8, "c": 172.2, "v": 50000},
-          {"t": 1709999940000, "o": 171.9, "h": 172.1, "l": 171.7, "c": 172.0, "v": 48000}
-        ], "resultsCount": 2}
-        """)
-      end)
-
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{token}")
-        |> get("/api/stocks/AAPL/intraday")
-
-      assert conn.status == 200
-      data = json_response(conn, 200)
-      assert length(data) == 2
-      [first | _] = data
-      assert first["close"] == 172.2
-      assert first["open"] == 172.0
-      assert is_binary(first["datetime"])
-    end
-
-    test "returns 200 with empty list when no intraday bars", %{conn: conn, bypass: bypass, token: token} do
-      Bypass.expect(bypass, fn conn ->
-        assert conn.request_path =~ ~r"/v2/aggs/ticker/INVALIDXYZ/range/"
-        Plug.Conn.send_resp(conn, 200, ~s({"results": [], "resultsCount": 0}))
-      end)
-
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{token}")
-        |> get("/api/stocks/INVALIDXYZ/intraday")
-
-      assert conn.status == 200
-      assert json_response(conn, 200) == []
-    end
-  end
-
   describe "GET /api/stocks/:ticker/technical" do
     test "returns technical analysis with indicators and score", %{conn: conn, bypass: bypass, token: token} do
-      # Both get_quote and get_daily call the aggregates endpoint; return 30 bars for both
-      Bypass.expect(bypass, fn conn ->
+      # Single stub handles all GET /query requests (quote + 9 indicators); dispatch by function= param
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
+        q = conn.query_string || ""
         body =
-          if String.contains?(conn.request_path, "/v2/aggs/ticker/TECH1") do
-            daily_bars_json("TECH1")
-          else
-            ~s({})
+          cond do
+            q =~ "function=GLOBAL_QUOTE" ->
+              ~s({"Global Quote": {"01. symbol": "TECH1", "05. price": "100", "06. volume": "0", "09. change": "0", "10. change percent": "0%"}})
+            q =~ "function=RSI" ->
+              ~s({"Technical Analysis: RSI": {"2024-01-15": {"RSI": "45"}}})
+            q =~ "function=MACD" ->
+              ~s({"Technical Analysis: MACD": {"2024-01-15": {"MACD_Hist": "0.1"}}})
+            q =~ "function=SMA" ->
+              ~s({"Technical Analysis: SMA": {"2024-01-15": {"SMA": "99"}}})
+            q =~ "function=BBANDS" ->
+              ~s({"Technical Analysis: BBANDS": {"2024-01-15": {"Real Lower Band": "95", "Real Middle Band": "100", "Real Upper Band": "105"}}})
+            q =~ "function=ATR" ->
+              ~s({"Technical Analysis: ATR": {"2024-01-15": {"ATR": "2"}}})
+            q =~ "function=ADX" ->
+              ~s({"Technical Analysis: ADX": {"2024-01-15": {"ADX": "20"}}})
+            q =~ "function=STOCH" ->
+              ~s({"Technical Analysis: STOCH": {"2024-01-15": {"SlowK": "50", "SlowD": "50"}}})
+            true ->
+              ~s({})
           end
-
         Plug.Conn.send_resp(conn, 200, body)
       end)
 
@@ -232,7 +188,7 @@ defmodule StockAnalysisWeb.StocksControllerTest do
 
     test "returns 404 for invalid ticker", %{conn: conn, bypass: bypass, token: token} do
       Bypass.expect(bypass, fn conn ->
-        Plug.Conn.send_resp(conn, 200, ~s({"results": [], "resultsCount": 0}))
+        Plug.Conn.send_resp(conn, 200, ~s({"Global Quote": {}}))
       end)
 
       conn =
