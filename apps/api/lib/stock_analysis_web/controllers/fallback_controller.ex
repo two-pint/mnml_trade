@@ -28,22 +28,4 @@ defmodule StockAnalysisWeb.FallbackController do
     |> put_status(:unprocessable_entity)
     |> json(%{error: to_string(reason), message: @trade_errors[reason]})
   end
-
-  @llm_settings_errors %{
-    invalid_provider: "Provider must be openai or anthropic",
-    api_key_required: "API key is required when adding LLM settings",
-    encryption_failed: "Failed to store API key securely"
-  }
-
-  def call(conn, {:error, reason}) when is_map_key(@llm_settings_errors, reason) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> json(%{error: to_string(reason), message: @llm_settings_errors[reason]})
-  end
-
-  def call(conn, {:error, :llm_not_configured}) do
-    conn
-    |> put_status(:forbidden)
-    |> json(%{error: "llm_not_configured", message: "Add your API key in Settings to enable AI analysis."})
-  end
 end

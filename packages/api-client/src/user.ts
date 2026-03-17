@@ -3,8 +3,6 @@ import type {
   PushTokenRequest,
   PushTokenResponse,
   NotificationPreferences,
-  LLMSettings,
-  LLMSettingsUpdate,
 } from "@repo/types";
 import type { ApiClient } from "./client";
 
@@ -43,14 +41,6 @@ export function createUserApi(client: ApiClient) {
         "/api/user/notification-preferences",
         prefs,
       );
-    },
-
-    getLLMSettings(): Promise<DataResponse<LLMSettings>> {
-      return client.get<DataResponse<LLMSettings>>("/api/user/llm-settings");
-    },
-
-    updateLLMSettings(settings: LLMSettingsUpdate): Promise<DataResponse<LLMSettings>> {
-      return client.put<DataResponse<LLMSettings>>("/api/user/llm-settings", settings);
     },
   };
 }

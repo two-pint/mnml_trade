@@ -14,25 +14,6 @@ defmodule StockAnalysis.Integrations.Finnhub do
   end
 
   @doc """
-  Fetches market-wide news (general category, last 24h).
-
-  Returns `{:ok, [%{headline: _, summary: _, source: _, datetime: _, url: _, sentiment_from_source: _}, ...]}`
-  or `{:error, reason}`.
-  """
-  def get_market_news do
-    case get("/news", category: "general") do
-      {:ok, articles} when is_list(articles) ->
-        {:ok, Enum.map(articles, &normalize_article/1)}
-
-      {:ok, _} ->
-        {:error, :invalid_response}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
   Fetches recent news articles for a ticker (last 7 days).
 
   Returns `{:ok, [%{headline: _, summary: _, source: _, datetime: _, url: _, sentiment_from_source: _}, ...]}`
