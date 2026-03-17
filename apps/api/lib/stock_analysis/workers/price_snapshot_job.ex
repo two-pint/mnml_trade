@@ -4,7 +4,7 @@ defmodule StockAnalysis.Workers.PriceSnapshotJob do
   inserts rows into `price_snapshots`.
 
   Scheduled daily at 21:00 UTC (one hour after US market close at 20:00 UTC).
-  Batches tickers with a pause between batches to respect Massive.com's
+  Batches tickers with a pause between batches to respect Alpha Vantage's
   5 requests/minute free-tier limit.
   """
   use Oban.Worker,
@@ -15,9 +15,9 @@ defmodule StockAnalysis.Workers.PriceSnapshotJob do
   require Logger
 
   alias StockAnalysis.Market
-  alias StockAnalysis.Integrations.Massive
+  alias StockAnalysis.Integrations.AlphaVantage
 
-  # Massive.com free tier: 5 requests/minute
+  # Alpha Vantage free tier: 5 requests/minute
   @batch_size 5
   @batch_pause_ms 12_000
 
@@ -39,7 +39,7 @@ defmodule StockAnalysis.Workers.PriceSnapshotJob do
   end
 
   defp fetch_and_store(ticker, date) do
-    case Massive.get_daily(ticker.symbol) do
+    case AlphaVantage.get_daily(ticker.symbol) do
       {:ok, daily_data} ->
         # Use today's bar if available, otherwise fall back to most recent
         bar =

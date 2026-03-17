@@ -34,8 +34,6 @@ defmodule StockAnalysisWeb.Router do
     delete "/user/push-token", NotificationsController, :remove_token
     get "/user/notification-preferences", NotificationsController, :get_preferences
     put "/user/notification-preferences", NotificationsController, :update_preferences
-    get "/user/llm-settings", LlmSettingsController, :get_settings
-    put "/user/llm-settings", LlmSettingsController, :update_settings
     get "/user/watchlist", EngagementController, :list_watchlist
     post "/user/watchlist", EngagementController, :add_to_watchlist
     delete "/user/watchlist/:ticker", EngagementController, :remove_from_watchlist
@@ -50,12 +48,8 @@ defmodule StockAnalysisWeb.Router do
     get "/stocks/:ticker/fundamental", StocksController, :fundamental
     get "/stocks/:ticker/sentiment", StocksController, :sentiment
     get "/stocks/:ticker/daily", StocksController, :daily
-    get "/stocks/:ticker/intraday", StocksController, :intraday
     get "/stocks/:ticker/institutional", StocksController, :institutional
-    get "/stocks/:ticker/agent-analysis", StocksController, :agent_analysis
     get "/stocks/:ticker", StocksController, :show
-
-    get "/news/market", NewsController, :market
 
     get "/institutional/:ticker/congressional", InstitutionalController, :congressional
     get "/institutional/:ticker/insider-trades", InstitutionalController, :insider_trades

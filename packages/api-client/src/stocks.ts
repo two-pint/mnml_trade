@@ -1,5 +1,4 @@
 import type {
-  AgentAnalysis,
   SearchResult,
   StockOverview,
   TechnicalAnalysis,
@@ -13,9 +12,7 @@ import type {
   MarketTide,
   SmartMoneyScore,
   DailySeries,
-  IntradaySeries,
   TrendingStock,
-  MarketNewsArticle,
   PriceSnapshot,
   ScoreSnapshot,
 } from "@repo/types";
@@ -31,11 +28,6 @@ export function createStocksApi(client: ApiClient) {
     getStock(ticker: string): Promise<StockOverview> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<StockOverview>(`/api/stocks/${encoded}`);
-    },
-
-    getAgentAnalysis(ticker: string): Promise<AgentAnalysis> {
-      const encoded = encodeURIComponent(ticker.trim());
-      return client.get<AgentAnalysis>(`/api/stocks/${encoded}/agent-analysis`);
     },
 
     getStockTechnical(ticker: string): Promise<TechnicalAnalysis> {
@@ -61,18 +53,6 @@ export function createStocksApi(client: ApiClient) {
     getStockDaily(ticker: string): Promise<DailySeries> {
       const encoded = encodeURIComponent(ticker.trim());
       return client.get<DailySeries>(`/api/stocks/${encoded}/daily`);
-    },
-
-    getStockIntraday(
-      ticker: string,
-      options?: { interval?: "1min" | "5min" | "1h"; days?: number },
-    ): Promise<IntradaySeries> {
-      const encoded = encodeURIComponent(ticker.trim());
-      const params = new URLSearchParams();
-      if (options?.interval) params.set("interval", options.interval);
-      if (options?.days != null) params.set("days", String(options.days));
-      const qs = params.toString();
-      return client.get<IntradaySeries>(`/api/stocks/${encoded}/intraday${qs ? `?${qs}` : ""}`);
     },
 
     getTrending(): Promise<TrendingStock[]> {
@@ -113,10 +93,6 @@ export function createStocksApi(client: ApiClient) {
       const encoded = encodeURIComponent(ticker.trim());
       const params = days != null ? `?days=${days}` : "";
       return client.get<ScoreSnapshot[]>(`/api/stocks/${encoded}/score-history${params}`);
-    },
-
-    getMarketNews(): Promise<MarketNewsArticle[]> {
-      return client.get<MarketNewsArticle[]>("/api/news/market");
     },
   };
 }

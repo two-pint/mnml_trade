@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth-context";
 import { userApi } from "@/lib/api";
-import type { NotificationPreferences, LLMSettings, LLMProvider } from "@repo/types";
+import type { NotificationPreferences } from "@repo/types";
 
 export default function ProfileTab() {
   const { user, logout } = useAuth();
@@ -24,13 +24,6 @@ export default function ProfileTab() {
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [prefsLoading, setPrefsLoading] = useState(true);
 
-  const [llmSettings, setLlmSettings] = useState<LLMSettings | null>(null);
-  const [llmLoading, setLlmLoading] = useState(true);
-  const [llmProvider, setLlmProvider] = useState<LLMProvider>("openai");
-  const [llmApiKey, setLlmApiKey] = useState("");
-  const [llmModel, setLlmModel] = useState("");
-  const [llmSaving, setLlmSaving] = useState(false);
-
   const loadPrefs = useCallback(() => {
     userApi
       .getNotificationPreferences()
@@ -39,25 +32,9 @@ export default function ProfileTab() {
       .finally(() => setPrefsLoading(false));
   }, []);
 
-  const loadLlmSettings = useCallback(() => {
-    userApi
-      .getLLMSettings()
-      .then(({ data }) => {
-        setLlmSettings(data);
-        setLlmProvider(data.provider ?? "openai");
-        setLlmModel(data.model ?? "");
-      })
-      .catch(() => {})
-      .finally(() => setLlmLoading(false));
-  }, []);
-
   useEffect(() => {
     loadPrefs();
   }, [loadPrefs]);
-
-  useEffect(() => {
-    loadLlmSettings();
-  }, [loadLlmSettings]);
 
   const handleSaveUsername = async () => {
     setSaving(true);
@@ -68,24 +45,6 @@ export default function ProfileTab() {
       Alert.alert("Error", "Failed to update username");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSaveLlmSettings = async () => {
-    setLlmSaving(true);
-    try {
-      const payload: { provider: LLMProvider; api_key?: string; model?: string } = {
-        provider: llmProvider,
-      };
-      if (llmApiKey.trim()) payload.api_key = llmApiKey.trim();
-      if (llmModel.trim()) payload.model = llmModel.trim();
-      const { data } = await userApi.updateLLMSettings(payload);
-      setLlmSettings(data);
-      setLlmApiKey("");
-    } catch {
-      Alert.alert("Error", "Failed to save AI settings");
-    } finally {
-      setLlmSaving(false);
     }
   };
 
@@ -161,78 +120,6 @@ export default function ProfileTab() {
             <Text className="mt-1 text-base text-gray-900">
               {user?.username ?? "Not set"}
             </Text>
-          )}
-        </View>
-
-        {/* AI analysis (BYOK) */}
-        <View className="border-t border-gray-100 px-4 py-5">
-          <Text className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
-            AI analysis
-          </Text>
-          <Text className="mb-4 text-sm text-gray-500">
-            Add your API key to enable AI stock analysis. Stored securely on the server.
-          </Text>
-          {llmLoading ? (
-            <ActivityIndicator size="small" color="#4c6ef5" />
-          ) : (
-            <View className="gap-4">
-              <View>
-                <Text className="mb-1 text-sm font-medium text-gray-700">Provider</Text>
-                <View className="flex-row gap-3">
-                  <TouchableOpacity
-                    onPress={() => setLlmProvider("openai")}
-                    className={`rounded-lg border px-4 py-2 ${llmProvider === "openai" ? "border-primary-600 bg-primary-50" : "border-gray-200 bg-gray-50"}`}
-                  >
-                    <Text className={llmProvider === "openai" ? "font-medium text-primary-600" : "text-gray-700"}>
-                      OpenAI
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setLlmProvider("anthropic")}
-                    className={`rounded-lg border px-4 py-2 ${llmProvider === "anthropic" ? "border-primary-600 bg-primary-50" : "border-gray-200 bg-gray-50"}`}
-                  >
-                    <Text className={llmProvider === "anthropic" ? "font-medium text-primary-600" : "text-gray-700"}>
-                      Anthropic
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View>
-                <Text className="mb-1 text-sm font-medium text-gray-700">API key</Text>
-                <TextInput
-                  value={llmApiKey}
-                  onChangeText={setLlmApiKey}
-                  placeholder={llmSettings?.api_key_configured ? "Leave blank to keep current" : "sk-..."}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-base text-gray-900"
-                />
-                {llmSettings?.api_key_configured && (
-                  <Text className="mt-1 text-xs text-gray-500">API key configured</Text>
-                )}
-              </View>
-              <View>
-                <Text className="mb-1 text-sm font-medium text-gray-700">Model (optional)</Text>
-                <TextInput
-                  value={llmModel}
-                  onChangeText={setLlmModel}
-                  placeholder={llmProvider === "openai" ? "e.g. gpt-4o" : "e.g. claude-3-5-sonnet"}
-                  autoCapitalize="none"
-                  className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-base text-gray-900"
-                />
-              </View>
-              <TouchableOpacity
-                onPress={handleSaveLlmSettings}
-                disabled={llmSaving || (!llmApiKey.trim() && !llmSettings?.api_key_configured)}
-                className="rounded-lg bg-primary-600 py-3"
-                style={{ opacity: (llmSaving || (!llmApiKey.trim() && !llmSettings?.api_key_configured)) ? 0.5 : 1 }}
-              >
-                <Text className="text-center font-medium text-white">
-                  {llmSaving ? "Saving..." : "Save AI settings"}
-                </Text>
-              </TouchableOpacity>
-            </View>
           )}
         </View>
 

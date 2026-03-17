@@ -17,16 +17,15 @@
 Before building, we need a clear design: how agent roles map to our existing data (Stocks context, Analysis context, Alpha Vantage, Unusual Whales), whether to implement in Elixir or as a Python sidecar, how results are cached and exposed via the API, and how the pipeline ties into watchlist, paper trading, and UI.
 
 ### Required tasks
-- [x] Document TradingAgents-style roles relevant to our stack: **Technical Analyst** (our indicators + price), **Fundamental/Sentiment** (M3 data when available; or summary from overview), **Institutional Analyst** (options flow, dark pool from Unusual Whales), **Researcher** (bull/bear debate over analyst outputs), **Trader Agent** (synthesized view → optional "consideration" or paper-trade suggestion), **Risk** (guardrails, optional approval).
-- [x] Decide integration approach: **Option A** — Elixir-native (HTTP client to OpenAI/Claude/etc., orchestration in Phoenix, cache in ETS/Redis); **Option B** — Python service (TradingAgents or minimal clone) called by Phoenix; **Option C** — hybrid (e.g. single "summary" agent in Elixir first, expand later). Document pros/cons and chosen path.
-- [x] Define data flow: which existing API responses (stock overview, technical, options flow, etc.) are passed into which agents; where results are stored (e.g. `agent_analysis` table or cache key per ticker); TTL and invalidation. **BYOK**: Load current user's LLM settings (provider + decrypted API key) before any LLM call; if user has not configured an API key, return 403 with message to configure in Settings.
-- [x] Define API contract: e.g. `GET /api/stocks/:ticker/agent-analysis` (and optionally batch for watchlist); response shape (summary, debate excerpt, optional "consideration" label). **Auth**: 401 if unauthenticated; 403 if user has not configured an LLM API key (message: "Add your API key in Settings to enable AI analysis").
+- [ ] Document TradingAgents-style roles relevant to our stack: **Technical Analyst** (our indicators + price), **Fundamental/Sentiment** (M3 data when available; or summary from overview), **Institutional Analyst** (options flow, dark pool from Unusual Whales), **Researcher** (bull/bear debate over analyst outputs), **Trader Agent** (synthesized view → optional "consideration" or paper-trade suggestion), **Risk** (guardrails, optional approval).
+- [ ] Decide integration approach: **Option A** — Elixir-native (HTTP client to OpenAI/Claude/etc., orchestration in Phoenix, cache in ETS/Redis); **Option B** — Python service (TradingAgents or minimal clone) called by Phoenix; **Option C** — hybrid (e.g. single "summary" agent in Elixir first, expand later). Document pros/cons and chosen path.
+- [ ] Define data flow: which existing API responses (stock overview, technical, options flow, etc.) are passed into which agents; where results are stored (e.g. `agent_analysis` table or cache key per ticker); TTL and invalidation.
+- [ ] Define API contract: e.g. `GET /api/stocks/:ticker/agent-analysis` (and optionally batch for watchlist); response shape (summary, debate excerpt, optional "consideration" label).
 - [ ] Add a short "Multi-Agent Analysis" section to HLD or design doc referencing this milestone.
-- [x] **BYOK and multi-provider**: No app-level LLM key required for production. Users configure provider (OpenAI, Anthropic, etc.) and API key in profile/settings. Agent pipeline runs with the **current user's** credentials. Cache key can be `agent_analysis:{ticker}` (shared) or `agent_analysis:{user_id}:{ticker}` (per-user). Optional: app-level key in dev only for testing without per-user keys.
 
 ### Acceptance criteria
 - Written design doc (or HLD section) that specifies agent roles, data inputs, integration approach (Elixir vs Python), API contract, and cache strategy.
-- Decision recorded: **multi-provider BYOK from the start**; no app-level LLM key required in production.
+- Decision recorded on whether to use a single provider (e.g. OpenAI) or multi-provider from the start.
 
 ### Test plan
 | Step | Action | Expected result |
@@ -40,22 +39,22 @@ Before building, we need a clear design: how agent roles map to our existing dat
 
 ### Ticket
 **ID**: M7-002  
-**Title**: LLM provider integration — behaviour, adapters (OpenAI, Anthropic), key per request from user settings
+**Title**: LLM provider integration — config, client, and single-agent call from Phoenix
 
 ### Description (why this ticket is needed)
-The app needs a reliable way to call an LLM (OpenAI, Anthropic, or other) from Elixir. API key is supplied **per request** from the current user's encrypted settings (BYOK); no app-level key is required in production. This ticket establishes the behaviour and adapters so the agent pipeline can call the user's chosen provider with their key.
+The app needs a reliable way to call an LLM (OpenAI, Anthropic, or other) from Elixir: API key via env, HTTP client, structured request/response, and timeouts. This ticket establishes the foundation so later tickets can implement analyst prompts and orchestration.
 
 ### Required tasks
-- [x] Add dependency for HTTP LLM calls (e.g. `req` already in use) to OpenAI/Anthropic APIs.
-- [x] Create a behaviour (e.g. `StockAnalysis.AgentAnalysis.LLMAdapter`) with `complete(provider, api_key, prompt, options)` returning `{:ok, text}` or `{:error, reason}`; support configurable model and max_tokens passed in options.
-- [x] Implement OpenAI adapter: chat completions using passed-in `api_key`; timeout (e.g. 30s).
-- [x] Implement Anthropic adapter: Messages API using passed-in `api_key`; timeout (e.g. 30s).
-- [ ] Optional dev fallback: config flag `use_app_llm_key_in_dev`; when true and user has no key, use env `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` for testing only.
+- [ ] Add dependency for HTTP LLM calls (e.g. `req` to OpenAI/Anthropic API, or a small wrapper library). Ensure API key is read from env (e.g. `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`); never committed.
+- [ ] Create a behaviour or module (e.g. `StockAnalysis.AgentAnalysis.LLM`) with `complete(prompt, options)` returning `{:ok, text}` or `{:error, reason}`; support configurable model and max_tokens.
+- [ ] Implement at least one provider (e.g. OpenAI chat completions); add basic retries and timeout (e.g. 30s).
+- [ ] Add config in `runtime.exs` for prod: API key from env, model name, optional enable/disable flag so the feature can be turned off if key is missing.
+- [ ] (Optional) Add a second provider (e.g. Anthropic) behind the same behaviour for future multi-provider or fallback.
 
 ### Acceptance criteria
-- Phoenix can call the LLM with a prompt and receive plain-text completion; key is passed per call (from user settings).
-- No app-level LLM key required for production; feature works when user has configured provider and key in settings.
-- Multiple providers (OpenAI, Anthropic) supported behind the same behaviour.
+- Phoenix can call the LLM with a prompt and receive plain-text completion.
+- API key and model are configured via env; no secrets in repo.
+- Feature can be disabled when key is not set (no runtime errors).
 
 ### Test plan
 | Step | Action | Expected result |
@@ -76,9 +75,9 @@ The app needs a reliable way to call an LLM (OpenAI, Anthropic, or other) from E
 Users benefit from a short, natural-language summary of what the numbers mean. This ticket implements two "analyst" agents that consume data we already have: (1) Technical Analyst — overview + indicators + score; (2) Institutional Analyst — options flow and dark pool summary. Both use the LLM to produce a concise paragraph (or bullets) suitable for the stock detail UI.
 
 ### Required tasks
-- [x] **Technical Analyst**: Build a prompt that includes ticker, price, change, key metrics, technical indicators (RSI, MACD, etc.), and technical score. Call LLM; parse and sanitize response (strip markdown if needed, length limit). Return structured result (e.g. `%{role: "technical", summary: "..."}`).
-- [x] **Institutional Analyst**: Build a prompt that includes ticker, recent options flow summary, dark pool summary (from Unusual Whales integration). Call LLM; return structured result (e.g. `%{role: "institutional", summary: "..."}`).
-- [x] Fetch required data via existing contexts (Stocks, Analysis, Unusual Whales); do not duplicate API calls—use cached/context data passed into the agent module.
+- [ ] **Technical Analyst**: Build a prompt that includes ticker, price, change, key metrics, technical indicators (RSI, MACD, etc.), and technical score. Call LLM; parse and sanitize response (strip markdown if needed, length limit). Return structured result (e.g. `%{role: "technical", summary: "..."}`).
+- [ ] **Institutional Analyst**: Build a prompt that includes ticker, recent options flow summary, dark pool summary (from Unusual Whales integration). Call LLM; return structured result (e.g. `%{role: "institutional", summary: "..."}`).
+- [ ] Fetch required data via existing contexts (Stocks, Analysis, Unusual Whales); do not duplicate API calls—use cached/context data passed into the agent module.
 - [ ] Add unit tests or integration tests that stub LLM response and assert output shape and that no raw secrets appear in prompts.
 
 ### Acceptance criteria
@@ -106,11 +105,11 @@ Users benefit from a short, natural-language summary of what the numbers mean. T
 A TradingAgents-style "researcher" step adds balance: one agent argues bull case, one bear case, based on the same analyst summaries. This gives users a quick pros/cons view and reduces single-perspective bias. The output is consumed by the synthesis step or shown directly in the UI.
 
 ### Required tasks
-- [x] Define input: concatenated or structured output from Technical and Institutional analysts (and optionally Fundamental/Sentiment when M3 data exists).
-- [x] **Bull researcher**: Prompt that asks for 2–4 bullet points supporting a bullish view given the data. Call LLM; return structured result.
-- [x] **Bear researcher**: Prompt that asks for 2–4 bullet points supporting a bearish view given the data. Call LLM; return structured result.
-- [x] Optionally combine into a single "debate" call (e.g. "Given the following analysis, list key bull and key bear points") to save latency and cost.
-- [x] Cache debate result per ticker (same TTL strategy as agent analysis) to avoid re-running on every request.
+- [ ] Define input: concatenated or structured output from Technical and Institutional analysts (and optionally Fundamental/Sentiment when M3 data exists).
+- [ ] **Bull researcher**: Prompt that asks for 2–4 bullet points supporting a bullish view given the data. Call LLM; return structured result.
+- [ ] **Bear researcher**: Prompt that asks for 2–4 bullet points supporting a bearish view given the data. Call LLM; return structured result.
+- [ ] Optionally combine into a single "debate" call (e.g. "Given the following analysis, list key bull and key bear points") to save latency and cost.
+- [ ] Cache debate result per ticker (same TTL strategy as agent analysis) to avoid re-running on every request.
 
 ### Acceptance criteria
 - Bull and bear points are generated from the same analyst inputs.
@@ -135,10 +134,10 @@ A TradingAgents-style "researcher" step adds balance: one agent argues bull case
 The final step combines analyst summaries and debate into one coherent "agent analysis" and, optionally, a simple label (e.g. "Worth a look" / "Neutral" / "Caution") that the UI can show and that could later feed into paper-trading suggestions. This ticket does not execute trades; it only produces a synthesized view and an optional consideration tag.
 
 ### Required tasks
-- [x] **Synthesis agent**: Prompt that takes technical summary, institutional summary, and bull/bear points; outputs one short paragraph (2–4 sentences) and optionally a single "consideration" label. Call LLM; parse response into `%{summary: "...", consideration: "..."}` (consideration optional).
-- [x] **Orchestration**: Implement a pipeline (e.g. in `StockAnalysis.AgentAnalysis` context): fetch data → Technical Analyst → Institutional Analyst → Researchers → Synthesis. Run in sequence or parallel where independent; respect timeouts and abort on critical failure.
-- [x] **Persistence/cache**: Store or cache the full result (all analyst outputs + debate + synthesis) under a key like `agent_analysis:{ticker}` with TTL (e.g. 1–4 hours) so UI and API can serve it without re-running every time.
-- [x] Define "risk" guardrails: e.g. no explicit "buy/sell" in synthesis; disclaimer that output is for research only, not advice. Enforce in prompt and/or post-processing.
+- [ ] **Synthesis agent**: Prompt that takes technical summary, institutional summary, and bull/bear points; outputs one short paragraph (2–4 sentences) and optionally a single "consideration" label. Call LLM; parse response into `%{summary: "...", consideration: "..."}` (consideration optional).
+- [ ] **Orchestration**: Implement a pipeline (e.g. in `StockAnalysis.AgentAnalysis` context): fetch data → Technical Analyst → Institutional Analyst → Researchers → Synthesis. Run in sequence or parallel where independent; respect timeouts and abort on critical failure.
+- [ ] **Persistence/cache**: Store or cache the full result (all analyst outputs + debate + synthesis) under a key like `agent_analysis:{ticker}` with TTL (e.g. 1–4 hours) so UI and API can serve it without re-running every time.
+- [ ] Define "risk" guardrails: e.g. no explicit "buy/sell" in synthesis; disclaimer that output is for research only, not advice. Enforce in prompt and/or post-processing.
 
 ### Acceptance criteria
 - Full pipeline runs for a given ticker and produces synthesis + optional consideration.
@@ -165,14 +164,13 @@ The final step combines analyst summaries and debate into one coherent "agent an
 Web and mobile need a stable endpoint and types to display the multi-agent analysis on the stock detail page. This ticket adds the HTTP contract, auth, and shared TypeScript types so both clients can render summary, debate, and consideration consistently.
 
 ### Required tasks
-- [x] Add `GET /api/stocks/:ticker/agent-analysis` (auth required). Returns JSON: `{ summary, consideration?, technicalSummary?, institutionalSummary?, bullPoints?, bearPoints?, cachedAt? }`. Trigger pipeline if not cached (or return 202 + poll, or synchronous—per design from M7-001).
-- [x] Add Ecto schema/migration if storing in DB (e.g. `agent_analyses`: user_id optional, ticker, payload JSONB, inserted_at); or document "cache only" and return from cache with `cachedAt`.
-- [x] Add types in `@repo/types` and methods in `@repo/api-client` for agent analysis. Add to openapi/spec if present.
-- [x] Document in API docs or README: endpoint, rate limits (if any), and that analysis is for research only.
-- [x] **Auth and BYOK**: 401 when unauthenticated; **403 when the user has not configured an LLM API key** — response message: "Add your API key in Settings to enable AI analysis" (or equivalent) so clients can show a CTA linking to profile/settings.
+- [ ] Add `GET /api/stocks/:ticker/agent-analysis` (auth required). Returns JSON: `{ summary, consideration?, technicalSummary?, institutionalSummary?, bullPoints?, bearPoints?, cachedAt? }`. Trigger pipeline if not cached (or return 202 + poll, or synchronous—per design from M7-001).
+- [ ] Add Ecto schema/migration if storing in DB (e.g. `agent_analyses`: user_id optional, ticker, payload JSONB, inserted_at); or document "cache only" and return from cache with `cachedAt`.
+- [ ] Add types in `@repo/types` and methods in `@repo/api-client` for agent analysis. Add to openapi/spec if present.
+- [ ] Document in API docs or README: endpoint, rate limits (if any), and that analysis is for research only.
 
 ### Acceptance criteria
-- Authenticated GET returns agent analysis for the ticker; unauthenticated returns 401; **403 when user has not configured an API key**, with message directing them to Settings.
+- Authenticated GET returns agent analysis for the ticker; unauthenticated returns 401.
 - Response shape matches shared types; web and mobile can consume it.
 - Invalid ticker returns 404 or empty analysis per product decision.
 
@@ -195,10 +193,10 @@ Web and mobile need a stable endpoint and types to display the multi-agent analy
 The stock detail page should show the synthesized agent analysis: summary paragraph, optional bull/bear bullets, and consideration badge. This gives users a single place to read both raw data (tabs) and the LLM-derived narrative.
 
 ### Required tasks
-- [x] Add a section or tab "AI Analysis" (or "Summary") on the stock detail page that fetches `GET /api/stocks/:ticker/agent-analysis` and displays summary, consideration, and optionally bull/bear points.
-- [x] Use existing api-client and types; show loading state and handle errors (e.g. "Analysis unavailable"). **When the API returns 403 (user has not configured API key)**, show an inline message: "Add your API key in Settings to enable AI analysis" and link to profile/settings.
-- [x] Include short disclaimer: "For research only; not investment advice."
-- [x] Ensure layout works on mobile viewport (responsive).
+- [ ] Add a section or tab "AI Analysis" (or "Summary") on the stock detail page that fetches `GET /api/stocks/:ticker/agent-analysis` and displays summary, consideration, and optionally bull/bear points.
+- [ ] Use existing api-client and types; show loading state and handle errors (e.g. "Analysis unavailable").
+- [ ] Include short disclaimer: "For research only; not investment advice."
+- [ ] Ensure layout works on mobile viewport (responsive).
 
 ### Acceptance criteria
 - Agent analysis section visible on stock detail when data is available.
@@ -224,9 +222,9 @@ The stock detail page should show the synthesized agent analysis: summary paragr
 Mobile users should see the same agent analysis (summary, consideration, bull/bear) on the stock detail screen so the experience is consistent with web and they can quickly scan the AI-derived view on the go.
 
 ### Required tasks
-- [x] Add "AI Analysis" section or collapsible block on the stock detail screen; call `api.getAgentAnalysis(ticker)` and display summary, consideration badge, and optional bull/bear lists.
-- [x] Reuse shared types and api-client; match web disclaimer and tone. **When the API returns 403 (no API key configured)**, show inline message and link to profile/settings to add key.
-- [x] Handle loading and error states; avoid blocking the rest of the screen if the agent endpoint is slow or fails.
+- [ ] Add "AI Analysis" section or collapsible block on the stock detail screen; call `api.getAgentAnalysis(ticker)` and display summary, consideration badge, and optional bull/bear lists.
+- [ ] Reuse shared types and api-client; match web disclaimer and tone.
+- [ ] Handle loading and error states; avoid blocking the rest of the screen if the agent endpoint is slow or fails.
 
 ### Acceptance criteria
 - Agent analysis visible on mobile stock detail when available.
@@ -254,7 +252,6 @@ Users with a watchlist may want to see agent summaries for multiple tickers with
 ### Required tasks
 - [ ] **Option A**: `GET /api/user/watchlist/agent-summaries` — returns list of `{ticker, summary?, consideration?, cachedAt}` for the user's watchlist; trigger pipeline for missing/stale entries (async or sync per design).
 - [ ] **Option B**: Oban job that precomputes agent analysis for each watchlist ticker on a schedule (e.g. daily or when user adds ticker); API only reads from cache.
-- [ ] **Per-user key**: Batch/watchlist uses the same per-user LLM credentials (BYOK); rate and cost are determined by each user's own provider/limits.
 - [ ] Document rate/cost implications (LLM calls per user/watchlist size); add limits if needed (e.g. max 10 tickers per batch, or only cached).
 - [ ] (Optional) Add a compact "AI take" or consideration badge next to each ticker on the watchlist page (web and/or mobile).
 
@@ -281,9 +278,9 @@ Users with a watchlist may want to see agent summaries for multiple tickers with
 Multi-agent LLM output must be clearly framed as research/educational only, not investment advice. Documentation helps operators run and tune the feature; a clear disclaimer protects users and the product.
 
 ### Required tasks
-- [x] Add "Multi-Agent Analysis" section to README or docs: what it is, which data it uses, that it is **user-funded (BYOK)** — users configure provider and API key in profile/settings — and that it is for research only.
-- [x] Ensure in-app disclaimer is visible wherever agent analysis is shown (web and mobile): e.g. "AI-generated analysis for research only; not investment advice."
-- [x] Document env vars: **`LLM_SETTINGS_ENCRYPTION_KEY`** (required in production for encrypting user API keys at rest); **`OPENAI_API_KEY` / `ANTHROPIC_API_KEY`** only as **optional dev fallback** (when enabled in config) for testing without per-user keys — not required in production.
+- [ ] Add "Multi-Agent Analysis" section to README or docs: what it is, which data it uses, how to enable/disable (env), and that it is for research only.
+- [ ] Ensure in-app disclaimer is visible wherever agent analysis is shown (web and mobile): e.g. "AI-generated analysis for research only; not investment advice."
+- [ ] Document env vars: `OPENAI_API_KEY` (or equivalent), any feature flag or model name; add to deployment docs (e.g. M2-010 env list or M7).
 - [ ] (Optional) Add a link to a short "How we use AI" or "Research disclaimer" page in app footer or profile.
 
 ### Acceptance criteria
@@ -301,15 +298,15 @@ Multi-agent LLM output must be clearly framed as research/educational only, not 
 
 ## Milestone 7 completion checklist
 
-- [x] M7-001: Research and design — agent architecture
-- [x] M7-002: LLM provider integration (Phoenix)
-- [x] M7-003: Analyst agents — technical and institutional
-- [x] M7-004: Researcher layer — bull/bear debate
-- [x] M7-005: Synthesis and optional consideration signal
-- [x] M7-006: API and types — agent analysis endpoint
-- [x] M7-007: Web UI — agent analysis on stock detail
-- [x] M7-008: Mobile UI — agent analysis on stock screen
+- [ ] M7-001: Research and design — agent architecture
+- [ ] M7-002: LLM provider integration (Phoenix)
+- [ ] M7-003: Analyst agents — technical and institutional
+- [ ] M7-004: Researcher layer — bull/bear debate
+- [ ] M7-005: Synthesis and optional consideration signal
+- [ ] M7-006: API and types — agent analysis endpoint
+- [ ] M7-007: Web UI — agent analysis on stock detail
+- [ ] M7-008: Mobile UI — agent analysis on stock screen
 - [ ] M7-009: Watchlist and batch (optional)
-- [x] M7-010: Documentation and disclaimer
+- [ ] M7-010: Documentation and disclaimer
 
 **Done when**: Multi-agent LLM analysis is designed and implemented; Technical and Institutional analysts plus Researcher debate and Synthesis run in Phoenix (or approved sidecar); API exposes agent analysis; web and mobile show summary and consideration with clear research-only disclaimer; optional watchlist integration and full documentation in place.
