@@ -104,7 +104,7 @@ Users benefit from a short, natural-language summary of what the numbers mean. T
 **Title**: Researcher layer — bull and bear debate from analyst outputs
 
 ### Description (why this ticket is needed)
-A TradingAgents-style "researcher" step adds balance: one agent argues bull case, one bear case, based on the same analyst summaries. This gives users a quick pros/cons view and reduces single-perspective bias. The output is consumed by the synthesis step or shown directly in the UI.
+A TradingAgents-style "researcher" step adds balance: one agent argues bull case, one bear case, based on the same analyst summaries. This gives users a quick pros/cons view and reduces single-perspective bias. The output is consumed by the synthesis step or shown directly in the UI. Again using https://arxiv.org/pdf/2412.20138 as input
 
 ### Required tasks
 - [ ] Define input: concatenated or structured output from Technical and Institutional analysts (and optionally Fundamental/Sentiment when M3 data exists).
