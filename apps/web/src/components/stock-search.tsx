@@ -113,13 +113,13 @@ export function StockSearch() {
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setOpen(true)}
         placeholder="Search stocks..."
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-9 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 pl-9 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-400"
         aria-expanded={open}
         aria-autocomplete="list"
         aria-controls="stock-search-list"
       />
       <span
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
         aria-hidden
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,29 +135,29 @@ export function StockSearch() {
         <ul
           id="stock-search-list"
           role="listbox"
-          className="absolute top-full z-50 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute top-full z-50 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-600 dark:bg-zinc-800"
         >
           {showError && (
             <li className="px-3 py-2 text-sm text-bearish">Search failed. Try again.</li>
           )}
           {showEmpty && !showError && (
-            <li className="px-3 py-2 text-sm text-gray-500">No results</li>
+            <li className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">No results</li>
           )}
           {!showError && displayList.length > 0 && (
             <>
               {showRecent && recent.length > 0 && !query.trim() && (
-                <li className="px-3 py-1.5 text-xs font-medium text-gray-500">Recent</li>
+                <li className="px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">Recent</li>
               )}
               {displayList.map((item) => (
                 <li
                   key={`${item.ticker}-${item.name}`}
                   role="option"
                   tabIndex={0}
-                  className="cursor-pointer px-3 py-2 text-sm transition-colors hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                  className="cursor-pointer px-3 py-2 text-sm transition-colors hover:bg-zinc-100 focus:bg-zinc-100 focus:outline-none dark:hover:bg-zinc-700 dark:focus:bg-zinc-700"
                   onMouseDown={() => handleSelect(item)}
                 >
-                  <span className="font-medium text-gray-900">{item.ticker}</span>
-                  <span className="ml-2 text-gray-500">{item.name}</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{item.ticker}</span>
+                  <span className="ml-2 text-zinc-500 dark:text-zinc-400">{item.name}</span>
                 </li>
               ))}
             </>

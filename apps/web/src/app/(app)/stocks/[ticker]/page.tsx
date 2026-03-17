@@ -72,7 +72,7 @@ function IndicatorRow({
       ? "text-bullish"
       : interpretation === "bearish"
         ? "text-bearish"
-        : "text-gray-600";
+        : "text-zinc-600 dark:text-zinc-400";
   const val =
     value != null
       ? Array.isArray(value)
@@ -83,7 +83,7 @@ function IndicatorRow({
       : "—";
   return (
     <div className="flex justify-between py-2 text-sm">
-      <span className="font-medium text-gray-700">{name}</span>
+      <span className="font-medium text-zinc-700 dark:text-zinc-300">{name}</span>
       <span className={color}>
         {val}
         {interpretation && (
@@ -203,19 +203,19 @@ export default function StockPage() {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <Link
         href="/dashboard"
-        className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900"
+        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
         ← Dashboard
       </Link>
 
       {/* Overview */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
         {overviewLoading ? (
-          <div className="h-24 animate-pulse rounded bg-gray-100" />
+          <div className="h-24 animate-pulse rounded bg-zinc-100 dark:bg-zinc-700" />
         ) : overview ? (
           <>
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">{overview.ticker}</h1>
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{overview.ticker}</h1>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -224,7 +224,7 @@ export default function StockPage() {
                   className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
                     inWatchlist
                       ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700/50"
                   }`}
                   title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
                 >
@@ -240,7 +240,7 @@ export default function StockPage() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-baseline gap-6">
-              <span className="text-3xl font-semibold text-gray-900">
+              <span className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100">
                 ${overview.price != null ? overview.price.toFixed(2) : "—"}
               </span>
               <span
@@ -249,7 +249,7 @@ export default function StockPage() {
                     ? "text-bullish"
                     : isNegative
                       ? "text-bearish"
-                      : "text-gray-500"
+                      : "text-zinc-500 dark:text-zinc-400"
                 }
               >
                 {isPositive ? "+" : ""}
@@ -259,28 +259,28 @@ export default function StockPage() {
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div>
-                <dt className="text-gray-500">Volume</dt>
-                <dd className="font-medium">
+                <dt className="text-zinc-500 dark:text-zinc-400">Volume</dt>
+                <dd className="font-medium text-zinc-900 dark:text-zinc-200">
                   {overview.volume != null
                     ? overview.volume.toLocaleString()
                     : "—"}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">Open</dt>
-                <dd className="font-medium">
+                <dt className="text-zinc-500 dark:text-zinc-400">Open</dt>
+                <dd className="font-medium text-zinc-900 dark:text-zinc-200">
                   {overview.open != null ? `$${overview.open.toFixed(2)}` : "—"}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">High</dt>
-                <dd className="font-medium">
+                <dt className="text-zinc-500 dark:text-zinc-400">High</dt>
+                <dd className="font-medium text-zinc-900 dark:text-zinc-200">
                   {overview.high != null ? `$${overview.high.toFixed(2)}` : "—"}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500">Low</dt>
-                <dd className="font-medium">
+                <dt className="text-zinc-500 dark:text-zinc-400">Low</dt>
+                <dd className="font-medium text-zinc-900 dark:text-zinc-200">
                   {overview.low != null ? `$${overview.low.toFixed(2)}` : "—"}
                 </dd>
               </div>
@@ -294,18 +294,18 @@ export default function StockPage() {
                         ? "bg-bullish-light text-bullish-dark"
                         : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
                           ? "bg-bearish-light text-bearish-dark"
-                          : "bg-gray-100 text-gray-700"
+                          : "bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
                     }`}
                   >
                     {overview.recommendation}
                   </span>
                   {overview.recommendation_score != null && (
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                       Score: {overview.recommendation_score}/100
                     </span>
                   )}
                   {overview.confidence != null && (
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-zinc-400 dark:text-zinc-500">
                       {overview.confidence}% confidence
                     </span>
                   )}
@@ -326,16 +326,16 @@ export default function StockPage() {
                           ? "bg-bullish"
                           : val != null && val < 40
                             ? "bg-bearish"
-                            : "bg-gray-400";
+                            : "bg-zinc-400";
                       return (
                         <div key={key} className="flex-1 min-w-[100px]">
                           <div className="flex items-baseline justify-between text-xs">
-                            <span className="text-gray-500">{label}</span>
-                            <span className="font-medium text-gray-700">
+                            <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
+                            <span className="font-medium text-zinc-700 dark:text-zinc-300">
                               {val != null ? val : "—"}
                             </span>
                           </div>
-                          <div className="mt-1 h-1.5 w-full rounded-full bg-gray-100">
+                          <div className="mt-1 h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-700">
                             {val != null && (
                               <div
                                 className={`h-full rounded-full ${barColor}`}
@@ -343,7 +343,7 @@ export default function StockPage() {
                               />
                             )}
                           </div>
-                          <p className="mt-0.5 text-[10px] text-gray-400">{weight}</p>
+                          <p className="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">{weight}</p>
                         </div>
                       );
                     })}
@@ -351,7 +351,7 @@ export default function StockPage() {
                 )}
               </div>
             )}
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
               Market cap & 52w range coming soon
             </p>
           </>
@@ -359,7 +359,7 @@ export default function StockPage() {
       </section>
 
       {/* Tabs */}
-      <div className="mt-6 border-b border-gray-200">
+      <div className="mt-6 border-b border-zinc-200 dark:border-zinc-700">
         <nav className="flex gap-6" aria-label="Tabs">
           {TABS.map((t) => (
             <Link
@@ -367,8 +367,8 @@ export default function StockPage() {
               href={setTab(t.id)}
               className={`border-b-2 py-3 text-sm font-medium ${
                 tab === t.id
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  ? "border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400"
+                  : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
               }`}
             >
               {t.label}
@@ -381,7 +381,7 @@ export default function StockPage() {
       {tab === "technical" && (
         <section className="mt-6 space-y-6">
           {/* Timeframe + Chart */}
-          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             <div className="mb-4 flex flex-wrap gap-2">
               {(["1D", "1M", "6M", "1Y"] as const).map((tf) => (
                 <button
@@ -391,7 +391,7 @@ export default function StockPage() {
                   className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                     timeframe === tf
                       ? "bg-primary-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                   }`}
                 >
                   {tf}
@@ -399,7 +399,7 @@ export default function StockPage() {
               ))}
             </div>
             {dailyLoading ? (
-              <div className="h-64 animate-pulse rounded bg-gray-100" />
+              <div className="h-64 animate-pulse rounded bg-zinc-100 dark:bg-zinc-700" />
             ) : chartData.length > 0 ? (
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -430,29 +430,29 @@ export default function StockPage() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center text-gray-500">
+              <div className="flex h-64 items-center justify-center text-zinc-500 dark:text-zinc-400">
                 No chart data
               </div>
             )}
           </div>
 
           {/* Score + Indicators */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             {technicalLoading ? (
-              <div className="h-32 animate-pulse rounded bg-gray-100" />
+              <div className="h-32 animate-pulse rounded bg-zinc-100 dark:bg-zinc-700" />
             ) : technical ? (
               <>
                 <div className="mb-6 flex flex-wrap items-center gap-4">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-sm text-gray-500">Technical score</span>
-                    <span className="text-2xl font-bold text-gray-900">{technical.score}</span>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Technical score</span>
+                    <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{technical.score}</span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-sm font-medium ${
                         technical.signal === "bullish"
-                          ? "bg-bullish-light text-bullish-dark"
+                          ? "bg-bullish-light text-bullish-dark dark:bg-bullish-dark/40 dark:text-bullish-light"
                           : technical.signal === "bearish"
-                            ? "bg-bearish-light text-bearish-dark"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-bearish-light text-bearish-dark dark:bg-bearish-dark/40 dark:text-bearish-light"
+                            : "bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
                       }`}
                     >
                       {technical.signal}
@@ -460,8 +460,8 @@ export default function StockPage() {
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-700">Indicators</h3>
+                  <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-700/50">
+                    <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Indicators</h3>
                     {technical.indicators?.rsi && (
                       <IndicatorRow
                         name="RSI"
@@ -534,12 +534,12 @@ export default function StockPage() {
                       />
                     )}
                   </div>
-                  <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-700">Support / Resistance</h3>
-                    <p className="text-sm text-gray-600">
+                  <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-700/50">
+                    <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Support / Resistance</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
                       Support: {technical.support_resistance?.support?.toFixed(2) ?? "—"}
                     </p>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                       Resistance: {technical.support_resistance?.resistance?.toFixed(2) ?? "—"}
                     </p>
                   </div>

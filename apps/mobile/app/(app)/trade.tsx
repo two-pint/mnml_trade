@@ -109,29 +109,29 @@ export default function TradeScreen() {
           <View className="h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <Text className="text-3xl">✓</Text>
           </View>
-          <Text className="mt-4 text-xl font-bold text-gray-900">Trade Executed</Text>
-          <View className="mt-6 w-full rounded-lg bg-gray-50 p-4">
+          <Text className="mt-4 text-xl font-bold text-zinc-900">Trade Executed</Text>
+          <View className="mt-6 w-full rounded-lg bg-zinc-50 p-4">
             <View className="flex-row justify-between py-1.5">
-              <Text className="text-gray-500">Action</Text>
+              <Text className="text-zinc-500">Action</Text>
               <Text className={`font-semibold capitalize ${result.transaction.side === "buy" ? "text-green-600" : "text-red-600"}`}>
                 {result.transaction.side}
               </Text>
             </View>
             <View className="flex-row justify-between py-1.5">
-              <Text className="text-gray-500">Ticker</Text>
-              <Text className="font-semibold text-gray-900">{result.transaction.ticker}</Text>
+              <Text className="text-zinc-500">Ticker</Text>
+              <Text className="font-semibold text-zinc-900">{result.transaction.ticker}</Text>
             </View>
             <View className="flex-row justify-between py-1.5">
-              <Text className="text-gray-500">Quantity</Text>
-              <Text className="font-semibold text-gray-900">{result.transaction.quantity}</Text>
+              <Text className="text-zinc-500">Quantity</Text>
+              <Text className="font-semibold text-zinc-900">{result.transaction.quantity}</Text>
             </View>
             <View className="flex-row justify-between py-1.5">
-              <Text className="text-gray-500">Price</Text>
-              <Text className="font-semibold text-gray-900">${parseFloat(result.transaction.price_per_share).toFixed(2)}</Text>
+              <Text className="text-zinc-500">Price</Text>
+              <Text className="font-semibold text-zinc-900">${parseFloat(result.transaction.price_per_share).toFixed(2)}</Text>
             </View>
-            <View className="mt-2 border-t border-gray-200 pt-2 flex-row justify-between">
-              <Text className="font-semibold text-gray-700">Total</Text>
-              <Text className="font-bold text-gray-900">${parseFloat(result.transaction.total_amount).toFixed(2)}</Text>
+            <View className="mt-2 border-t border-zinc-200 pt-2 flex-row justify-between">
+              <Text className="font-semibold text-zinc-700">Total</Text>
+              <Text className="font-bold text-zinc-900">${parseFloat(result.transaction.total_amount).toFixed(2)}</Text>
             </View>
           </View>
           <View className="mt-8 w-full gap-3">
@@ -146,9 +146,9 @@ export default function TradeScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.back()}
-              className="rounded-lg border border-gray-300 py-3"
+              className="rounded-lg border border-zinc-300 py-3"
             >
-              <Text className="text-center font-medium text-gray-700">Continue Analyzing</Text>
+              <Text className="text-center font-medium text-zinc-700">Continue Analyzing</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -168,75 +168,75 @@ export default function TradeScreen() {
             <TouchableOpacity onPress={() => router.back()}>
               <Text className="text-primary-600 font-medium">Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-bold text-gray-900">Trade {ticker}</Text>
+            <Text className="text-lg font-bold text-zinc-900">Trade {ticker}</Text>
             <View style={{ width: 50 }} />
           </View>
 
           {!portfolio ? (
             <View className="items-center py-8">
-              <Text className="text-gray-500">No portfolio found</Text>
-              <Text className="mt-1 text-xs text-gray-400">Create a portfolio from the Portfolio tab first</Text>
+              <Text className="text-zinc-500">No portfolio found</Text>
+              <Text className="mt-1 text-xs text-zinc-400">Create a portfolio from the Portfolio tab first</Text>
             </View>
           ) : (
             <>
               {/* Buy/Sell Toggle */}
-              <View className="flex-row rounded-lg bg-gray-100 p-1">
+              <View className="flex-row rounded-lg bg-zinc-100 p-1">
                 <TouchableOpacity
                   onPress={() => { setSide("buy"); setError(null); }}
                   className={`flex-1 items-center rounded-md py-2.5 ${side === "buy" ? "bg-green-500" : ""}`}
                 >
-                  <Text className={`font-semibold ${side === "buy" ? "text-white" : "text-gray-600"}`}>Buy</Text>
+                  <Text className={`font-semibold ${side === "buy" ? "text-white" : "text-zinc-600"}`}>Buy</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => { setSide("sell"); setError(null); }}
                   className={`flex-1 items-center rounded-md py-2.5 ${side === "sell" ? "bg-red-500" : ""}`}
                 >
-                  <Text className={`font-semibold ${side === "sell" ? "text-white" : "text-gray-600"}`}>Sell</Text>
+                  <Text className={`font-semibold ${side === "sell" ? "text-white" : "text-zinc-600"}`}>Sell</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Price */}
               <View className="mt-6 flex-row items-baseline justify-between">
-                <Text className="text-sm text-gray-500">Current Price</Text>
-                <Text className="text-2xl font-bold text-gray-900">
+                <Text className="text-sm text-zinc-500">Current Price</Text>
+                <Text className="text-2xl font-bold text-zinc-900">
                   {price != null ? `$${price.toFixed(2)}` : "—"}
                 </Text>
               </View>
 
               {/* Context */}
-              <View className="mt-4 rounded-lg bg-gray-50 px-4 py-3">
+              <View className="mt-4 rounded-lg bg-zinc-50 px-4 py-3">
                 {side === "buy" ? (
                   <View className="flex-row justify-between">
-                    <Text className="text-sm text-gray-500">Cash Available</Text>
-                    <Text className="font-semibold text-gray-900">${cashAvailable.toFixed(2)}</Text>
+                    <Text className="text-sm text-zinc-500">Cash Available</Text>
+                    <Text className="font-semibold text-zinc-900">${cashAvailable.toFixed(2)}</Text>
                   </View>
                 ) : (
                   <View className="flex-row justify-between">
-                    <Text className="text-sm text-gray-500">Shares Owned</Text>
-                    <Text className="font-semibold text-gray-900">{sharesQty}</Text>
+                    <Text className="text-sm text-zinc-500">Shares Owned</Text>
+                    <Text className="font-semibold text-zinc-900">{sharesQty}</Text>
                   </View>
                 )}
               </View>
 
               {/* Quantity */}
               <View className="mt-5">
-                <Text className="text-sm font-medium text-gray-600">Shares</Text>
+                <Text className="text-sm font-medium text-zinc-600">Shares</Text>
                 <TextInput
                   value={quantity}
                   onChangeText={(t) => { setQuantity(t); setError(null); }}
                   placeholder="Enter quantity"
                   placeholderTextColor="#9ca3af"
                   keyboardType="number-pad"
-                  className="mt-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900"
+                  className="mt-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-base font-medium text-zinc-900"
                   autoFocus
                 />
               </View>
 
               {/* Total Preview */}
               {totalCost != null && (
-                <View className="mt-4 flex-row items-baseline justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <Text className="text-sm font-medium text-gray-600">Estimated Total</Text>
-                  <Text className="text-lg font-bold text-gray-900">
+                <View className="mt-4 flex-row items-baseline justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+                  <Text className="text-sm font-medium text-zinc-600">Estimated Total</Text>
+                  <Text className="text-lg font-bold text-zinc-900">
                     ${totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                 </View>

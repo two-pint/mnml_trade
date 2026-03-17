@@ -28,8 +28,8 @@ function ScoreBadge({ score, assessment }: { score: number; assessment: string }
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-baseline gap-2">
-        <span className="text-sm text-gray-500">Fundamental score</span>
-        <span className="text-2xl font-bold text-gray-900">{score}</span>
+        <span className="text-sm text-zinc-500">Fundamental score</span>
+        <span className="text-2xl font-bold text-zinc-900">{score}</span>
       </div>
       <span className={`rounded-full px-3 py-1 text-sm font-medium ${bg}`}>
         {assessment}
@@ -40,9 +40,9 @@ function ScoreBadge({ score, assessment }: { score: number; assessment: string }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold text-gray-900">{value}</dd>
+    <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 px-4 py-3">
+      <dt className="text-xs text-zinc-500">{label}</dt>
+      <dd className="mt-1 text-lg font-semibold text-zinc-900">{value}</dd>
     </div>
   );
 }
@@ -50,11 +50,11 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 function RatingBadge({ label, value }: { label: string; value: string }) {
   const color =
     value === "Strong" || value === "Healthy" ? "text-bullish" :
-    value === "Weak" ? "text-bearish" : "text-gray-600";
+    value === "Weak" ? "text-bearish" : "text-zinc-600";
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="text-gray-500">{label}:</span>
+      <span className="text-zinc-500">{label}:</span>
       <span className={`font-medium ${color}`}>{value}</span>
     </div>
   );
@@ -73,23 +73,23 @@ function StatementTable<T extends object>({
   if (!data.length) return null;
 
   return (
-    <div className="rounded-lg border border-gray-100">
+    <div className="rounded-lg border border-zinc-100">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
       >
         {title}
-        <span className="text-gray-400">{open ? "▲" : "▼"}</span>
+        <span className="text-zinc-400">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-t border-gray-100 bg-gray-50">
-                <th className="px-4 py-2 font-medium text-gray-500">Date</th>
+              <tr className="border-t border-zinc-100 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-700/50">
+                <th className="px-4 py-2 font-medium text-zinc-500">Date</th>
                 {columns.map((c) => (
-                  <th key={String(c.key)} className="px-4 py-2 text-right font-medium text-gray-500">
+                  <th key={String(c.key)} className="px-4 py-2 text-right font-medium text-zinc-500">
                     {c.label}
                   </th>
                 ))}
@@ -99,10 +99,10 @@ function StatementTable<T extends object>({
               {data.slice(0, 8).map((row, i) => {
                 const r = row as Record<string, unknown>;
                 return (
-                  <tr key={i} className="border-t border-gray-50">
-                    <td className="px-4 py-2 text-gray-600">{(r["date"] as string) ?? "—"}</td>
+                  <tr key={i} className="border-t border-zinc-50">
+                    <td className="px-4 py-2 text-zinc-600">{(r["date"] as string) ?? "—"}</td>
                     {columns.map((c) => (
-                      <td key={String(c.key)} className="px-4 py-2 text-right text-gray-900">
+                      <td key={String(c.key)} className="px-4 py-2 text-right text-zinc-900">
                         {fmt(r[String(c.key)] as number | null, {
                           compact: c.format === "compact",
                           currency: c.format === "currency",
@@ -140,17 +140,17 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
   if (loading) {
     return (
       <section className="mt-6 space-y-4">
-        <div className="h-20 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-40 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-40 animate-pulse rounded-xl bg-gray-100" />
+        <div className="h-20 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
       </section>
     );
   }
 
   if (error || !data) {
     return (
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-        <p className="text-gray-500">Fundamental data unavailable</p>
+      <section className="mt-6 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-12 text-center shadow-sm">
+        <p className="text-zinc-500">Fundamental data unavailable</p>
       </section>
     );
   }
@@ -160,7 +160,7 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
   return (
     <section className="mt-6 space-y-6">
       {/* Score & Ratings */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
         <ScoreBadge score={data.score} assessment={data.assessment} />
         <div className="mt-4 flex flex-wrap gap-6">
           <RatingBadge label="Growth" value={data.growth_rating} />
@@ -170,8 +170,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
 
       {/* Company Overview */}
       {profile && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-3 text-sm font-semibold text-gray-700">Company Overview</h3>
+        <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+          <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Company Overview</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {profile.company_name && (
               <MetricCard label="Company" value={profile.company_name} />
@@ -194,7 +194,7 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
             )}
           </div>
           {profile.description && (
-            <p className="mt-4 text-sm leading-relaxed text-gray-600 line-clamp-4">
+            <p className="mt-4 text-sm leading-relaxed text-zinc-600 line-clamp-4">
               {profile.description}
             </p>
           )}
@@ -202,8 +202,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       )}
 
       {/* Valuation */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Valuation</h3>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Valuation</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MetricCard label="P/E Ratio" value={fmt(ratios.pe_ratio)} />
           <MetricCard label="P/B Ratio" value={fmt(ratios.pb_ratio)} />
@@ -213,8 +213,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       </div>
 
       {/* Profitability */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Profitability</h3>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Profitability</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <MetricCard label="Gross Margin" value={fmt(ratios.gross_margin, { pct: true })} />
           <MetricCard label="Operating Margin" value={fmt(ratios.operating_margin, { pct: true })} />
@@ -225,8 +225,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       </div>
 
       {/* Financial Health */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Financial Health</h3>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Financial Health</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MetricCard label="Current Ratio" value={fmt(ratios.current_ratio)} />
           <MetricCard label="Quick Ratio" value={fmt(ratios.quick_ratio)} />
@@ -236,8 +236,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       </div>
 
       {/* Financial Statements */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Financial Statements</h3>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Financial Statements</h3>
         <div className="space-y-2">
           <StatementTable<IncomeStatement>
             title="Income Statement"

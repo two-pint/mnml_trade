@@ -25,9 +25,9 @@ function formatPct(n: number | null | undefined): string {
 
 function MetricRow({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-row justify-between border-b border-gray-50 py-2">
-      <Text className="text-sm text-gray-500">{label}</Text>
-      <Text className="text-sm font-medium text-gray-900">{value}</Text>
+    <View className="flex-row justify-between border-b border-zinc-50 py-2">
+      <Text className="text-sm text-zinc-500">{label}</Text>
+      <Text className="text-sm font-medium text-zinc-900">{value}</Text>
     </View>
   );
 }
@@ -44,15 +44,15 @@ function SectionCard({
   const [open, setOpen] = useState(!collapsible);
 
   return (
-    <View className="rounded-xl border border-gray-200 bg-white p-4">
+    <View className="rounded-xl border border-zinc-200 bg-white p-4">
       <TouchableOpacity
         onPress={collapsible ? () => setOpen(!open) : undefined}
         activeOpacity={collapsible ? 0.7 : 1}
         className="flex-row items-center justify-between"
       >
-        <Text className="text-sm font-semibold text-gray-700">{title}</Text>
+        <Text className="text-sm font-semibold text-zinc-700">{title}</Text>
         {collapsible && (
-          <Text className="text-xs text-gray-400">{open ? "▲" : "▼"}</Text>
+          <Text className="text-xs text-zinc-400">{open ? "▲" : "▼"}</Text>
         )}
       </TouchableOpacity>
       {open && <View className="mt-3">{children}</View>}
@@ -87,7 +87,7 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
   if (error || !data) {
     return (
       <View className="items-center py-12">
-        <Text className="text-gray-500">Fundamental data unavailable</Text>
+        <Text className="text-zinc-500">Fundamental data unavailable</Text>
       </View>
     );
   }
@@ -97,23 +97,23 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       ? "bg-green-100 text-green-800"
       : data.assessment === "Overvalued"
         ? "bg-red-100 text-red-800"
-        : "bg-gray-100 text-gray-700";
+        : "bg-zinc-100 text-zinc-700";
 
   return (
     <View className="gap-4 p-4">
       {/* Score */}
-      <View className="items-center rounded-xl border border-gray-200 bg-white p-4">
-        <Text className="text-sm text-gray-500">Fundamental Score</Text>
-        <Text className="mt-1 text-3xl font-bold text-gray-900">{data.score}</Text>
+      <View className="items-center rounded-xl border border-zinc-200 bg-white p-4">
+        <Text className="text-sm text-zinc-500">Fundamental Score</Text>
+        <Text className="mt-1 text-3xl font-bold text-zinc-900">{data.score}</Text>
         <View className={`mt-2 rounded-full px-3 py-1 ${assessmentColor}`}>
           <Text className="text-sm font-medium">{data.assessment}</Text>
         </View>
         <View className="mt-2 flex-row gap-4">
-          <Text className="text-xs text-gray-500">
-            Growth: <Text className="font-medium text-gray-700">{data.growth_rating}</Text>
+          <Text className="text-xs text-zinc-500">
+            Growth: <Text className="font-medium text-zinc-700">{data.growth_rating}</Text>
           </Text>
-          <Text className="text-xs text-gray-500">
-            Health: <Text className="font-medium text-gray-700">{data.health_rating}</Text>
+          <Text className="text-xs text-zinc-500">
+            Health: <Text className="font-medium text-zinc-700">{data.health_rating}</Text>
           </Text>
         </View>
       </View>
@@ -122,7 +122,7 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       {data.profile && (
         <SectionCard title="Company Overview">
           {data.profile.description && (
-            <Text className="mb-3 text-xs leading-5 text-gray-600" numberOfLines={4}>
+            <Text className="mb-3 text-xs leading-5 text-zinc-600" numberOfLines={4}>
               {data.profile.description}
             </Text>
           )}
@@ -168,8 +168,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       {data.income_statement.length > 0 && (
         <SectionCard title="Income Statement (Recent)" collapsible>
           {data.income_statement.slice(0, 4).map((row, i) => (
-            <View key={i} className="mb-3 rounded-lg bg-gray-50 p-3">
-              <Text className="mb-1 text-xs font-medium text-gray-500">
+            <View key={i} className="mb-3 rounded-lg bg-zinc-50 p-3">
+              <Text className="mb-1 text-xs font-medium text-zinc-500">
                 {row.date ?? "—"} ({row.period ?? "—"})
               </Text>
               <MetricRow label="Revenue" value={formatCompact(row.revenue)} />
@@ -184,8 +184,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       {data.balance_sheet.length > 0 && (
         <SectionCard title="Balance Sheet (Recent)" collapsible>
           {data.balance_sheet.slice(0, 4).map((row, i) => (
-            <View key={i} className="mb-3 rounded-lg bg-gray-50 p-3">
-              <Text className="mb-1 text-xs font-medium text-gray-500">
+            <View key={i} className="mb-3 rounded-lg bg-zinc-50 p-3">
+              <Text className="mb-1 text-xs font-medium text-zinc-500">
                 {row.date ?? "—"} ({row.period ?? "—"})
               </Text>
               <MetricRow label="Total Assets" value={formatCompact(row.total_assets)} />
@@ -200,8 +200,8 @@ export default function FundamentalTab({ ticker }: { ticker: string }) {
       {data.cash_flow.length > 0 && (
         <SectionCard title="Cash Flow (Recent)" collapsible>
           {data.cash_flow.slice(0, 4).map((row, i) => (
-            <View key={i} className="mb-3 rounded-lg bg-gray-50 p-3">
-              <Text className="mb-1 text-xs font-medium text-gray-500">
+            <View key={i} className="mb-3 rounded-lg bg-zinc-50 p-3">
+              <Text className="mb-1 text-xs font-medium text-zinc-500">
                 {row.date ?? "—"} ({row.period ?? "—"})
               </Text>
               <MetricRow label="Operating" value={formatCompact(row.operating_cash_flow)} />

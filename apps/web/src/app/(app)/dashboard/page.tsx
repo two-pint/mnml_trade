@@ -45,10 +45,10 @@ function fmtPct(value: string | null | undefined): string {
 }
 
 function colorCls(value: string | null | undefined): string {
-  if (value == null) return "text-gray-500";
+  if (value == null) return "text-zinc-500";
   const n = parseFloat(value);
-  if (Number.isNaN(n)) return "text-gray-500";
-  return n > 0 ? "text-bullish" : n < 0 ? "text-bearish" : "text-gray-500";
+  if (Number.isNaN(n)) return "text-zinc-500";
+  return n > 0 ? "text-bullish" : n < 0 ? "text-bearish" : "text-zinc-500";
 }
 
 interface WatchlistRow extends WatchlistItem {
@@ -201,10 +201,10 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Welcome */}
-      <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl">
         Welcome{user?.username ? `, ${user.username}` : ""}
       </h1>
-      <p className="mt-1 text-gray-500">
+      <p className="mt-1 text-zinc-500 dark:text-zinc-400">
         Here&apos;s your trading overview.
       </p>
 
@@ -213,46 +213,46 @@ export default function DashboardPage() {
         {/* Portfolio Summary — takes 3 columns */}
         <section className="lg:col-span-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Portfolio</h2>
-            <Link href="/portfolio" className="text-sm font-medium text-primary-600 hover:underline">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Portfolio</h2>
+            <Link href="/portfolio" className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-400">
               View details →
             </Link>
           </div>
 
           {portfolioLoading ? (
-            <div className="mt-3 h-52 animate-pulse rounded-xl bg-gray-100" />
+            <div className="mt-3 h-52 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
           ) : portfolio && performance ? (
-            <div className="mt-3 rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-100 p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total Value</p>
+            <div className="mt-3 rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="border-b border-zinc-100 p-5 dark:border-zinc-700">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Total Value</p>
                 <div className="mt-1 flex flex-wrap items-baseline gap-3">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                     ${fmt(performance.total_value)}
                   </span>
                   <span className={`text-sm font-semibold ${colorCls(totalReturnDollar)}`}>
                     {fmtDollar(totalReturnDollar)} ({fmtPct(performance.total_return)})
                   </span>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-5 text-sm text-gray-500">
-                  <span>Cash <span className="ml-1 font-medium text-gray-900">${fmt(performance.cash_balance)}</span></span>
-                  <span>Holdings <span className="ml-1 font-medium text-gray-900">${fmt(performance.holdings_value)}</span></span>
-                  <span>Win rate <span className="ml-1 font-medium text-gray-900">{fmtPct(performance.win_rate).replace("+", "")}</span></span>
+                <div className="mt-3 flex flex-wrap gap-5 text-sm text-zinc-500 dark:text-zinc-400">
+                  <span>Cash <span className="ml-1 font-medium text-zinc-900 dark:text-zinc-100">${fmt(performance.cash_balance)}</span></span>
+                  <span>Holdings <span className="ml-1 font-medium text-zinc-900 dark:text-zinc-100">${fmt(performance.holdings_value)}</span></span>
+                  <span>Win rate <span className="ml-1 font-medium text-zinc-900 dark:text-zinc-100">{fmtPct(performance.win_rate).replace("+", "")}</span></span>
                 </div>
               </div>
               {holdings.length > 0 ? (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-zinc-50 dark:divide-zinc-700">
                   {holdings.map((h) => (
                     <Link
                       key={h.id}
                       href={`/stocks/${encodeURIComponent(h.ticker)}`}
-                      className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-gray-50"
+                      className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                     >
                       <div>
-                        <span className="font-semibold text-gray-900">{h.ticker}</span>
-                        <span className="ml-2 text-sm text-gray-500">{fmt(h.quantity)} shares</span>
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{h.ticker}</span>
+                        <span className="ml-2 text-sm text-zinc-500 dark:text-zinc-400">{fmt(h.quantity)} shares</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-medium text-gray-900">${fmt(h.current_value)}</span>
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">${fmt(h.current_value)}</span>
                         <span className={`ml-2 text-sm ${colorCls(h.gain_loss_percent)}`}>
                           {fmtPct(h.gain_loss_percent)}
                         </span>
@@ -261,15 +261,15 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="px-5 py-6 text-center text-sm text-gray-400">
+                <div className="px-5 py-6 text-center text-sm text-zinc-400 dark:text-zinc-500">
                   No holdings yet — find a stock and place a trade.
                 </div>
               )}
             </div>
           ) : (
-            <div className="mt-3 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-              <p className="font-medium text-gray-700">No portfolio yet</p>
-              <p className="mt-1 text-sm text-gray-500">Create one to start paper trading.</p>
+            <div className="mt-3 rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <p className="font-medium text-zinc-700 dark:text-zinc-300">No portfolio yet</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Create one to start paper trading.</p>
               <Link
                 href="/portfolio"
                 className="mt-4 inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
@@ -283,30 +283,30 @@ export default function DashboardPage() {
         {/* Watchlist — takes 2 columns */}
         <section className="lg:col-span-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Watchlist</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Watchlist</h2>
             <Link href="/watchlist" className="text-sm font-medium text-primary-600 hover:underline">
               View all →
             </Link>
           </div>
 
           {watchlistLoading ? (
-            <div className="mt-3 h-52 animate-pulse rounded-xl bg-gray-100" />
+            <div className="mt-3 h-52 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
           ) : watchlist.length > 0 ? (
-            <div className="mt-3 divide-y divide-gray-50 rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="mt-3 divide-y divide-zinc-50 rounded-xl border border-zinc-200 bg-white shadow-sm dark:divide-zinc-700 dark:border-zinc-700 dark:bg-zinc-800">
               {watchlist.map((item) => (
                 <Link
                   key={item.id}
                   href={`/stocks/${encodeURIComponent(item.ticker)}`}
-                  className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-gray-50"
+                  className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                 >
                   <div>
-                    <span className="font-semibold text-gray-900">{item.ticker}</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{item.ticker}</span>
                     {item.name && (
-                      <span className="ml-2 text-sm text-gray-400">{item.name}</span>
+                      <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">{item.name}</span>
                     )}
                   </div>
                   <div className="text-right">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
                       {item.price != null ? `$${item.price.toFixed(2)}` : "—"}
                     </span>
                     {item.change != null && (
@@ -319,10 +319,10 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="mt-3 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+            <div className="mt-3 rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
               <p className="text-2xl">☆</p>
-              <p className="mt-2 font-medium text-gray-700">Watchlist empty</p>
-              <p className="mt-1 text-sm text-gray-500">Star stocks to track them here.</p>
+              <p className="mt-2 font-medium text-zinc-700 dark:text-zinc-300">Watchlist empty</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Star stocks to track them here.</p>
             </div>
           )}
         </section>
@@ -331,9 +331,9 @@ export default function DashboardPage() {
       {/* Portfolio performance over time */}
       {!portfolioLoading && portfolio && performance && performanceChartData.length >= 2 && (
         <section className="mt-8">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Portfolio performance</h2>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Portfolio performance</h2>
               <Link href="/portfolio" className="text-sm font-medium text-primary-600 hover:underline">
                 View details →
               </Link>
@@ -383,13 +383,13 @@ export default function DashboardPage() {
       {/* Recently Viewed */}
       {history.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900">Recently viewed</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Recently viewed</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {history.map((h) => (
               <Link
                 key={h.id}
                 href={`/stocks/${encodeURIComponent(h.ticker)}`}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+                className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-primary-600 dark:hover:bg-primary-900/30 dark:hover:text-primary-300"
               >
                 {h.ticker}
               </Link>
@@ -400,11 +400,11 @@ export default function DashboardPage() {
 
       {/* Trending */}
       <section className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900">Popular stocks</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Popular stocks</h2>
         {trendingLoading ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-100" />
+              <div key={i} className="h-20 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
             ))}
           </div>
         ) : trending.length > 0 ? (
@@ -413,15 +413,15 @@ export default function DashboardPage() {
               <li key={stock.ticker}>
                 <Link
                   href={`/stocks/${encodeURIComponent(stock.ticker)}`}
-                  className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-primary-300 hover:bg-gray-50"
+                  className="block rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-primary-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-primary-600 dark:hover:bg-zinc-700/50"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-semibold text-gray-900">{stock.ticker}</span>
-                      <p className="text-sm text-gray-500">{stock.name}</p>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stock.ticker}</span>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">{stock.name}</p>
                     </div>
                     <div className="text-right">
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
                         ${stock.price != null ? stock.price.toFixed(2) : "—"}
                       </span>
                       <p className={`text-sm ${(stock.change ?? 0) >= 0 ? "text-bullish" : "text-bearish"}`}>
@@ -436,7 +436,7 @@ export default function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-gray-500">No trending data right now.</p>
+          <p className="mt-3 text-sm text-zinc-500">No trending data right now.</p>
         )}
       </section>
     </div>

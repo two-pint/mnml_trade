@@ -43,7 +43,7 @@ function SentimentBadge({ sentiment }: { sentiment: string | null }) {
       ? "bg-bullish-light text-bullish-dark"
       : lower === "bearish" || lower === "sell"
         ? "bg-bearish-light text-bearish-dark"
-        : "bg-gray-100 text-gray-600";
+        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-600 dark:text-zinc-200";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${cls}`}>
       {sentiment}
@@ -102,44 +102,44 @@ function QuickStatsCards({
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 text-center">
-        <p className="text-xs text-gray-500">Smart Money Score</p>
+      <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4 text-center">
+        <p className="text-xs text-zinc-500">Smart Money Score</p>
         {smartMoney ? (
           <div className="mt-2 flex flex-col items-center">
             <ScoreRing score={smartMoney.score} size={64} />
-            <p className="mt-1 text-xs font-medium text-gray-600">{smartMoney.label}</p>
+            <p className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">{smartMoney.label}</p>
           </div>
         ) : (
-          <p className="mt-3 text-lg font-semibold text-gray-400">—</p>
+          <p className="mt-3 text-lg font-semibold text-zinc-400">—</p>
         )}
       </div>
-      <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 text-center">
-        <p className="text-xs text-gray-500">Options Flow</p>
-        <p className="mt-3 text-lg font-semibold text-gray-900">{flowCount}</p>
+      <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4 text-center">
+        <p className="text-xs text-zinc-500">Options Flow</p>
+        <p className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{flowCount}</p>
         <div className="mt-1 flex justify-center gap-2 text-xs">
           <span className="text-bullish">{bullishFlow} Bull</span>
-          <span className="text-gray-300">|</span>
+          <span className="text-zinc-300">|</span>
           <span className="text-bearish">{bearishFlow} Bear</span>
         </div>
       </div>
-      <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 text-center">
-        <p className="text-xs text-gray-500">Dark Pool Volume</p>
-        <p className="mt-3 text-lg font-semibold text-gray-900">
+      <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4 text-center">
+        <p className="text-xs text-zinc-500">Dark Pool Volume</p>
+        <p className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
           {dpVolume != null ? formatCompact(dpVolume) : "—"}
         </p>
         {dpNet != null && (
-          <p className={`mt-1 text-xs font-medium ${dpNet > 0 ? "text-bullish" : dpNet < 0 ? "text-bearish" : "text-gray-500"}`}>
+          <p className={`mt-1 text-xs font-medium ${dpNet > 0 ? "text-bullish" : dpNet < 0 ? "text-bearish" : "text-zinc-500"}`}>
             Net: {dpNet > 0 ? "+" : ""}{formatCompact(dpNet)}
           </p>
         )}
       </div>
-      <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4 text-center">
-        <p className="text-xs text-gray-500">Data Status</p>
-        <p className="mt-3 text-lg font-semibold text-gray-900">
+      <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4 text-center">
+        <p className="text-xs text-zinc-500">Data Status</p>
+        <p className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
           {basicData?.stale ? "⚠ Stale" : "✓ Live"}
         </p>
         {basicData?.data_as_of && (
-          <p className="mt-1 text-xs text-gray-400">as of {basicData.data_as_of}</p>
+          <p className="mt-1 text-xs text-zinc-400">as of {basicData.data_as_of}</p>
         )}
       </div>
     </div>
@@ -157,9 +157,9 @@ function OptionsFlowTable({ trades }: { trades: OptionsFlowTrade[] }) {
   });
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-gray-700">Options Flow</h3>
+        <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Options Flow</h3>
         <div className="flex gap-1">
           {(["all", "calls", "puts"] as const).map((f) => (
             <button
@@ -169,7 +169,7 @@ function OptionsFlowTable({ trades }: { trades: OptionsFlowTrade[] }) {
               className={`rounded-lg px-3 py-1 text-xs font-medium capitalize ${
                 filter === f
                   ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-500"
               }`}
             >
               {f}
@@ -178,12 +178,12 @@ function OptionsFlowTable({ trades }: { trades: OptionsFlowTrade[] }) {
         </div>
       </div>
       {filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-400">No options flow data</p>
+        <p className="py-8 text-center text-sm text-zinc-400">No options flow data</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-xs text-gray-500">
+              <tr className="border-b border-zinc-100 text-xs text-zinc-500">
                 <th className="pb-2 font-medium">Type</th>
                 <th className="pb-2 font-medium">Strike</th>
                 <th className="pb-2 font-medium">Expiry</th>
@@ -192,20 +192,20 @@ function OptionsFlowTable({ trades }: { trades: OptionsFlowTrade[] }) {
                 <th className="pb-2 font-medium">Sentiment</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-zinc-50">
               {filtered.map((t, i) => {
                 const premium = t.premium ?? 0;
                 const isLarge = premium >= 1_000_000;
                 return (
                   <tr key={i} className={isLarge ? "bg-yellow-50/50" : ""}>
-                    <td className="py-2 font-medium text-gray-900">{t.type ?? "—"}</td>
-                    <td className="py-2 text-gray-700">{t.strike != null ? `$${t.strike}` : "—"}</td>
-                    <td className="py-2 text-gray-700">{t.expiry ?? "—"}</td>
-                    <td className={`py-2 text-right font-medium ${isLarge ? "text-yellow-700" : "text-gray-900"}`}>
+                    <td className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{t.type ?? "—"}</td>
+                    <td className="py-2 text-zinc-700 dark:text-zinc-300">{t.strike != null ? `$${t.strike}` : "—"}</td>
+                    <td className="py-2 text-zinc-700 dark:text-zinc-300">{t.expiry ?? "—"}</td>
+                    <td className={`py-2 text-right font-medium ${isLarge ? "text-yellow-700" : "text-zinc-900 dark:text-zinc-100"}`}>
                       {formatCurrency(t.premium)}
                       {isLarge && <span className="ml-1 text-xs">🔥</span>}
                     </td>
-                    <td className="py-2 text-right text-gray-700">
+                    <td className="py-2 text-right text-zinc-700 dark:text-zinc-300">
                       {t.quantity != null ? t.quantity.toLocaleString() : "—"}
                     </td>
                     <td className="py-2"><SentimentBadge sentiment={t.sentiment} /></td>
@@ -223,28 +223,28 @@ function OptionsFlowTable({ trades }: { trades: OptionsFlowTrade[] }) {
 function DarkPoolSection({ darkPool }: { darkPool: InstitutionalData["dark_pool"] | null }) {
   if (!darkPool) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Dark Pool Activity</h3>
-        <p className="py-4 text-center text-sm text-gray-400">No dark pool data available</p>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Dark Pool Activity</h3>
+        <p className="py-4 text-center text-sm text-zinc-400">No dark pool data available</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700">Dark Pool Activity</h3>
+    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+      <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Dark Pool Activity</h3>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div>
-          <p className="text-xs text-gray-500">Volume</p>
-          <p className="mt-1 text-lg font-semibold text-gray-900">
+          <p className="text-xs text-zinc-500">Volume</p>
+          <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
             {darkPool.volume != null ? formatCompact(darkPool.volume) : "—"}
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Net Buy/Sell</p>
+          <p className="text-xs text-zinc-500">Net Buy/Sell</p>
           <p className={`mt-1 text-lg font-semibold ${
             (darkPool.net_buy_sell ?? 0) > 0 ? "text-bullish" :
-            (darkPool.net_buy_sell ?? 0) < 0 ? "text-bearish" : "text-gray-900"
+            (darkPool.net_buy_sell ?? 0) < 0 ? "text-bearish" : "text-zinc-900 dark:text-zinc-100"
           }`}>
             {darkPool.net_buy_sell != null
               ? `${darkPool.net_buy_sell > 0 ? "+" : ""}${formatCompact(darkPool.net_buy_sell)}`
@@ -252,8 +252,8 @@ function DarkPoolSection({ darkPool }: { darkPool: InstitutionalData["dark_pool"
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Block Trades</p>
-          <p className="mt-1 text-lg font-semibold text-gray-900">
+          <p className="text-xs text-zinc-500">Block Trades</p>
+          <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
             {darkPool.block_trades?.length ?? 0}
           </p>
         </div>
@@ -265,9 +265,9 @@ function DarkPoolSection({ darkPool }: { darkPool: InstitutionalData["dark_pool"
 function CongressionalSection({ trades }: { trades: CongressionalTrade[] | null }) {
   if (!trades || trades.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Congressional Trading</h3>
-        <p className="py-4 text-center text-sm text-gray-400">No congressional trades found</p>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Congressional Trading</h3>
+        <p className="py-4 text-center text-sm text-zinc-400">No congressional trades found</p>
       </div>
     );
   }
@@ -276,9 +276,9 @@ function CongressionalSection({ trades }: { trades: CongressionalTrade[] | null 
   const sells = trades.length - buys;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Congressional Trading</h3>
+        <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Congressional Trading</h3>
         <div className="flex gap-3 text-xs">
           <span className="text-bullish">{buys} Buy</span>
           <span className="text-bearish">{sells} Sell</span>
@@ -287,7 +287,7 @@ function CongressionalSection({ trades }: { trades: CongressionalTrade[] | null 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-xs text-gray-500">
+            <tr className="border-b border-zinc-100 text-xs text-zinc-500">
               <th className="pb-2 font-medium">Representative</th>
               <th className="pb-2 font-medium">Party</th>
               <th className="pb-2 font-medium">Type</th>
@@ -295,15 +295,15 @@ function CongressionalSection({ trades }: { trades: CongressionalTrade[] | null 
               <th className="pb-2 font-medium">Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-zinc-50">
             {trades.slice(0, 10).map((t, i) => (
               <tr key={i}>
-                <td className="py-2 font-medium text-gray-900">{t.representative ?? "—"}</td>
+                <td className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{t.representative ?? "—"}</td>
                 <td className="py-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                     t.party === "Democrat" ? "bg-blue-50 text-blue-700" :
                     t.party === "Republican" ? "bg-red-50 text-red-700" :
-                    "bg-gray-100 text-gray-600"
+                    "bg-zinc-100 text-zinc-600 dark:bg-zinc-600 dark:text-zinc-200"
                   }`}>
                     {t.party ?? "—"}
                   </span>
@@ -311,14 +311,14 @@ function CongressionalSection({ trades }: { trades: CongressionalTrade[] | null 
                 <td className="py-2">
                   <SentimentBadge sentiment={t.transaction_type} />
                 </td>
-                <td className="py-2 text-gray-700">{t.amount ?? "—"}</td>
-                <td className="py-2 text-gray-500">{formatDate(t.date)}</td>
+                <td className="py-2 text-zinc-700 dark:text-zinc-300">{t.amount ?? "—"}</td>
+                <td className="py-2 text-zinc-500">{formatDate(t.date)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-4 text-xs text-gray-400">
+      <p className="mt-4 text-xs text-zinc-400">
         Data sourced from STOCK Act filings. Congressional trading data is reported with a delay and may not reflect current positions.
       </p>
     </div>
@@ -328,9 +328,9 @@ function CongressionalSection({ trades }: { trades: CongressionalTrade[] | null 
 function InsiderSection({ trades }: { trades: InsiderTrade[] | null }) {
   if (!trades || trades.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Insider Transactions</h3>
-        <p className="py-4 text-center text-sm text-gray-400">No insider trades found</p>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Insider Transactions</h3>
+        <p className="py-4 text-center text-sm text-zinc-400">No insider trades found</p>
       </div>
     );
   }
@@ -342,9 +342,9 @@ function InsiderSection({ trades }: { trades: InsiderTrade[] | null }) {
   const sells = trades.length - buys;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Insider Transactions</h3>
+        <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Insider Transactions</h3>
         <div className="flex gap-3 text-xs">
           <span className="text-bullish">{buys} Buy</span>
           <span className="text-bearish">{sells} Sell</span>
@@ -353,7 +353,7 @@ function InsiderSection({ trades }: { trades: InsiderTrade[] | null }) {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-xs text-gray-500">
+            <tr className="border-b border-zinc-100 text-xs text-zinc-500">
               <th className="pb-2 font-medium">Name</th>
               <th className="pb-2 font-medium">Title</th>
               <th className="pb-2 font-medium">Type</th>
@@ -362,17 +362,17 @@ function InsiderSection({ trades }: { trades: InsiderTrade[] | null }) {
               <th className="pb-2 font-medium">Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-zinc-50">
             {trades.slice(0, 10).map((t, i) => (
               <tr key={i}>
-                <td className="py-2 font-medium text-gray-900">{t.insider_name ?? "—"}</td>
-                <td className="py-2 text-xs text-gray-500">{t.title ?? "—"}</td>
+                <td className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{t.insider_name ?? "—"}</td>
+                <td className="py-2 text-xs text-zinc-500">{t.title ?? "—"}</td>
                 <td className="py-2"><SentimentBadge sentiment={t.transaction_type} /></td>
-                <td className="py-2 text-right text-gray-700">
+                <td className="py-2 text-right text-zinc-700 dark:text-zinc-300">
                   {t.shares != null ? t.shares.toLocaleString() : "—"}
                 </td>
-                <td className="py-2 text-right text-gray-700">{formatCurrency(t.value)}</td>
-                <td className="py-2 text-gray-500">{formatDate(t.date)}</td>
+                <td className="py-2 text-right text-zinc-700 dark:text-zinc-300">{formatCurrency(t.value)}</td>
+                <td className="py-2 text-zinc-500">{formatDate(t.date)}</td>
               </tr>
             ))}
           </tbody>
@@ -385,20 +385,20 @@ function InsiderSection({ trades }: { trades: InsiderTrade[] | null }) {
 function HoldingsSection({ holdings }: { holdings: InstitutionalHolding[] | null }) {
   if (!holdings || holdings.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-gray-700">Institutional Holdings (13F)</h3>
-        <p className="py-4 text-center text-sm text-gray-400">No holdings data available</p>
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Institutional Holdings (13F)</h3>
+        <p className="py-4 text-center text-sm text-zinc-400">No holdings data available</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700">Top Institutional Holders (13F)</h3>
+    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+      <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Top Institutional Holders (13F)</h3>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-xs text-gray-500">
+            <tr className="border-b border-zinc-100 text-xs text-zinc-500">
               <th className="pb-2 font-medium">Holder</th>
               <th className="pb-2 font-medium text-right">Shares</th>
               <th className="pb-2 font-medium text-right">Value</th>
@@ -406,23 +406,23 @@ function HoldingsSection({ holdings }: { holdings: InstitutionalHolding[] | null
               <th className="pb-2 font-medium">Report Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-zinc-50">
             {holdings.slice(0, 15).map((h, i) => (
               <tr key={i}>
-                <td className="py-2 font-medium text-gray-900">{h.holder ?? "—"}</td>
-                <td className="py-2 text-right text-gray-700">
+                <td className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{h.holder ?? "—"}</td>
+                <td className="py-2 text-right text-zinc-700 dark:text-zinc-300">
                   {h.shares != null ? h.shares.toLocaleString() : "—"}
                 </td>
-                <td className="py-2 text-right text-gray-700">{formatCurrency(h.value)}</td>
+                <td className="py-2 text-right text-zinc-700 dark:text-zinc-300">{formatCurrency(h.value)}</td>
                 <td className={`py-2 text-right font-medium ${
                   (h.change_percent ?? 0) > 0 ? "text-bullish" :
-                  (h.change_percent ?? 0) < 0 ? "text-bearish" : "text-gray-500"
+                  (h.change_percent ?? 0) < 0 ? "text-bearish" : "text-zinc-500"
                 }`}>
                   {h.change_percent != null
                     ? `${h.change_percent > 0 ? "+" : ""}${h.change_percent.toFixed(1)}%`
                     : "—"}
                 </td>
-                <td className="py-2 text-gray-500">{formatDate(h.date)}</td>
+                <td className="py-2 text-zinc-500">{formatDate(h.date)}</td>
               </tr>
             ))}
           </tbody>
@@ -463,18 +463,18 @@ export default function InstitutionalTab({ ticker }: { ticker: string }) {
   if (loading) {
     return (
       <section className="mt-6 space-y-4">
-        <div className="h-32 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-48 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-40 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-40 animate-pulse rounded-xl bg-gray-100" />
+        <div className="h-32 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
       </section>
     );
   }
 
   if (error) {
     return (
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-        <p className="text-gray-500">Institutional data unavailable</p>
+      <section className="mt-6 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-12 text-center shadow-sm">
+        <p className="text-zinc-500">Institutional data unavailable</p>
       </section>
     );
   }
@@ -493,7 +493,7 @@ export default function InstitutionalTab({ ticker }: { ticker: string }) {
 
       <HoldingsSection holdings={holdings} />
 
-      <p className="text-center text-xs text-gray-400">
+      <p className="text-center text-xs text-zinc-400">
         Institutional data is for informational purposes only and does not constitute investment advice.
         Congressional trading data is sourced from public STOCK Act filings.
       </p>

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (toggle via .dark on html) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary-50: #f0f4ff;
   --color-primary-100: #dbe4ff;
@@ -25,5 +28,9 @@
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply bg-zinc-50 text-zinc-900 antialiased;
+}
+
+.dark body {
+  @apply bg-zinc-900 text-zinc-100;
 }

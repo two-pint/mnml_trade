@@ -2,9 +2,9 @@ import * as React from "react";
 
 const variantClasses = {
   primary: "bg-primary-600 text-white hover:bg-primary-700",
-  secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-  outline: "border border-gray-300 text-gray-700 hover:bg-gray-50",
-  ghost: "text-gray-700 hover:bg-gray-100",
+  secondary: "bg-zinc-200 text-zinc-900 hover:bg-zinc-300",
+  outline: "border border-zinc-300 text-zinc-700 hover:bg-zinc-50",
+  ghost: "text-zinc-700 hover:bg-zinc-100",
   destructive: "bg-bearish text-white hover:bg-bearish-dark",
 } as const;
 

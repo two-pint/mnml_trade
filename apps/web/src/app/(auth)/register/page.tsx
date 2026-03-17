@@ -46,24 +46,24 @@ export default function RegisterPage() {
   return (
     <>
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           Create your account
         </h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-primary-600 hover:text-primary-700"
+            className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
           >
             Sign in
           </Link>
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="rounded-lg bg-bearish-light/30 px-4 py-3 text-sm text-bearish-dark">
+            <div className="rounded-lg bg-bearish-light/30 px-4 py-3 text-sm text-bearish-dark dark:bg-bearish-dark/30 dark:text-bearish-light">
               {error}
             </div>
           )}
@@ -71,7 +71,7 @@ export default function RegisterPage() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="email"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
               Email
             </label>
@@ -82,10 +82,10 @@ export default function RegisterPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`rounded-lg border px-3 py-2 text-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`rounded-lg border px-3 py-2 text-sm transition-colors placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-zinc-700 dark:placeholder:text-zinc-500 ${
                 fieldError("email")
-                  ? "border-bearish text-bearish-dark"
-                  : "border-gray-300 text-gray-900"
+                  ? "border-bearish text-bearish-dark dark:text-bearish-light"
+                  : "border-zinc-300 text-zinc-900 dark:border-zinc-600 dark:text-zinc-100"
               }`}
               placeholder="you@example.com"
             />
@@ -97,10 +97,10 @@ export default function RegisterPage() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="username"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
               Username{" "}
-              <span className="font-normal text-gray-400">(optional)</span>
+              <span className="font-normal text-zinc-400">(optional)</span>
             </label>
             <input
               id="username"
@@ -108,10 +108,10 @@ export default function RegisterPage() {
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className={`rounded-lg border px-3 py-2 text-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`rounded-lg border px-3 py-2 text-sm transition-colors placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-zinc-700 dark:placeholder:text-zinc-500 ${
                 fieldError("username")
-                  ? "border-bearish text-bearish-dark"
-                  : "border-gray-300 text-gray-900"
+                  ? "border-bearish text-bearish-dark dark:text-bearish-light"
+                  : "border-zinc-300 text-zinc-900 dark:border-zinc-600 dark:text-zinc-100"
               }`}
               placeholder="Choose a username"
             />
@@ -123,7 +123,7 @@ export default function RegisterPage() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="password"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
               Password
             </label>
@@ -134,10 +134,10 @@ export default function RegisterPage() {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`rounded-lg border px-3 py-2 text-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`rounded-lg border px-3 py-2 text-sm transition-colors placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-zinc-700 dark:placeholder:text-zinc-500 ${
                 fieldError("password")
-                  ? "border-bearish text-bearish-dark"
-                  : "border-gray-300 text-gray-900"
+                  ? "border-bearish text-bearish-dark dark:text-bearish-light"
+                  : "border-zinc-300 text-zinc-900 dark:border-zinc-600 dark:text-zinc-100"
               }`}
               placeholder="At least 8 characters"
             />

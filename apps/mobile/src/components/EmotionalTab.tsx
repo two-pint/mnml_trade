@@ -25,7 +25,7 @@ function SentimentBadge({ sentiment }: { sentiment: string }) {
       ? "bg-green-100 text-green-800"
       : sentiment === "bearish"
         ? "bg-red-100 text-red-800"
-        : "bg-gray-100 text-gray-600";
+        : "bg-zinc-100 text-zinc-600";
   return (
     <View className={`rounded-full px-2 py-0.5 ${cls}`}>
       <Text className="text-xs font-medium capitalize">{sentiment}</Text>
@@ -40,19 +40,19 @@ function GaugeBar({ score }: { score: number }) {
       ? "bg-green-500"
       : score < -25
         ? "bg-red-500"
-        : "bg-gray-400";
+        : "bg-zinc-400";
 
   return (
     <View className="mt-2">
-      <View className="h-3 w-full rounded-full bg-gray-200">
+      <View className="h-3 w-full rounded-full bg-zinc-200">
         <View
           className={`h-full rounded-full ${color}`}
           style={{ width: `${normalized}%` }}
         />
       </View>
       <View className="mt-1 flex-row justify-between">
-        <Text className="text-[10px] text-gray-400">Very Bearish</Text>
-        <Text className="text-[10px] text-gray-400">Very Bullish</Text>
+        <Text className="text-[10px] text-zinc-400">Very Bearish</Text>
+        <Text className="text-[10px] text-zinc-400">Very Bullish</Text>
       </View>
     </View>
   );
@@ -63,27 +63,27 @@ function PostCard({ post }: { post: SentimentPost }) {
 
   return (
     <TouchableOpacity
-      className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+      className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
       activeOpacity={post.url ? 0.7 : 1}
       onPress={post.url ? () => Linking.openURL(post.url!) : undefined}
     >
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1">
           <View className="mb-1 flex-row items-center gap-2">
-            <Text className="text-xs font-medium text-gray-500">
+            <Text className="text-xs font-medium text-zinc-500">
               r/{post.subreddit}
             </Text>
-            {timeAgo && <Text className="text-xs text-gray-400">· {timeAgo}</Text>}
+            {timeAgo && <Text className="text-xs text-zinc-400">· {timeAgo}</Text>}
           </View>
-          <Text className="text-sm font-medium text-gray-900" numberOfLines={2}>
+          <Text className="text-sm font-medium text-zinc-900" numberOfLines={2}>
             {post.title}
           </Text>
         </View>
         <SentimentBadge sentiment={post.sentiment} />
       </View>
       <View className="mt-2 flex-row gap-4">
-        <Text className="text-xs text-gray-400">↑ {post.score}</Text>
-        <Text className="text-xs text-gray-400">{post.num_comments} comments</Text>
+        <Text className="text-xs text-zinc-400">↑ {post.score}</Text>
+        <Text className="text-xs text-zinc-400">{post.num_comments} comments</Text>
       </View>
     </TouchableOpacity>
   );
@@ -99,7 +99,7 @@ function NewsCard({ article }: { article: SentimentNewsArticle }) {
 
   return (
     <TouchableOpacity
-      className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+      className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
       activeOpacity={article.url ? 0.7 : 1}
       onPress={article.url ? () => Linking.openURL(article.url!) : undefined}
     >
@@ -107,15 +107,15 @@ function NewsCard({ article }: { article: SentimentNewsArticle }) {
         <View className="flex-1">
           <View className="mb-1 flex-row items-center gap-2">
             {article.source && (
-              <Text className="text-xs font-medium text-gray-500">{article.source}</Text>
+              <Text className="text-xs font-medium text-zinc-500">{article.source}</Text>
             )}
-            {date && <Text className="text-xs text-gray-400">· {date}</Text>}
+            {date && <Text className="text-xs text-zinc-400">· {date}</Text>}
           </View>
-          <Text className="text-sm font-medium text-gray-900" numberOfLines={2}>
+          <Text className="text-sm font-medium text-zinc-900" numberOfLines={2}>
             {article.headline ?? "Untitled"}
           </Text>
           {article.summary && (
-            <Text className="mt-1 text-xs text-gray-500" numberOfLines={2}>
+            <Text className="mt-1 text-xs text-zinc-500" numberOfLines={2}>
               {article.summary}
             </Text>
           )}
@@ -153,7 +153,7 @@ export default function EmotionalTab({ ticker }: { ticker: string }) {
   if (error || !data) {
     return (
       <View className="items-center py-12">
-        <Text className="text-gray-500">Sentiment data unavailable</Text>
+        <Text className="text-zinc-500">Sentiment data unavailable</Text>
       </View>
     );
   }
@@ -165,21 +165,21 @@ export default function EmotionalTab({ ticker }: { ticker: string }) {
       ? "text-green-600"
       : data.trend === "declining"
         ? "text-red-600"
-        : "text-gray-500";
+        : "text-zinc-500";
 
   const labelColor =
     data.label === "Bullish"
       ? "bg-green-100 text-green-800"
       : data.label === "Bearish"
         ? "bg-red-100 text-red-800"
-        : "bg-gray-100 text-gray-700";
+        : "bg-zinc-100 text-zinc-700";
 
   return (
     <View className="gap-4 p-4">
       {/* Sentiment Overview */}
-      <View className="items-center rounded-xl border border-gray-200 bg-white p-4">
-        <Text className="text-sm text-gray-500">Sentiment Score</Text>
-        <Text className="mt-1 text-3xl font-bold text-gray-900">{data.score}</Text>
+      <View className="items-center rounded-xl border border-zinc-200 bg-white p-4">
+        <Text className="text-sm text-zinc-500">Sentiment Score</Text>
+        <Text className="mt-1 text-3xl font-bold text-zinc-900">{data.score}</Text>
         <View className={`mt-2 rounded-full px-3 py-1 ${labelColor}`}>
           <Text className="text-sm font-medium">{data.label}</Text>
         </View>
@@ -189,19 +189,19 @@ export default function EmotionalTab({ ticker }: { ticker: string }) {
         <View className="mt-3 flex-row gap-6">
           <View className="items-center">
             <Text className={`text-lg font-semibold ${trendColor}`}>{trendIcon}</Text>
-            <Text className="text-xs text-gray-500 capitalize">{data.trend}</Text>
+            <Text className="text-xs text-zinc-500 capitalize">{data.trend}</Text>
           </View>
           <View className="items-center">
-            <Text className="text-lg font-semibold text-gray-900">{data.mention_count}</Text>
-            <Text className="text-xs text-gray-500">Mentions</Text>
+            <Text className="text-lg font-semibold text-zinc-900">{data.mention_count}</Text>
+            <Text className="text-xs text-zinc-500">Mentions</Text>
           </View>
         </View>
       </View>
 
       {/* Reddit Posts */}
       {data.top_posts.length > 0 && (
-        <View className="rounded-xl border border-gray-200 bg-white p-4">
-          <Text className="mb-3 text-sm font-semibold text-gray-700">Reddit Sentiment</Text>
+        <View className="rounded-xl border border-zinc-200 bg-white p-4">
+          <Text className="mb-3 text-sm font-semibold text-zinc-700">Reddit Sentiment</Text>
           <View className="gap-2">
             {data.top_posts.slice(0, 5).map((post, i) => (
               <PostCard key={i} post={post} />
@@ -212,8 +212,8 @@ export default function EmotionalTab({ ticker }: { ticker: string }) {
 
       {/* News */}
       {data.news.length > 0 && (
-        <View className="rounded-xl border border-gray-200 bg-white p-4">
-          <Text className="mb-3 text-sm font-semibold text-gray-700">News Sentiment</Text>
+        <View className="rounded-xl border border-zinc-200 bg-white p-4">
+          <Text className="mb-3 text-sm font-semibold text-zinc-700">News Sentiment</Text>
           <View className="gap-2">
             {data.news.slice(0, 5).map((article, i) => (
               <NewsCard key={i} article={article} />

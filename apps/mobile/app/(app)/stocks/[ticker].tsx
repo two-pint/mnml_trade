@@ -140,7 +140,7 @@ export default function StockDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="p-6">
-          <Text className="text-gray-500">Missing ticker</Text>
+          <Text className="text-zinc-500">Missing ticker</Text>
         </View>
       </SafeAreaView>
     );
@@ -165,9 +165,9 @@ export default function StockDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.back()}
-                className="rounded-lg bg-gray-200 px-4 py-2"
+                className="rounded-lg bg-zinc-200 px-4 py-2"
               >
-                <Text className="font-medium text-gray-700">Go back</Text>
+                <Text className="font-medium text-zinc-700">Go back</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -187,7 +187,7 @@ export default function StockDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View className="border-b border-gray-200 px-4 py-3">
+        <View className="border-b border-zinc-200 px-4 py-3">
           <TouchableOpacity onPress={() => router.back()} className="mb-2">
             <Text className="text-primary-600">← Back</Text>
           </TouchableOpacity>
@@ -196,7 +196,7 @@ export default function StockDetailScreen() {
           ) : overview ? (
             <>
               <View className="flex-row items-center justify-between">
-                <Text className="text-2xl font-bold text-gray-900">{overview.ticker}</Text>
+                <Text className="text-2xl font-bold text-zinc-900">{overview.ticker}</Text>
                 <View className="flex-row items-center gap-2">
                   <TouchableOpacity
                     onPress={toggleWatchlist}
@@ -204,11 +204,11 @@ export default function StockDetailScreen() {
                     className={`rounded-lg border px-3 py-2 ${
                       inWatchlist
                         ? "border-amber-300 bg-amber-50"
-                        : "border-gray-300"
+                        : "border-zinc-300"
                     }`}
                     style={{ opacity: watchlistLoading ? 0.5 : 1 }}
                   >
-                    <Text className={`text-base ${inWatchlist ? "text-amber-600" : "text-gray-400"}`}>
+                    <Text className={`text-base ${inWatchlist ? "text-amber-600" : "text-zinc-400"}`}>
                       {inWatchlist ? "★" : "☆"}
                     </Text>
                   </TouchableOpacity>
@@ -221,7 +221,7 @@ export default function StockDetailScreen() {
                 </View>
               </View>
               <View className="mt-2 flex-row items-baseline gap-3">
-                <Text className="text-xl font-semibold text-gray-900">
+                <Text className="text-xl font-semibold text-zinc-900">
                   ${overview.price != null ? overview.price.toFixed(2) : "—"}
                 </Text>
                 <Text
@@ -235,10 +235,10 @@ export default function StockDetailScreen() {
                 </Text>
               </View>
               <View className="mt-3 flex-row gap-4">
-                <Text className="text-sm text-gray-500">
+                <Text className="text-sm text-zinc-500">
                   Vol: {overview.volume != null ? overview.volume.toLocaleString() : "—"}
                 </Text>
-                <Text className="text-sm text-gray-500">
+                <Text className="text-sm text-zinc-500">
                   O: {overview.open != null ? overview.open.toFixed(2) : "—"} H:{" "}
                   {overview.high != null ? overview.high.toFixed(2) : "—"} L:{" "}
                   {overview.low != null ? overview.low.toFixed(2) : "—"}
@@ -253,7 +253,7 @@ export default function StockDetailScreen() {
                           ? "bg-green-100"
                           : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
                             ? "bg-red-100"
-                            : "bg-gray-100"
+                            : "bg-zinc-100"
                       }`}
                     >
                       <Text
@@ -262,19 +262,19 @@ export default function StockDetailScreen() {
                             ? "text-green-800"
                             : overview.recommendation === "Sell" || overview.recommendation === "Strong Sell"
                               ? "text-red-800"
-                              : "text-gray-700"
+                              : "text-zinc-700"
                         }`}
                       >
                         {overview.recommendation}
                       </Text>
                     </View>
                     {overview.recommendation_score != null && (
-                      <Text className="text-sm text-gray-500">
+                      <Text className="text-sm text-zinc-500">
                         {overview.recommendation_score}/100
                       </Text>
                     )}
                     {overview.confidence != null && (
-                      <Text className="text-xs text-gray-400">
+                      <Text className="text-xs text-zinc-400">
                         {overview.confidence}% conf
                       </Text>
                     )}
@@ -293,16 +293,16 @@ export default function StockDetailScreen() {
                             ? "bg-green-500"
                             : val != null && val < 40
                               ? "bg-red-500"
-                              : "bg-gray-400";
+                              : "bg-zinc-400";
                         return (
                           <View key={key} className="flex-1">
                             <View className="flex-row justify-between">
-                              <Text className="text-[10px] text-gray-500">{label}</Text>
-                              <Text className="text-[10px] font-medium text-gray-700">
+                              <Text className="text-[10px] text-zinc-500">{label}</Text>
+                              <Text className="text-[10px] font-medium text-zinc-700">
                                 {val ?? "—"}
                               </Text>
                             </View>
-                            <View className="mt-0.5 h-1 w-full rounded-full bg-gray-200">
+                            <View className="mt-0.5 h-1 w-full rounded-full bg-zinc-200">
                               {val != null && (
                                 <View
                                   className={`h-full rounded-full ${barColor}`}
@@ -322,7 +322,7 @@ export default function StockDetailScreen() {
         </View>
 
         {/* Tabs */}
-        <View className="flex-row border-b border-gray-200 px-2">
+        <View className="flex-row border-b border-zinc-200 px-2">
           {TABS.map((t) => (
             <TouchableOpacity
               key={t.id}
@@ -337,7 +337,7 @@ export default function StockDetailScreen() {
                 className={
                   tab === t.id
                     ? "font-semibold text-primary-600"
-                    : "text-gray-500"
+                    : "text-zinc-500"
                 }
               >
                 {t.label}
@@ -355,14 +355,14 @@ export default function StockDetailScreen() {
                   key={tf}
                   onPress={() => setTimeframe(tf)}
                   className={`rounded-lg px-3 py-1.5 ${
-                    timeframe === tf ? "bg-primary-600" : "bg-gray-100"
+                    timeframe === tf ? "bg-primary-600" : "bg-zinc-100"
                   }`}
                 >
                   <Text
                     className={
                       timeframe === tf
                         ? "font-medium text-white"
-                        : "text-gray-700"
+                        : "text-zinc-700"
                     }
                   >
                     {tf}
@@ -373,8 +373,8 @@ export default function StockDetailScreen() {
 
             {/* Simple chart placeholder (line of closes) */}
             {chartData.length > 0 && (
-              <View className="mb-6 h-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
-                <Text className="mb-2 text-xs font-medium text-gray-500">
+              <View className="mb-6 h-40 rounded-lg border border-zinc-200 bg-zinc-50 p-2">
+                <Text className="mb-2 text-xs font-medium text-zinc-500">
                   Price (close)
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -401,8 +401,8 @@ export default function StockDetailScreen() {
             {technical ? (
               <>
                 <View className="mb-4 flex-row items-center gap-3">
-                  <Text className="text-sm text-gray-500">Score</Text>
-                  <Text className="text-2xl font-bold text-gray-900">
+                  <Text className="text-sm text-zinc-500">Score</Text>
+                  <Text className="text-2xl font-bold text-zinc-900">
                     {technical.score}
                   </Text>
                   <View
@@ -411,7 +411,7 @@ export default function StockDetailScreen() {
                         ? "bg-green-100"
                         : technical.signal === "bearish"
                           ? "bg-red-100"
-                          : "bg-gray-100"
+                          : "bg-zinc-100"
                     }`}
                   >
                     <Text
@@ -420,21 +420,21 @@ export default function StockDetailScreen() {
                           ? "text-green-800"
                           : technical.signal === "bearish"
                             ? "text-red-800"
-                            : "text-gray-700"
+                            : "text-zinc-700"
                       }`}
                     >
                       {technical.signal}
                     </Text>
                   </View>
                 </View>
-                <View className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <Text className="mb-3 font-semibold text-gray-700">
+                <View className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                  <Text className="mb-3 font-semibold text-zinc-700">
                     Indicators
                   </Text>
                   {technical.indicators?.rsi && (
                     <View className="flex-row justify-between py-2">
-                      <Text className="text-gray-600">RSI</Text>
-                      <Text className="font-medium text-gray-900">
+                      <Text className="text-zinc-600">RSI</Text>
+                      <Text className="font-medium text-zinc-900">
                         {typeof technical.indicators.rsi.value === "number"
                           ? technical.indicators.rsi.value.toFixed(2)
                           : "—"}
@@ -443,8 +443,8 @@ export default function StockDetailScreen() {
                   )}
                   {technical.indicators?.sma_20 && (
                     <View className="flex-row justify-between py-2">
-                      <Text className="text-gray-600">SMA 20</Text>
-                      <Text className="font-medium text-gray-900">
+                      <Text className="text-zinc-600">SMA 20</Text>
+                      <Text className="font-medium text-zinc-900">
                         {typeof technical.indicators.sma_20.value === "number"
                           ? technical.indicators.sma_20.value.toFixed(2)
                           : "—"}
@@ -453,8 +453,8 @@ export default function StockDetailScreen() {
                   )}
                   {technical.indicators?.sma_50 && (
                     <View className="flex-row justify-between py-2">
-                      <Text className="text-gray-600">SMA 50</Text>
-                      <Text className="font-medium text-gray-900">
+                      <Text className="text-zinc-600">SMA 50</Text>
+                      <Text className="font-medium text-zinc-900">
                         {typeof technical.indicators.sma_50.value === "number"
                           ? technical.indicators.sma_50.value.toFixed(2)
                           : "—"}
@@ -463,8 +463,8 @@ export default function StockDetailScreen() {
                   )}
                   {technical.indicators?.sma_200 && (
                     <View className="flex-row justify-between py-2">
-                      <Text className="text-gray-600">SMA 200</Text>
-                      <Text className="font-medium text-gray-900">
+                      <Text className="text-zinc-600">SMA 200</Text>
+                      <Text className="font-medium text-zinc-900">
                         {typeof technical.indicators.sma_200.value === "number"
                           ? technical.indicators.sma_200.value.toFixed(2)
                           : "—"}
@@ -472,8 +472,8 @@ export default function StockDetailScreen() {
                     </View>
                   )}
                   {technical.support_resistance && (
-                    <View className="mt-3 border-t border-gray-200 pt-3">
-                      <Text className="text-xs text-gray-500">
+                    <View className="mt-3 border-t border-zinc-200 pt-3">
+                      <Text className="text-xs text-zinc-500">
                         Support: {technical.support_resistance.support?.toFixed(2) ?? "—"} |
                         Resistance: {technical.support_resistance.resistance?.toFixed(2) ?? "—"}
                       </Text>

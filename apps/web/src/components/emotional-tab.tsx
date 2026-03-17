@@ -13,12 +13,12 @@ function SentimentGauge({ score, label }: { score: number; label: string }) {
   const gaugeColor =
     label === "Bullish" ? "text-bullish" :
     label === "Bearish" ? "text-bearish" :
-    "text-gray-500";
+    "text-zinc-500";
 
   const bgColor =
     label === "Bullish" ? "bg-bullish-light text-bullish-dark" :
     label === "Bearish" ? "bg-bearish-light text-bearish-dark" :
-    "bg-gray-100 text-gray-700";
+    "bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200";
 
   return (
     <div className="flex flex-col items-center">
@@ -52,7 +52,7 @@ function SentimentGauge({ score, label }: { score: number; label: string }) {
         <span className={`text-3xl font-bold ${gaugeColor}`}>{score}</span>
         <span className={`rounded-full px-3 py-1 text-sm font-medium ${bgColor}`}>{label}</span>
       </div>
-      <div className="mt-1 flex w-full justify-between px-2 text-xs text-gray-400">
+      <div className="mt-1 flex w-full justify-between px-2 text-xs text-zinc-400">
         <span>Very Bearish</span>
         <span>Very Bullish</span>
       </div>
@@ -64,7 +64,7 @@ function SentimentBadge({ sentiment }: { sentiment: string }) {
   const cls =
     sentiment === "bullish" ? "bg-bullish-light text-bullish-dark" :
     sentiment === "bearish" ? "bg-bearish-light text-bearish-dark" :
-    "bg-gray-100 text-gray-600";
+    "bg-zinc-100 text-zinc-600 dark:bg-zinc-600 dark:text-zinc-200";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${cls}`}>
       {sentiment}
@@ -78,24 +78,24 @@ function PostCard({ post }: { post: SentimentPost }) {
     : null;
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+    <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2 text-xs text-gray-400">
-            <span className="font-medium text-gray-500">r/{post.subreddit}</span>
+          <div className="mb-1 flex items-center gap-2 text-xs text-zinc-400">
+            <span className="font-medium text-zinc-500 dark:text-zinc-400">r/{post.subreddit}</span>
             {timeAgo && <span>· {timeAgo}</span>}
           </div>
           {post.url ? (
-            <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-900 hover:text-primary-600 line-clamp-2">
+            <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:text-primary-600 line-clamp-2">
               {post.title}
             </a>
           ) : (
-            <p className="text-sm font-medium text-gray-900 line-clamp-2">{post.title}</p>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2">{post.title}</p>
           )}
         </div>
         <SentimentBadge sentiment={post.sentiment} />
       </div>
-      <div className="mt-2 flex items-center gap-4 text-xs text-gray-400">
+      <div className="mt-2 flex items-center gap-4 text-xs text-zinc-400">
         <span>↑ {post.score}</span>
         <span>{post.num_comments} comments</span>
       </div>
@@ -112,21 +112,21 @@ function NewsCard({ article }: { article: SentimentNewsArticle }) {
     : null;
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+    <div className="flex items-start justify-between gap-3 rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4">
       <div className="min-w-0 flex-1">
-        <div className="mb-1 flex items-center gap-2 text-xs text-gray-400">
-          {article.source && <span className="font-medium text-gray-500">{article.source}</span>}
+        <div className="mb-1 flex items-center gap-2 text-xs text-zinc-400">
+          {article.source && <span className="font-medium text-zinc-500 dark:text-zinc-400">{article.source}</span>}
           {date && <span>· {date}</span>}
         </div>
         {article.url ? (
-          <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-900 hover:text-primary-600 line-clamp-2">
+          <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:text-primary-600 line-clamp-2">
             {article.headline ?? "Untitled"}
           </a>
         ) : (
-          <p className="text-sm font-medium text-gray-900 line-clamp-2">{article.headline ?? "Untitled"}</p>
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2">{article.headline ?? "Untitled"}</p>
         )}
         {article.summary && (
-          <p className="mt-1 text-xs text-gray-500 line-clamp-2">{article.summary}</p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">{article.summary}</p>
         )}
       </div>
       <SentimentBadge sentiment={article.sentiment} />
@@ -151,29 +151,29 @@ function SmartMoneyBrief({ ticker, tabSetter }: { ticker: string; tabSetter: (id
   const dpVolume = instData.dark_pool?.volume;
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+    <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-700/50 p-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-700">Smart Money Snapshot</h4>
+        <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Smart Money Snapshot</h4>
         <Link href={tabSetter("institutional")} className="text-xs text-primary-600 hover:underline">
           View full →
         </Link>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-3 text-center">
         <div>
-          <p className="text-lg font-semibold text-gray-900">{flowCount}</p>
-          <p className="text-xs text-gray-500">Options Alerts</p>
+          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{flowCount}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Options Alerts</p>
         </div>
         <div>
           <p className="text-lg font-semibold text-bullish">
             {flowCount > 0 ? Math.round((bullishCount / flowCount) * 100) : 0}%
           </p>
-          <p className="text-xs text-gray-500">Bullish Flow</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Bullish Flow</p>
         </div>
         <div>
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
             {dpVolume != null ? formatCompact(dpVolume) : "—"}
           </p>
-          <p className="text-xs text-gray-500">Dark Pool Vol</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Dark Pool Vol</p>
         </div>
       </div>
     </div>
@@ -223,17 +223,17 @@ export default function EmotionalTab({
   if (loading) {
     return (
       <section className="mt-6 space-y-4">
-        <div className="h-44 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-40 animate-pulse rounded-xl bg-gray-100" />
-        <div className="h-40 animate-pulse rounded-xl bg-gray-100" />
+        <div className="h-44 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
+        <div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
       </section>
     );
   }
 
   if (error || !data) {
     return (
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-        <p className="text-gray-500">Sentiment data unavailable</p>
+      <section className="mt-6 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-12 text-center shadow-sm">
+        <p className="text-zinc-500 dark:text-zinc-400">Sentiment data unavailable</p>
       </section>
     );
   }
@@ -243,29 +243,29 @@ export default function EmotionalTab({
     data.trend === "declining" ? "↓" : "→";
   const trendColor =
     data.trend === "improving" ? "text-bullish" :
-    data.trend === "declining" ? "text-bearish" : "text-gray-500";
+    data.trend === "declining" ? "text-bearish" : "text-zinc-500 dark:text-zinc-400";
 
   return (
     <section className="mt-6 space-y-6">
       {/* Sentiment Overview */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
         <SentimentGauge score={data.score} label={data.label} />
         <div className="mt-4 flex justify-center gap-8">
           <div className="text-center">
             <span className={`text-lg font-semibold ${trendColor}`}>{trendIcon}</span>
-            <p className="text-xs text-gray-500">Trend: <span className="capitalize">{data.trend}</span></p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Trend: <span className="capitalize">{data.trend}</span></p>
           </div>
           <div className="text-center">
-            <span className="text-lg font-semibold text-gray-900">{data.mention_count}</span>
-            <p className="text-xs text-gray-500">Mentions</p>
+            <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{data.mention_count}</span>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Mentions</p>
           </div>
         </div>
       </div>
 
       {/* Reddit Posts */}
       {data.top_posts.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-sm font-semibold text-gray-700">Reddit Sentiment</h3>
+        <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Reddit Sentiment</h3>
           <div className="space-y-3">
             {data.top_posts.slice(0, 5).map((post, i) => (
               <PostCard key={i} post={post} />
@@ -276,8 +276,8 @@ export default function EmotionalTab({
 
       {/* News */}
       {data.news.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-sm font-semibold text-gray-700">News Sentiment</h3>
+        <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">News Sentiment</h3>
           <div className="space-y-3">
             {data.news.slice(0, 5).map((article, i) => (
               <NewsCard key={i} article={article} />
@@ -287,7 +287,7 @@ export default function EmotionalTab({
       )}
 
       {/* Smart Money Brief */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 p-6 shadow-sm">
         <SmartMoneyBrief ticker={ticker} tabSetter={tabSetter} />
       </div>
     </section>

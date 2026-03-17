@@ -89,18 +89,18 @@ export default function HomeTab() {
     return (
       <TouchableOpacity
         onPress={() => handleSelectTicker(ticker)}
-        className="border-b border-gray-100 px-6 py-4 active:bg-gray-50"
+        className="border-b border-zinc-100 px-6 py-4 active:bg-zinc-50 dark:border-zinc-800 dark:active:bg-zinc-800"
       >
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="font-semibold text-gray-900">{ticker}</Text>
-            <Text className="text-sm text-gray-500" numberOfLines={1}>
+            <Text className="font-semibold text-zinc-900 dark:text-zinc-100">{ticker}</Text>
+            <Text className="text-sm text-zinc-500 dark:text-zinc-400" numberOfLines={1}>
               {name}
             </Text>
           </View>
           {"price" in item && item.price != null && (
             <View className="items-end">
-              <Text className="font-medium text-gray-900">
+              <Text className="font-medium text-zinc-900 dark:text-zinc-100">
                 ${item.price.toFixed(2)}
               </Text>
               {"change" in item && item.change != null && (
@@ -119,43 +119,43 @@ export default function HomeTab() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-zinc-900" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <View className="border-b border-gray-200 px-4 py-3">
+        <View className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
           <View className="flex-row items-center justify-between">
             <MnmlLogo height={28} />
             <TouchableOpacity
               onPress={() => logout()}
-              className="rounded-lg border border-gray-300 px-3 py-1.5"
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-600 dark:bg-zinc-800"
             >
-              <Text className="text-sm font-medium text-gray-700">Sign out</Text>
+              <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Sign out</Text>
             </TouchableOpacity>
           </View>
-          <Text className="mt-1 text-sm text-gray-500">{user?.email}</Text>
+          <Text className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{user?.email}</Text>
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Search stocks..."
             placeholderTextColor="#9ca3af"
-            className="mt-3 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-base text-gray-900"
+            className="mt-3 rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-3 text-base text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </View>
 
         {!showSearch && history.length > 0 && (
-          <View className="border-b border-gray-100 px-4 py-3">
-            <Text className="mb-2 text-sm font-medium text-gray-500">Recently viewed</Text>
+          <View className="border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
+            <Text className="mb-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">Recently viewed</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
                 {history.map((h) => (
                   <TouchableOpacity
                     key={h.id}
                     onPress={() => handleSelectTicker(h.ticker)}
-                    className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2"
+                    className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-700 dark:bg-zinc-800"
                   >
-                    <Text className="text-sm font-medium text-gray-700">{h.ticker}</Text>
+                    <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{h.ticker}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -171,7 +171,7 @@ export default function HomeTab() {
 
         {showSearch && !searching && searchResults.length === 0 && (
           <View className="px-6 py-8">
-            <Text className="text-center text-gray-500">No results</Text>
+            <Text className="text-center text-zinc-500 dark:text-zinc-400">No results</Text>
           </View>
         )}
 
@@ -188,8 +188,8 @@ export default function HomeTab() {
             renderItem={renderItem}
             ListHeaderComponent={
               !showSearch && trending.length > 0 ? (
-                <View className="border-b border-gray-100 px-6 py-3">
-                  <Text className="text-sm font-medium text-gray-500">
+                <View className="border-b border-zinc-100 px-6 py-3 dark:border-zinc-800">
+                  <Text className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
                     Popular stocks
                   </Text>
                 </View>
@@ -200,7 +200,7 @@ export default function HomeTab() {
 
         {!showSearch && !trendingLoading && trending.length === 0 && (
           <View className="flex-1 items-center justify-center px-6">
-            <Text className="text-center text-gray-500">
+            <Text className="text-center text-zinc-500 dark:text-zinc-400">
               No trending data. Search for a stock above.
             </Text>
           </View>

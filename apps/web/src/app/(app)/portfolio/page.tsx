@@ -32,10 +32,10 @@ function fmtDollar(value: string | null | undefined): string {
 }
 
 function colorClass(value: string | null | undefined): string {
-  if (value == null) return "text-gray-500";
+  if (value == null) return "text-zinc-500";
   const n = parseFloat(value);
-  if (Number.isNaN(n)) return "text-gray-500";
-  return n > 0 ? "text-bullish" : n < 0 ? "text-bearish" : "text-gray-500";
+  if (Number.isNaN(n)) return "text-zinc-500";
+  return n > 0 ? "text-bullish" : n < 0 ? "text-bearish" : "text-zinc-500";
 }
 
 function StatCard({
@@ -50,13 +50,13 @@ function StatCard({
   colorize?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${colorize ? colorClass(value) : "text-gray-900"}`}>
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${colorize ? colorClass(value) : "text-zinc-900 dark:text-zinc-100"}`}>
         {colorize ? fmtDollar(value) : value}
       </p>
       {subValue && (
-        <p className={`mt-0.5 text-sm ${colorize ? colorClass(subValue) : "text-gray-500"}`}>
+        <p className={`mt-0.5 text-sm ${colorize ? colorClass(subValue) : "text-zinc-500 dark:text-zinc-400"}`}>
           {colorize ? fmtPct(subValue) : subValue}
         </p>
       )}
@@ -67,16 +67,16 @@ function StatCard({
 function TradeMetricCard({ label, trade }: { label: string; trade: TradeMetric | null }) {
   if (!trade) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">{label}</p>
-        <p className="mt-1 text-xl font-bold text-gray-400">—</p>
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+        <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">{label}</p>
+        <p className="mt-1 text-xl font-bold text-zinc-400 dark:text-zinc-500">—</p>
       </div>
     );
   }
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">{label}</p>
-      <p className="mt-1 text-lg font-bold text-gray-900">{trade.ticker}</p>
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">{label}</p>
+      <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">{trade.ticker}</p>
       <p className={`text-sm font-medium ${colorClass(trade.gain_percent)}`}>
         {fmtDollar(trade.gain)} ({fmtPct(trade.gain_percent)})
       </p>
@@ -145,13 +145,13 @@ export default function PortfolioPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-100" />
+        <div className="h-8 w-48 animate-pulse rounded bg-zinc-100" />
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-100" />
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-100" />
           ))}
         </div>
-        <div className="mt-6 h-64 animate-pulse rounded-xl bg-gray-100" />
+        <div className="mt-6 h-64 animate-pulse rounded-xl bg-zinc-100" />
       </div>
     );
   }
@@ -170,15 +170,15 @@ export default function PortfolioPage() {
   if (portfolios.length === 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold text-gray-900">Paper Trading Portfolio</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Paper Trading Portfolio</h1>
         <div className="mt-12 flex flex-col items-center text-center">
-          <div className="rounded-full bg-primary-50 p-6">
+          <div className="rounded-full bg-primary-50 p-6 dark:bg-primary-900/30">
             <svg className="h-12 w-12 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
             </svg>
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-gray-900">No portfolio yet</h2>
-          <p className="mt-2 max-w-sm text-sm text-gray-500">
+          <h2 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">No portfolio yet</h2>
+          <p className="mt-2 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
             Create your first paper trading portfolio to start practicing trades with $100,000 in virtual cash.
           </p>
           <button
@@ -216,7 +216,7 @@ export default function PortfolioPage() {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <Link
         href="/dashboard"
-        className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900"
+        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
         ← Dashboard
       </Link>
@@ -224,18 +224,18 @@ export default function PortfolioPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             {selectedPortfolio?.name ?? "Portfolio"}
           </h1>
           {selectedPortfolio?.description && (
-            <p className="mt-1 text-sm text-gray-500">{selectedPortfolio.description}</p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{selectedPortfolio.description}</p>
           )}
         </div>
         {portfolios.length > 1 && (
           <select
             value={selectedId ?? ""}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700"
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
           >
             {portfolios.map((p) => (
               <option key={p.id} value={p.id}>
@@ -247,10 +247,10 @@ export default function PortfolioPage() {
       </div>
 
       {/* Portfolio Value */}
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-medium text-gray-500">Total Portfolio Value</p>
+      <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Portfolio Value</p>
         <div className="mt-1 flex flex-wrap items-baseline gap-4">
-          <span className="text-3xl font-bold text-gray-900">
+          <span className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
             ${fmt(performance?.total_value)}
           </span>
           <span className={`text-lg font-semibold ${colorClass(totalReturnDollar)}`}>
@@ -262,16 +262,16 @@ export default function PortfolioPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-6 text-sm">
           <div>
-            <span className="text-gray-500">Cash Available</span>
-            <span className="ml-2 font-semibold text-gray-900">${fmt(performance?.cash_balance)}</span>
+            <span className="text-zinc-500 dark:text-zinc-400">Cash Available</span>
+            <span className="ml-2 font-semibold text-zinc-900 dark:text-zinc-100">${fmt(performance?.cash_balance)}</span>
           </div>
           <div>
-            <span className="text-gray-500">Holdings Value</span>
-            <span className="ml-2 font-semibold text-gray-900">${fmt(performance?.holdings_value)}</span>
+            <span className="text-zinc-500 dark:text-zinc-400">Holdings Value</span>
+            <span className="ml-2 font-semibold text-zinc-900 dark:text-zinc-100">${fmt(performance?.holdings_value)}</span>
           </div>
           <div>
-            <span className="text-gray-500">Starting Balance</span>
-            <span className="ml-2 font-medium text-gray-600">${fmt(selectedPortfolio?.starting_balance)}</span>
+            <span className="text-zinc-500 dark:text-zinc-400">Starting Balance</span>
+            <span className="ml-2 font-medium text-zinc-600 dark:text-zinc-400">${fmt(selectedPortfolio?.starting_balance)}</span>
           </div>
         </div>
       </section>
@@ -280,7 +280,7 @@ export default function PortfolioPage() {
       {holdingsLoading ? (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-100" />
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
           ))}
         </div>
       ) : performance ? (
@@ -306,9 +306,9 @@ export default function PortfolioPage() {
       ) : null}
 
       {/* Performance Chart Placeholder */}
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-700">Performance Over Time</h2>
-        <div className="mt-4 flex h-48 items-center justify-center rounded-lg bg-gray-50 text-sm text-gray-400">
+      <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Performance Over Time</h2>
+        <div className="mt-4 flex h-48 items-center justify-center rounded-lg bg-zinc-50 text-sm text-zinc-400 dark:bg-zinc-700/50 dark:text-zinc-500">
           Historical portfolio value chart coming soon (requires Milestone 6 — historical data snapshots)
         </div>
       </section>
@@ -316,16 +316,16 @@ export default function PortfolioPage() {
       {/* Holdings Table */}
       <section className="mt-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Holdings</h2>
-          <span className="text-sm text-gray-500">{holdings.length} position{holdings.length !== 1 ? "s" : ""}</span>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Holdings</h2>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">{holdings.length} position{holdings.length !== 1 ? "s" : ""}</span>
         </div>
         {holdingsLoading ? (
-          <div className="mt-4 h-48 animate-pulse rounded-xl bg-gray-100" />
+          <div className="mt-4 h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
         ) : holdings.length > 0 ? (
-          <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-medium tracking-wide text-gray-500 uppercase">
+                <tr className="border-b border-zinc-100 bg-zinc-50 text-left text-xs font-medium tracking-wide text-zinc-500 uppercase dark:border-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-400">
                   <th className="px-4 py-3">Ticker</th>
                   <th className="px-4 py-3 text-right">Qty</th>
                   <th className="px-4 py-3 text-right">Avg Cost</th>
@@ -341,7 +341,7 @@ export default function PortfolioPage() {
                   const value = parseFloat(h.current_value);
                   const portfolioPct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : "0.0";
                   return (
-                    <tr key={h.id} className="border-b border-gray-50 transition-colors hover:bg-gray-50">
+                    <tr key={h.id} className="border-b border-zinc-50 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-700/50">
                       <td className="px-4 py-3">
                         <Link
                           href={`/stocks/${encodeURIComponent(h.ticker)}`}
@@ -350,17 +350,17 @@ export default function PortfolioPage() {
                           {h.ticker}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">{fmt(h.quantity)}</td>
-                      <td className="px-4 py-3 text-right text-gray-600">${fmt(h.average_cost)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">${fmt(h.current_price)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">${fmt(h.current_value)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">{fmt(h.quantity)}</td>
+                      <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">${fmt(h.average_cost)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">${fmt(h.current_price)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">${fmt(h.current_value)}</td>
                       <td className={`px-4 py-3 text-right font-medium ${colorClass(h.gain_loss)}`}>
                         {fmtDollar(h.gain_loss)}
                       </td>
                       <td className={`px-4 py-3 text-right font-medium ${colorClass(h.gain_loss_percent)}`}>
                         {fmtPct(h.gain_loss_percent)}
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-600">{portfolioPct}%</td>
+                      <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">{portfolioPct}%</td>
                     </tr>
                   );
                 })}
@@ -368,9 +368,9 @@ export default function PortfolioPage() {
             </table>
           </div>
         ) : (
-          <div className="mt-4 flex flex-col items-center rounded-xl border border-gray-200 bg-white py-12 text-center shadow-sm">
-            <p className="text-gray-500">No holdings yet</p>
-            <p className="mt-1 text-sm text-gray-400">
+          <div className="mt-4 flex flex-col items-center rounded-xl border border-zinc-200 bg-white py-12 text-center shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <p className="text-zinc-500 dark:text-zinc-400">No holdings yet</p>
+            <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">
               Start by analyzing a stock and placing a paper trade.
             </p>
             <Link
@@ -385,9 +385,9 @@ export default function PortfolioPage() {
 
       {/* Summary Stats */}
       {performance && (
-        <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-700">Trading Summary</h2>
+            <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Trading Summary</h2>
             <Link
               href="/portfolio/transactions"
               className="text-sm font-medium text-primary-600 hover:underline"
@@ -397,20 +397,20 @@ export default function PortfolioPage() {
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
             <div>
-              <dt className="text-gray-500">Total Trades</dt>
-              <dd className="mt-1 text-lg font-bold text-gray-900">{performance.total_trades}</dd>
+              <dt className="text-zinc-500 dark:text-zinc-400">Total Trades</dt>
+              <dd className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">{performance.total_trades}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Total Sells</dt>
-              <dd className="mt-1 text-lg font-bold text-gray-900">{performance.total_sells}</dd>
+              <dt className="text-zinc-500 dark:text-zinc-400">Total Sells</dt>
+              <dd className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">{performance.total_sells}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Profitable Sells</dt>
+              <dt className="text-zinc-500 dark:text-zinc-400">Profitable Sells</dt>
               <dd className="mt-1 text-lg font-bold text-bullish">{performance.profitable_sells}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Most Traded</dt>
-              <dd className="mt-1 text-lg font-bold text-gray-900">
+              <dt className="text-zinc-500 dark:text-zinc-400">Most Traded</dt>
+              <dd className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 {performance.most_traded_ticker ?? "—"}
               </dd>
             </div>
