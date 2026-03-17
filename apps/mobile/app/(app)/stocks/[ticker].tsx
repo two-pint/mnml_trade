@@ -12,7 +12,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { DailyOhlcv, StockOverview, TechnicalAnalysis, WatchlistItem } from "@repo/types";
+import type {
+  AgentAnalysis,
+  DailyOhlcv,
+  IntradayOhlcv,
+  StockOverview,
+  TechnicalAnalysis,
+  WatchlistItem,
+} from "@repo/types";
+import { ApiClientError } from "@repo/api-client";
 import { stocksApi, engagementApi } from "@/lib/api";
 import FundamentalTab from "@/components/FundamentalTab";
 import EmotionalTab from "@/components/EmotionalTab";
@@ -27,15 +35,31 @@ const TABS = [
   { id: "institutional", label: "Institutional" },
 ] as const;
 
-function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): DailyOhlcv[] {
-  if (!series.length) return [];
+type ChartPoint = { date: string; open: number | null; high: number | null; low: number | null; close: number | null; volume: number | null };
+
+function intradayToChartPoints(bars: IntradayOhlcv[]): ChartPoint[] {
+  const ordered = [...bars].reverse();
+  return ordered.map((b) => {
+    const time =
+      typeof b.datetime === "string" && b.datetime.length >= 16
+        ? b.datetime.slice(11, 16)
+        : b.datetime;
+    return {
+      date: time,
+      open: b.open,
+      high: b.high,
+      low: b.low,
+      close: b.close,
+      volume: b.volume,
+    };
+  });
+}
+
+function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): ChartPoint[] {
+  if (!series.length || tf === "1D") return [];
   const now = new Date();
   let cut: Date;
   switch (tf) {
-    case "1D":
-      cut = new Date(now);
-      cut.setDate(cut.getDate() - 1);
-      break;
     case "1M":
       cut = new Date(now);
       cut.setMonth(cut.getMonth() - 1);
@@ -49,10 +73,13 @@ function filterByTimeframe(series: DailyOhlcv[], tf: Timeframe): DailyOhlcv[] {
       cut.setFullYear(cut.getFullYear() - 1);
       break;
     default:
-      return series;
+      return series.map((d) => ({ ...d, date: d.date }));
   }
   const cutStr = cut.toISOString().slice(0, 10);
-  return series.filter((d) => d.date >= cutStr).slice(-80);
+  return series
+    .filter((d) => d.date >= cutStr)
+    .slice(-80)
+    .map((d) => ({ ...d, date: d.date }));
 }
 
 export default function StockDetailScreen() {
@@ -64,6 +91,7 @@ export default function StockDetailScreen() {
   const [overview, setOverview] = useState<StockOverview | null>(null);
   const [technical, setTechnical] = useState<TechnicalAnalysis | null>(null);
   const [daily, setDaily] = useState<DailyOhlcv[]>([]);
+  const [intraday, setIntraday] = useState<IntradayOhlcv[]>([]);
   const [tab, setTab] = useState<string>("technical");
   const [timeframe, setTimeframe] = useState<Timeframe>("1M");
   const [loading, setLoading] = useState(true);
@@ -71,6 +99,9 @@ export default function StockDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [agentAnalysis, setAgentAnalysis] = useState<AgentAnalysis | null>(null);
+  const [agentAnalysisLoading, setAgentAnalysisLoading] = useState(false);
+  const [agentAnalysisError, setAgentAnalysisError] = useState<"unavailable" | "forbidden" | null>(null);
 
   const load = useCallback(() => {
     if (!ticker) return;
@@ -79,11 +110,13 @@ export default function StockDetailScreen() {
       stocksApi.getStock(ticker),
       stocksApi.getStockTechnical(ticker).catch(() => null),
       stocksApi.getStockDaily(ticker).catch(() => []),
+      stocksApi.getStockIntraday(ticker, { interval: "1min", days: 1 }).catch(() => []),
     ])
-      .then(([ov, tech, d]) => {
+      .then(([ov, tech, d, intra]) => {
         setOverview(ov);
         setTechnical(tech ?? null);
         setDaily(Array.isArray(d) ? d : []);
+        setIntraday(Array.isArray(intra) ? intra : []);
       })
       .catch(() => setError("Failed to load"))
       .finally(() => {
@@ -98,6 +131,34 @@ export default function StockDetailScreen() {
       load();
     }
   }, [ticker, load]);
+
+  useEffect(() => {
+    if (!ticker || loading) return;
+    const interval = setInterval(() => {
+      stocksApi
+        .getStock(ticker)
+        .then(setOverview)
+        .catch(() => {});
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [ticker, loading]);
+
+  useEffect(() => {
+    if (!ticker) return;
+    setAgentAnalysisError(null);
+    setAgentAnalysisLoading(true);
+    stocksApi
+      .getAgentAnalysis(ticker)
+      .then(setAgentAnalysis)
+      .catch((e: unknown) => {
+        if (e instanceof ApiClientError && e.status === 403) {
+          setAgentAnalysisError("forbidden");
+        } else {
+          setAgentAnalysisError("unavailable");
+        }
+      })
+      .finally(() => setAgentAnalysisLoading(false));
+  }, [ticker]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -131,10 +192,10 @@ export default function StockDetailScreen() {
     }
   };
 
-  const chartData = useMemo(
-    () => filterByTimeframe(daily, timeframe),
-    [daily, timeframe],
-  );
+  const chartData = useMemo((): ChartPoint[] => {
+    if (timeframe === "1D") return intradayToChartPoints(intraday);
+    return filterByTimeframe(daily, timeframe);
+  }, [daily, intraday, timeframe]);
 
   if (!ticker) {
     return (
@@ -315,6 +376,74 @@ export default function StockDetailScreen() {
                       })}
                     </View>
                   )}
+                </View>
+              )}
+            </>
+          ) : null}
+        </View>
+
+        {/* AI Analysis */}
+        <View className="border-t border-gray-100 px-4 py-4">
+          <Text className="text-sm font-semibold text-gray-700">AI Analysis</Text>
+          {agentAnalysisLoading ? (
+            <View className="mt-4">
+              <ActivityIndicator size="small" color="#4c6ef5" />
+            </View>
+          ) : agentAnalysisError === "forbidden" ? (
+            <View className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <Text className="text-sm text-amber-800">
+                Add your API key in Settings to enable AI analysis.
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/profile" as never)}
+                className="mt-2"
+              >
+                <Text className="text-sm font-medium text-primary-600">Go to Settings →</Text>
+              </TouchableOpacity>
+            </View>
+          ) : agentAnalysisError === "unavailable" ? (
+            <Text className="mt-4 text-sm text-gray-500">Analysis unavailable. Try again later.</Text>
+          ) : agentAnalysis ? (
+            <>
+              <Text className="mt-1 text-xs text-gray-500">For research only; not investment advice.</Text>
+              <Text className="mt-4 text-gray-900">{agentAnalysis.summary}</Text>
+              {agentAnalysis.consideration && (
+                <View
+                  className={`mt-4 self-start rounded-full px-3 py-1 ${
+                    agentAnalysis.consideration === "Strong buy" || agentAnalysis.consideration === "Worth a look"
+                      ? "bg-green-100"
+                      : agentAnalysis.consideration === "Strong sell" || agentAnalysis.consideration === "Avoid"
+                        ? "bg-red-100"
+                        : "bg-gray-100"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${
+                      agentAnalysis.consideration === "Strong buy" || agentAnalysis.consideration === "Worth a look"
+                        ? "text-green-800"
+                        : agentAnalysis.consideration === "Strong sell" || agentAnalysis.consideration === "Avoid"
+                          ? "text-red-800"
+                          : "text-gray-700"
+                    }`}
+                  >
+                    {agentAnalysis.consideration}
+                  </Text>
+                </View>
+              )}
+              {(agentAnalysis.bull_points?.length ?? 0) > 0 && (
+                <View className="mt-4">
+                  <Text className="text-xs font-medium uppercase text-gray-500">Bull points</Text>
+                  {agentAnalysis.bull_points?.map((p, i) => (
+                    <Text key={i} className="mt-1 text-sm text-gray-700">• {p}</Text>
+                  ))}
+                </View>
+              )}
+              {(agentAnalysis.bear_points?.length ?? 0) > 0 && (
+                <View className="mt-3">
+                  <Text className="text-xs font-medium uppercase text-gray-500">Bear points</Text>
+                  {agentAnalysis.bear_points?.map((p, i) => (
+                    <Text key={i} className="mt-1 text-sm text-gray-700">• {p}</Text>
+                  ))}
                 </View>
               )}
             </>

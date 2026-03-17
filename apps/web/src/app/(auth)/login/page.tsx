@@ -1,36 +1,36 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Logo } from "@repo/ui";
-import { useAuth } from "@/lib/auth-context";
-import { ApiClientError } from "@repo/api-client";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Logo } from "@repo/ui"
+import { useAuth } from "@/lib/auth-context"
+import { ApiClientError } from "@repo/api-client"
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { login } = useAuth()
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
+    e.preventDefault()
+    setError("")
+    setSubmitting(true)
 
     try {
-      await login(email, password);
-      router.replace("/dashboard");
+      await login(email, password)
+      router.replace("/dashboard")
     } catch (err) {
       if (err instanceof ApiClientError) {
-        setError(err.error.message);
+        setError(err.error.message)
       } else {
-        setError("Something went wrong. Please try again.");
+        setError("Something went wrong. Please try again.")
       }
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
@@ -38,7 +38,7 @@ export default function LoginPage() {
     <>
       <div className="mb-8 text-center">
         <div className="flex justify-center">
-          <Logo height={40} />
+          <Logo height={48} />
         </div>
         <h1 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
           Sign in
@@ -110,5 +110,5 @@ export default function LoginPage() {
         </form>
       </div>
     </>
-  );
+  )
 }

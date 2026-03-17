@@ -151,6 +151,17 @@ export interface DailyOhlcv {
 
 export type DailySeries = DailyOhlcv[];
 
+export interface IntradayOhlcv {
+  datetime: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
+}
+
+export type IntradaySeries = IntradayOhlcv[];
+
 export interface TrendingStock {
   ticker: string;
   name: string;
@@ -274,6 +285,15 @@ export interface SentimentPost {
   url: string | null;
   sentiment: SentimentItemLabel;
   sentiment_confidence: number;
+}
+
+export interface MarketNewsArticle {
+  headline: string | null;
+  summary: string | null;
+  source: string | null;
+  datetime: number | null;
+  url: string | null;
+  sentiment_from_source: string | null;
 }
 
 export interface SentimentNewsArticle {
