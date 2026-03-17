@@ -5,6 +5,8 @@
 **HLD reference**: §12.7 Logical Milestones — Milestone 7.  
 **Inspiration**: [TradingAgents](https://github.com/TauricResearch/TradingAgents) (Apache 2.0): analyst agents, researcher debate, trader/risk layers—adapted to our stack and data sources.
 
+**On-demand only**: Agent analysis must **not** run on page/screen load. It runs **only when the user explicitly requests it** (e.g. by clicking "Run analysis" or "Run deep analysis" in the UI). This keeps token/API usage under user control and avoids unwanted cost or latency on navigation.
+
 ---
 
 ## M7-001: Research and design — agent architecture
@@ -20,7 +22,7 @@ Before building, we need a clear design: how agent roles map to our existing dat
 - [ ] Document TradingAgents-style roles relevant to our stack: **Technical Analyst** (our indicators + price), **Fundamental/Sentiment** (M3 data when available; or summary from overview), **Institutional Analyst** (options flow, dark pool from Unusual Whales), **Researcher** (bull/bear debate over analyst outputs), **Trader Agent** (synthesized view → optional "consideration" or paper-trade suggestion), **Risk** (guardrails, optional approval).
 - [ ] Decide integration approach: **Option A** — Elixir-native (HTTP client to OpenAI/Claude/etc., orchestration in Phoenix, cache in ETS/Redis); **Option B** — Python service (TradingAgents or minimal clone) called by Phoenix; **Option C** — hybrid (e.g. single "summary" agent in Elixir first, expand later). Document pros/cons and chosen path.
 - [ ] Define data flow: which existing API responses (stock overview, technical, options flow, etc.) are passed into which agents; where results are stored (e.g. `agent_analysis` table or cache key per ticker); TTL and invalidation.
-- [ ] Define API contract: e.g. `GET /api/stocks/:ticker/agent-analysis` (and optionally batch for watchlist); response shape (summary, debate excerpt, optional "consideration" label).
+- [ ] Define API contract: e.g. `GET /api/stocks/:ticker/agent-analysis` (and optionally batch for watchlist); response shape (summary, debate excerpt, optional "consideration" label). **Trigger**: Analysis is run only when the client calls the endpoint (e.g. in response to a user clicking "Run analysis"); no auto-fetch on stock page load.
 - [ ] Add a short "Multi-Agent Analysis" section to HLD or design doc referencing this milestone.
 
 ### Acceptance criteria
@@ -72,7 +74,7 @@ The app needs a reliable way to call an LLM (OpenAI, Anthropic, or other) from E
 **Title**: Analyst agents — technical and institutional (LLM summaries from existing data)
 
 ### Description (why this ticket is needed)
-Users benefit from a short, natural-language summary of what the numbers mean. This ticket implements two "analyst" agents that consume data we already have: (1) Technical Analyst — overview + indicators + score; (2) Institutional Analyst — options flow and dark pool summary. Both use the LLM to produce a concise paragraph (or bullets) suitable for the stock detail UI.
+Users benefit from a short, natural-language summary of what the numbers mean. This ticket implements two "analyst" agents that consume data we already have: (1) Technical Analyst — overview + indicators + score; (2) Institutional Analyst — options flow and dark pool summary. Both use the LLM to produce a concise paragraph (or bullets) suitable for the stock detail UI. Use the document found at this link to guide you https://arxiv.org/pdf/2412.20138
 
 ### Required tasks
 - [ ] **Technical Analyst**: Build a prompt that includes ticker, price, change, key metrics, technical indicators (RSI, MACD, etc.), and technical score. Call LLM; parse and sanitize response (strip markdown if needed, length limit). Return structured result (e.g. `%{role: "technical", summary: "..."}`).
@@ -136,7 +138,7 @@ The final step combines analyst summaries and debate into one coherent "agent an
 ### Required tasks
 - [ ] **Synthesis agent**: Prompt that takes technical summary, institutional summary, and bull/bear points; outputs one short paragraph (2–4 sentences) and optionally a single "consideration" label. Call LLM; parse response into `%{summary: "...", consideration: "..."}` (consideration optional).
 - [ ] **Orchestration**: Implement a pipeline (e.g. in `StockAnalysis.AgentAnalysis` context): fetch data → Technical Analyst → Institutional Analyst → Researchers → Synthesis. Run in sequence or parallel where independent; respect timeouts and abort on critical failure.
-- [ ] **Persistence/cache**: Store or cache the full result (all analyst outputs + debate + synthesis) under a key like `agent_analysis:{ticker}` with TTL (e.g. 1–4 hours) so UI and API can serve it without re-running every time.
+- [ ] **Persistence/cache**: Store or cache the full result (all analyst outputs + debate + synthesis) under a key like `agent_analysis:{ticker}` with TTL (e.g. 1–4 hours) so that when the user has already requested analysis, subsequent views can show cached result until they click refresh or TTL expires. Pipeline runs only when the user explicitly requests analysis (button), not on page load.
 - [ ] Define "risk" guardrails: e.g. no explicit "buy/sell" in synthesis; disclaimer that output is for research only, not advice. Enforce in prompt and/or post-processing.
 
 ### Acceptance criteria
@@ -164,7 +166,7 @@ The final step combines analyst summaries and debate into one coherent "agent an
 Web and mobile need a stable endpoint and types to display the multi-agent analysis on the stock detail page. This ticket adds the HTTP contract, auth, and shared TypeScript types so both clients can render summary, debate, and consideration consistently.
 
 ### Required tasks
-- [ ] Add `GET /api/stocks/:ticker/agent-analysis` (auth required). Returns JSON: `{ summary, consideration?, technicalSummary?, institutionalSummary?, bullPoints?, bearPoints?, cachedAt? }`. Trigger pipeline if not cached (or return 202 + poll, or synchronous—per design from M7-001).
+- [ ] Add `GET /api/stocks/:ticker/agent-analysis` (auth required). Returns JSON: `{ summary, consideration?, technicalSummary?, institutionalSummary?, bullPoints?, bearPoints?, cachedAt? }`. Pipeline is triggered only when the client calls this endpoint (e.g. after user clicks "Run analysis"); if not cached, run pipeline and return (sync or 202 + poll per design). **Do not** trigger analysis on stock page load—only on explicit user request.
 - [ ] Add Ecto schema/migration if storing in DB (e.g. `agent_analyses`: user_id optional, ticker, payload JSONB, inserted_at); or document "cache only" and return from cache with `cachedAt`.
 - [ ] Add types in `@repo/types` and methods in `@repo/api-client` for agent analysis. Add to openapi/spec if present.
 - [ ] Document in API docs or README: endpoint, rate limits (if any), and that analysis is for research only.
@@ -193,22 +195,23 @@ Web and mobile need a stable endpoint and types to display the multi-agent analy
 The stock detail page should show the synthesized agent analysis: summary paragraph, optional bull/bear bullets, and consideration badge. This gives users a single place to read both raw data (tabs) and the LLM-derived narrative.
 
 ### Required tasks
-- [ ] Add a section or tab "AI Analysis" (or "Summary") on the stock detail page that fetches `GET /api/stocks/:ticker/agent-analysis` and displays summary, consideration, and optionally bull/bear points.
-- [ ] Use existing api-client and types; show loading state and handle errors (e.g. "Analysis unavailable").
+- [ ] Add a section "AI Analysis" on the stock detail page. **Do not fetch** `GET /api/stocks/:ticker/agent-analysis` on page load. Instead show buttons (e.g. "Run analysis", "Run deep analysis"); only when the user clicks a button, call the API and then display summary, consideration, and optionally bull/bear points.
+- [ ] Use existing api-client and types; show loading state while analysis runs and handle errors (e.g. "Analysis unavailable", 403 when API key not configured).
 - [ ] Include short disclaimer: "For research only; not investment advice."
 - [ ] Ensure layout works on mobile viewport (responsive).
 
 ### Acceptance criteria
-- Agent analysis section visible on stock detail when data is available.
-- Loading and error states are handled.
+- Agent analysis section is visible; **no automatic fetch on page load**. User must click a button to request analysis.
+- After user clicks "Run analysis" (or equivalent), API is called and result is displayed; loading and error states are handled.
 - Disclaimer is visible; no misleading "buy/sell" wording from UI.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Open /stocks/AAPL; scroll to AI Analysis | Summary and consideration visible (or loading then content) |
-| 2 | Open stock with agent analysis disabled or failed | Graceful message or hidden section |
-| 3 | Resize to mobile width | Section readable and not broken |
+| 1 | Open /stocks/AAPL; do not click any button | AI Analysis section shows buttons only; no GET to agent-analysis on load |
+| 2 | Click "Run analysis" | API called; loading then summary/consideration (or error) |
+| 3 | Open stock with agent analysis disabled or failed | Graceful message when user triggers |
+| 4 | Resize to mobile width | Section readable and not broken |
 
 ---
 
@@ -222,21 +225,21 @@ The stock detail page should show the synthesized agent analysis: summary paragr
 Mobile users should see the same agent analysis (summary, consideration, bull/bear) on the stock detail screen so the experience is consistent with web and they can quickly scan the AI-derived view on the go.
 
 ### Required tasks
-- [ ] Add "AI Analysis" section or collapsible block on the stock detail screen; call `api.getAgentAnalysis(ticker)` and display summary, consideration badge, and optional bull/bear lists.
+- [ ] Add "AI Analysis" section on the stock detail screen. **Do not call** `api.getAgentAnalysis(ticker)` on screen load. Show buttons (e.g. "Run analysis", "Run deep analysis"); only when the user taps a button, call the API and then display summary, consideration badge, and optional bull/bear lists.
 - [ ] Reuse shared types and api-client; match web disclaimer and tone.
 - [ ] Handle loading and error states; avoid blocking the rest of the screen if the agent endpoint is slow or fails.
 
 ### Acceptance criteria
-- Agent analysis visible on mobile stock detail when available.
-- Layout fits small screens; text readable.
-- Same disclaimer as web; no investment advice claim.
+- Agent analysis section visible; **no automatic fetch on screen load**. User must tap a button to request analysis.
+- After user taps "Run analysis" (or equivalent), API is called and result is displayed; layout fits small screens; same disclaimer as web.
 
 ### Test plan
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Open stock detail on device/simulator | AI Analysis section shows summary (or loading) |
-| 2 | Tap to expand bull/bear if collapsed | Points displayed |
-| 3 | Turn off network; open stock | Error state or cached analysis if previously loaded |
+| 1 | Open stock detail on device/simulator; do not tap any button | AI Analysis section shows buttons only; no call to agent-analysis on load |
+| 2 | Tap "Run analysis" | API called; loading then summary (or error) |
+| 3 | Tap to expand bull/bear if collapsed | Points displayed |
+| 4 | Turn off network; open stock | Error state or cached analysis if user had previously loaded it |
 
 ---
 
@@ -309,4 +312,4 @@ Multi-agent LLM output must be clearly framed as research/educational only, not 
 - [ ] M7-009: Watchlist and batch (optional)
 - [ ] M7-010: Documentation and disclaimer
 
-**Done when**: Multi-agent LLM analysis is designed and implemented; Technical and Institutional analysts plus Researcher debate and Synthesis run in Phoenix (or approved sidecar); API exposes agent analysis; web and mobile show summary and consideration with clear research-only disclaimer; optional watchlist integration and full documentation in place.
+**Done when**: Multi-agent LLM analysis is designed and implemented; Technical and Institutional analysts plus Researcher debate and Synthesis run in Phoenix (or approved sidecar); API exposes agent analysis; web and mobile show summary and consideration **only after the user requests it via a button** (no auto-fetch on page/screen load), with clear research-only disclaimer; optional watchlist integration and full documentation in place.
