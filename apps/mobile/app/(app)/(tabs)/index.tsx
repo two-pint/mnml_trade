@@ -126,7 +126,7 @@ export default function HomeTab() {
       >
         <View className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
           <View className="flex-row items-center justify-between">
-            <MnmlLogo height={28} />
+            <MnmlLogo height={22} />
             <TouchableOpacity
               onPress={() => logout()}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 dark:border-zinc-600 dark:bg-zinc-800"

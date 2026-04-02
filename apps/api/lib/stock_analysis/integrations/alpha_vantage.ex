@@ -42,6 +42,20 @@ defmodule StockAnalysis.Integrations.AlphaVantage do
   end
 
   @doc """
+  Fetches a quote built from intraday bars for the current trading day.
+
+  This is used for refresh actions when we want today's session data instead of
+  Alpha Vantage's delayed `GLOBAL_QUOTE` payload.
+  """
+  def get_intraday_quote(ticker, interval \\ "1min") when is_binary(ticker) and is_binary(interval) do
+    with {:ok, intraday} <- get_intraday(ticker, interval),
+         {:ok, daily} <- get_daily(ticker),
+         {:ok, quote} <- build_intraday_quote(ticker, intraday, daily) do
+      {:ok, quote}
+    end
+  end
+
+  @doc """
   Fetches intraday time series (OHLCV) for a ticker.
 
   `interval` is e.g. `"1min"`, `"5min"`, `"15min"`, `"30min"`, `"60min"`.
@@ -242,6 +256,75 @@ defmodule StockAnalysis.Integrations.AlphaVantage do
       change_percent: raw["10. change percent"]
     }
   end
+
+  defp build_intraday_quote(ticker, series, daily_series) when is_list(series) and series != [] do
+    latest_bar = hd(series)
+    [trading_day | _] = String.split(latest_bar.date, " ")
+    day_bars = Enum.filter(series, fn %{date: date} -> String.starts_with?(date, trading_day) end)
+    day_bars_asc = Enum.reverse(day_bars)
+
+    open =
+      case day_bars_asc do
+        [%{open: open} | _] -> open
+        _ -> nil
+      end
+
+    high =
+      day_bars
+      |> Enum.map(& &1.high)
+      |> Enum.filter(&is_number/1)
+      |> case do
+        [] -> nil
+        values -> Enum.max(values)
+      end
+
+    low =
+      day_bars
+      |> Enum.map(& &1.low)
+      |> Enum.filter(&is_number/1)
+      |> case do
+        [] -> nil
+        values -> Enum.min(values)
+      end
+
+    volume =
+      day_bars
+      |> Enum.map(& &1.volume)
+      |> Enum.filter(&is_number/1)
+      |> Enum.sum()
+
+    price = latest_bar.close
+    previous_close = previous_close_from_daily(daily_series)
+    change = if is_number(price) and is_number(previous_close), do: price - previous_close, else: nil
+    change_percent = format_change_percent(change, previous_close)
+
+    {:ok,
+     %{
+       symbol: ticker,
+       ticker: ticker,
+       open: open,
+       high: high,
+       low: low,
+       price: price,
+       volume: volume,
+       latest_trading_day: trading_day,
+       previous_close: previous_close,
+       change: change,
+       change_percent: change_percent
+     }}
+  end
+
+  defp build_intraday_quote(_ticker, _series, _daily_series), do: {:error, :not_found}
+
+  defp previous_close_from_daily([_latest, previous | _]), do: previous.close
+  defp previous_close_from_daily(_), do: nil
+
+  defp format_change_percent(_change, previous_close) when not is_number(previous_close), do: nil
+  defp format_change_percent(change, previous_close) when is_number(change) and is_number(previous_close) do
+    pct = change / previous_close * 100
+    :erlang.float_to_binary(pct, decimals: 4) <> "%"
+  end
+  defp format_change_percent(_, _), do: nil
 
   defp normalize_ohlcv_series(series) do
     series

@@ -30,17 +30,22 @@ defmodule StockAnalysis.Stocks do
   Uses cache first (TTL 15s for price); on miss fetches from Alpha Vantage, caches, and returns.
   Returns `{:ok, overview}` map with price, change, volume, high, low, etc., or `{:error, :not_found}`.
   """
-  def get_overview(ticker) when is_binary(ticker) do
+  def get_overview(ticker, opts \\ []) when is_binary(ticker) do
     ticker = String.upcase(String.trim(ticker))
     cache_key = Cache.key("stocks", ticker, "price")
     ttl = Cache.default_ttl(:price)
+    force_refresh = Keyword.get(opts, :force_refresh, false)
 
-    case Cache.get(cache_key) do
-      nil ->
-        fetch_and_cache_overview(ticker, cache_key, ttl)
+    if force_refresh do
+      fetch_and_cache_today_overview(ticker, cache_key, ttl)
+    else
+      case Cache.get(cache_key) do
+        nil ->
+          fetch_and_cache_overview(ticker, cache_key, ttl)
 
-      cached ->
-        {:ok, cached}
+        cached ->
+          {:ok, cached}
+      end
     end
   end
 
@@ -56,6 +61,21 @@ defmodule StockAnalysis.Stocks do
 
       {:error, _reason} ->
         {:error, :not_found}
+    end
+  end
+
+  defp fetch_and_cache_today_overview(ticker, cache_key, ttl) do
+    case AlphaVantage.get_intraday_quote(ticker) do
+      {:ok, quote} ->
+        overview = quote_to_overview(ticker, quote)
+        Cache.put(cache_key, overview, ttl)
+        {:ok, overview}
+
+      {:error, :rate_limit} ->
+        {:error, :rate_limit}
+
+      {:error, _reason} ->
+        fetch_and_cache_overview(ticker, cache_key, ttl)
     end
   end
 

@@ -80,6 +80,36 @@ defmodule StockAnalysis.StocksTest do
       assert :counters.get(request_count, 1) == 1
     end
 
+    test "force refresh uses intraday bars from today", %{bypass: bypass} do
+      ticker = "TODAY1"
+
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
+        q = conn.query_string || ""
+
+        body =
+          cond do
+            q =~ "function=TIME_SERIES_INTRADAY" ->
+              ~s|{"Time Series (1min)": {"2026-03-17 15:59:00": {"1. open": "203.10", "2. high": "210.37", "3. low": "202.90", "4. close": "204.32", "5. volume": "111111"}, "2026-03-17 09:30:00": {"1. open": "200.08", "2. high": "200.50", "3. low": "195.72", "4. close": "200.10", "5. volume": "5000"}}}|
+            q =~ "function=TIME_SERIES_DAILY" ->
+              ~s|{"Time Series (Daily)": {"2026-03-17": {"1. open": "200.08", "2. high": "210.37", "3. low": "195.72", "4. close": "204.32", "5. volume": "116111"}, "2026-03-16": {"1. open": "199.00", "2. high": "201.00", "3. low": "198.00", "4. close": "200.13", "5. volume": "900000"}}}|
+            true ->
+              flunk("unexpected request: #{q}")
+          end
+
+        Plug.Conn.send_resp(conn, 200, body)
+      end)
+
+      assert {:ok, overview} = Stocks.get_overview(ticker, force_refresh: true)
+      assert overview.latest_trading_day == "2026-03-17"
+      assert overview.open == 200.08
+      assert overview.high == 210.37
+      assert overview.low == 195.72
+      assert overview.price == 204.32
+      assert overview.previous_close == 200.13
+      assert overview.change == 4.19
+      assert overview.change_percent == "2.0936%"
+    end
+
     test "returns {:error, :not_found} when Alpha Vantage returns empty quote", %{bypass: bypass} do
       ticker = "NOTFOUND1"
       Bypass.expect(bypass, fn conn ->

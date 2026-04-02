@@ -2,11 +2,8 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import type {
-  PaperPortfolio,
-  TransactionDetail,
-  PaginationMeta,
-} from "@repo/types";
+import { useParams } from "next/navigation";
+import type { PaperPortfolio, TransactionDetail, PaginationMeta } from "@repo/types";
 import { paperTradingApi } from "@/lib/api";
 
 function fmt(value: string | null | undefined): string {
@@ -26,9 +23,12 @@ function fmtTime(iso: string): string {
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-export default function TransactionsPage() {
-  const [portfolios, setPortfolios] = useState<PaperPortfolio[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export default function PortfolioTransactionsPage() {
+  const params = useParams();
+  const portfolioId = typeof params.portfolioId === "string" ? params.portfolioId : "";
+
+  const [portfolio, setPortfolio] = useState<PaperPortfolio | null>(null);
+  const [portfolioError, setPortfolioError] = useState(false);
   const [transactions, setTransactions] = useState<TransactionDetail[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,42 +43,45 @@ export default function TransactionsPage() {
   const perPage = 20;
 
   useEffect(() => {
+    if (!portfolioId) return;
+    setPortfolio(null);
+    setPortfolioError(false);
+    setTransactions([]);
+    setMeta(null);
+    setError(null);
     paperTradingApi
-      .listPortfolios()
-      .then((res) => {
-        const list = res.data;
-        setPortfolios(list);
-        if (list.length > 0) setSelectedId(list[0]!.id);
-      })
-      .catch(() => setError("Failed to load portfolios"))
+      .getPortfolio(portfolioId)
+      .then((r) => setPortfolio(r.data))
+      .catch(() => setPortfolioError(true))
       .finally(() => setLoading(false));
-  }, []);
+  }, [portfolioId]);
 
   const loadTransactions = useCallback(() => {
-    if (!selectedId) return;
+    if (!portfolioId) return;
     setTxLoading(true);
     paperTradingApi
-      .listTransactions(selectedId, {
+      .listTransactions(portfolioId, {
         page,
         per_page: perPage,
         ticker: tickerFilter || undefined,
         type: typeFilter || undefined,
       })
       .then((res) => {
+        setError(null);
         setTransactions(res.data);
         setMeta(res.meta);
       })
       .catch(() => setError("Failed to load transactions"))
       .finally(() => setTxLoading(false));
-  }, [selectedId, page, tickerFilter, typeFilter]);
+  }, [portfolioId, page, tickerFilter, typeFilter]);
 
   useEffect(() => {
-    if (selectedId) loadTransactions();
-  }, [selectedId, loadTransactions]);
+    if (portfolioId && portfolio && !portfolioError) loadTransactions();
+  }, [portfolioId, portfolio, portfolioError, loadTransactions]);
 
   useEffect(() => {
     setPage(1);
-  }, [tickerFilter, typeFilter, selectedId]);
+  }, [tickerFilter, typeFilter, portfolioId]);
 
   const totalPages = meta?.total_pages ?? 1;
 
@@ -91,12 +94,12 @@ export default function TransactionsPage() {
     );
   }
 
-  if (error && !selectedId) {
+  if (portfolioError || !portfolio) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <p className="text-bearish">{error}</p>
-        <Link href="/portfolio" className="mt-4 inline-block text-primary-600 hover:underline">
-          Back to portfolio
+        <p className="text-bearish">Portfolio not found.</p>
+        <Link href="/portfolio" className="mt-4 inline-block text-primary-600 hover:underline dark:text-primary-400">
+          Back to portfolios
         </Link>
       </div>
     );
@@ -105,28 +108,23 @@ export default function TransactionsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <Link
-        href="/portfolio"
+        href={`/portfolio/${portfolioId}`}
         className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
-        ← Portfolio
+        ← {portfolio.name}
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Transaction History</h1>
-        {portfolios.length > 1 && (
-          <select
-            value={selectedId ?? ""}
-            onChange={(e) => setSelectedId(e.target.value)}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
-          >
-            {portfolios.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        )}
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{portfolio.name}</p>
       </div>
 
-      {/* Filters */}
+      {error && (
+        <p className="mt-4 text-sm text-bearish" role="alert">
+          {error}
+        </p>
+      )}
+
       <div className="mt-6 flex flex-wrap gap-3">
         <input
           type="text"
@@ -147,7 +145,10 @@ export default function TransactionsPage() {
         {(tickerFilter || typeFilter) && (
           <button
             type="button"
-            onClick={() => { setTickerFilter(""); setTypeFilter(""); }}
+            onClick={() => {
+              setTickerFilter("");
+              setTypeFilter("");
+            }}
             className="rounded-lg px-3 py-2 text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
             Clear filters
@@ -155,7 +156,6 @@ export default function TransactionsPage() {
         )}
       </div>
 
-      {/* Transactions Table */}
       {txLoading ? (
         <div className="mt-6 h-64 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-700" />
       ) : transactions.length > 0 ? (
@@ -195,9 +195,13 @@ export default function TransactionsPage() {
                           {tx.transaction_type}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">{fmt(tx.quantity)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                        {fmt(tx.quantity)}
+                      </td>
                       <td className="px-4 py-3 text-right text-zinc-600 dark:text-zinc-400">${fmt(tx.price_per_share)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">${fmt(tx.total_amount)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-zinc-900 dark:text-zinc-100">
+                        ${fmt(tx.total_amount)}
+                      </td>
                     </tr>
                     {expandedId === tx.id && (
                       <tr key={`${tx.id}-detail`} className="bg-zinc-50 dark:bg-zinc-700/50">
@@ -209,7 +213,9 @@ export default function TransactionsPage() {
                             </div>
                             <div>
                               <span className="text-zinc-500 dark:text-zinc-400">Executed At</span>
-                              <p className="mt-0.5 text-zinc-900 dark:text-zinc-100">{new Date(tx.executed_at).toLocaleString()}</p>
+                              <p className="mt-0.5 text-zinc-900 dark:text-zinc-100">
+                                {new Date(tx.executed_at).toLocaleString()}
+                              </p>
                             </div>
                             {tx.recommendation_at_time && (
                               <div>
@@ -225,7 +231,9 @@ export default function TransactionsPage() {
                             )}
                             <div>
                               <span className="text-zinc-500 dark:text-zinc-400">Created</span>
-                              <p className="mt-0.5 text-zinc-900 dark:text-zinc-100">{new Date(tx.inserted_at).toLocaleString()}</p>
+                              <p className="mt-0.5 text-zinc-900 dark:text-zinc-100">
+                                {new Date(tx.inserted_at).toLocaleString()}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -237,7 +245,6 @@ export default function TransactionsPage() {
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-zinc-500 dark:text-zinc-400">

@@ -112,6 +112,7 @@ export default function StockPage() {
   const [tradeOpen, setTradeOpen] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [quoteRefreshing, setQuoteRefreshing] = useState(false);
 
   const setTab = useCallback(
     (id: string) => {
@@ -122,16 +123,27 @@ export default function StockPage() {
     [searchParams],
   );
 
+  const loadOverview = useCallback(
+    (forceRefresh = false) => {
+      if (!ticker) return;
+      setError(null);
+      if (!forceRefresh) setOverviewLoading(true);
+      stocksApi
+        .getStock(ticker, forceRefresh)
+        .then(setOverview)
+        .catch(() => setError(forceRefresh ? "Failed to refresh quote" : "Failed to load stock"))
+        .finally(() => {
+          if (!forceRefresh) setOverviewLoading(false);
+          setQuoteRefreshing(false);
+        });
+    },
+    [ticker],
+  );
+
   useEffect(() => {
     if (!ticker) return;
-    setError(null);
-    setOverviewLoading(true);
-    stocksApi
-      .getStock(ticker)
-      .then(setOverview)
-      .catch(() => setError("Failed to load stock"))
-      .finally(() => setOverviewLoading(false));
-  }, [ticker]);
+    loadOverview();
+  }, [ticker, loadOverview]);
 
   useEffect(() => {
     if (!ticker || tab !== "technical") return;
@@ -180,6 +192,11 @@ export default function StockPage() {
     }
   };
 
+  const refreshQuote = useCallback(() => {
+    setQuoteRefreshing(true);
+    loadOverview(true);
+  }, [loadOverview]);
+
   const chartData = useMemo(() => {
     const filtered = filterByTimeframe(daily, timeframe);
     return [...filtered].sort((a, b) => a.date.localeCompare(b.date));
@@ -218,6 +235,16 @@ export default function StockPage() {
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{overview.ticker}</h1>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={refreshQuote}
+                  disabled={overviewLoading || quoteRefreshing}
+                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700/50"
+                  title="Refresh quote"
+                  aria-label="Refresh quote"
+                >
+                  <span className={quoteRefreshing ? "inline-block animate-spin" : "inline-block"}>↻</span>
+                </button>
                 <button
                   type="button"
                   onClick={toggleWatchlist}

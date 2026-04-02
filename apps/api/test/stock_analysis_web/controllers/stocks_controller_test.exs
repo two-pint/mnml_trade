@@ -122,6 +122,49 @@ defmodule StockAnalysisWeb.StocksControllerTest do
       assert data["volume"] == 1_000_000
     end
 
+    test "refreshes with intraday data when refresh query param is set", %{conn: conn, bypass: bypass, token: token} do
+      Bypass.stub(bypass, "GET", "/query", fn conn ->
+        q = conn.query_string || ""
+
+        body =
+          cond do
+            q =~ "function=TIME_SERIES_INTRADAY" ->
+              ~s|{"Time Series (1min)": {"2026-03-17 15:59:00": {"1. open": "203.10", "2. high": "210.37", "3. low": "202.90", "4. close": "204.32", "5. volume": "111111"}, "2026-03-17 09:30:00": {"1. open": "200.08", "2. high": "200.50", "3. low": "195.72", "4. close": "200.10", "5. volume": "5000"}}}|
+            q =~ "function=TIME_SERIES_DAILY" ->
+              ~s|{"Time Series (Daily)": {"2026-03-17": {"1. open": "200.08", "2. high": "210.37", "3. low": "195.72", "4. close": "204.32", "5. volume": "116111"}, "2026-03-16": {"1. open": "199.00", "2. high": "201.00", "3. low": "198.00", "4. close": "200.13", "5. volume": "900000"}}}|
+            q =~ "function=GLOBAL_QUOTE" ->
+              flunk("refresh should not use GLOBAL_QUOTE")
+            true ->
+              flunk("unexpected request: #{q}")
+          end
+
+        Plug.Conn.send_resp(conn, 200, body)
+      end)
+      Bypass.stub(bypass, "GET", "/api/option-trades/flow-alerts", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/darkpool/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"volume": 0, "net_buy_sell": 0, "block_trades": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/congressional-trading/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+      Bypass.stub(bypass, "GET", "/api/insider-trading/OVW1", fn conn ->
+        Plug.Conn.send_resp(conn, 200, ~s({"data": []}))
+      end)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{token}")
+        |> get("/api/stocks/OVW1?refresh=1")
+
+      data = json_response(conn, 200)
+      assert data["ticker"] == "OVW1"
+      assert data["price"] == 204.32
+      assert data["latest_trading_day"] == "2026-03-17"
+      assert data["previous_close"] == 200.13
+    end
+
     test "returns 404 for invalid ticker", %{conn: conn, bypass: bypass, token: token} do
       Bypass.stub(bypass, "GET", "/query", fn conn ->
         Plug.Conn.send_resp(conn, 200, ~s({"Global Quote": {}}))

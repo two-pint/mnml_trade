@@ -25,9 +25,10 @@ export function createStocksApi(client: ApiClient) {
       return client.get<SearchResult[]>(`/api/stocks/search?${params}`);
     },
 
-    getStock(ticker: string): Promise<StockOverview> {
+    getStock(ticker: string, refresh = false): Promise<StockOverview> {
       const encoded = encodeURIComponent(ticker.trim());
-      return client.get<StockOverview>(`/api/stocks/${encoded}`);
+      const params = refresh ? "?refresh=1" : "";
+      return client.get<StockOverview>(`/api/stocks/${encoded}${params}`);
     },
 
     getStockTechnical(ticker: string): Promise<TechnicalAnalysis> {

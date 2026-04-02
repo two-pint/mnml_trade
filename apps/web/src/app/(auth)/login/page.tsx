@@ -40,7 +40,7 @@ export default function LoginPage() {
     <>
       <div className="mb-8 text-center">
         <div className="flex justify-center">
-          <Logo height={40} dark={resolvedTheme === "dark"} />
+          <Logo height={32} dark={resolvedTheme === "dark"} />
         </div>
         <h1 className="mt-6 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
           Sign in

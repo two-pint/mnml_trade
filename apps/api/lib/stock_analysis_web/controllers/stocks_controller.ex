@@ -132,8 +132,10 @@ defmodule StockAnalysisWeb.StocksController do
     end
   end
 
-  def show(conn, %{"ticker" => ticker}) do
-    case Stocks.get_overview(ticker) do
+  def show(conn, %{"ticker" => ticker} = params) do
+    force_refresh = params["refresh"] in ["1", "true"]
+
+    case Stocks.get_overview(ticker, force_refresh: force_refresh) do
       {:ok, overview} ->
         user = Guardian.Plug.current_resource(conn)
         if user, do: Task.start(fn -> StockAnalysis.Engagement.record_view(user.id, ticker) end)

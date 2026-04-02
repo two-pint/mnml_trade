@@ -48,7 +48,7 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="mb-8 items-center">
-          <MnmlLogo height={40} />
+          <MnmlLogo height={32} />
           <Text className="mt-6 text-center text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             Sign in
           </Text>
